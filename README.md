@@ -3,6 +3,8 @@ cpp-measures
 
 Header-only C++ library to handle physical measures
 
+**License: This project is released under the Mozilla Public License 2.0.**
+
 This library is aimed at who writes C++14 software, which handles values provided of unit of measurement, like lengths measured in meters, inches, or kilometers, durations measured in seconds, hours, or days, angles measured in degrees, radians, or turns, but also derived units, like revolutions per minute.
 Such library is useful for:
 - making code more readable;

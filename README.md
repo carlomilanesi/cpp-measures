@@ -5,14 +5,21 @@ Header-only C++ library to handle physical measures
 
 **License: This project is released under the Mozilla Public License 2.0.**
 
-This library is aimed at who writes C++14 software, which handles values provided of unit of measurement, like lengths measured in meters, inches, or kilometers, durations measured in seconds, hours, or days, angles measured in degrees, radians, or turns, but also derived units, like revolutions per minute.
+This library is aimed at those who write some kind of C++11 software,
+which uses values provided of unit of measurement,
+like, for example, lengths measured in meters, inches, or kilometers,
+durations measured in seconds, hours, or days,
+angles measured in degrees, radians, or turns,
+but also derived units, like revolutions per minute.
 Such library is useful for:
 - making code more readable;
 - making code more concise;
 - spotting logic errors at compile-time;
-- easing unit conversions.
+- easing unit conversions;
+- avoiding the run-time overhead added by other similar libraries.
 Two kinds of measures are handled:
-- Values having a unit of mesurement defined at compile-time (for example, when a programmer defines that an expression represents a length in millimeters).
+- Values having a unit of mesurement defined at compile-time
+  (for example, when a programmer defines that an expression represents a length in millimeters).
 - Values having a physical magnitude defined at compile-time, but unit of measurement defined at run-time (for example, when a programmer defines that an expression represents a length that could be measured in millimeters, in centimeters, or in inches, and at run-time one of those three units will be assigned to it).
 The first kind of measures guarantees virtually zero-runtime-overhead, with respect to using primitive types, provided an optimized compilation is performed.
 

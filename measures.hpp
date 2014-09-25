@@ -6,6 +6,7 @@
 #include <cassert>
 #include <cmath>
 #include <vector>
+#include <limits>
 #include <unordered_map>
 
 ///////////////////////// STATIC ASSERTS FOR MAGNITUDE /////////////////////////
@@ -53,9 +54,9 @@ namespace measures
 #define DEFINE_UNIT(UnitClass,MagnitudeClass,Symbol,Ratio,Offset)\
     namespace measures\
     {\
-		static int const UnitClass##id_ = []() {\
+		static unsigned int const UnitClass##id_ = []() {\
 			unit_features.push_back(UnitFeatures(Symbol, Ratio, Offset)); \
-			return unit_features.size() - 1;\
+			return unsigned int(unit_features.size() - 1);\
 		}();\
 		\
 		class UnitClass\
@@ -72,9 +73,9 @@ namespace measures
 #define DEFINE_ANGLE_UNIT(UnitClass,Symbol,TurnFraction,Offset)\
     namespace measures\
     {\
-		static int const UnitClass##id_ = []() {\
+		static unsigned int const UnitClass##id_ = []() {\
 			unit_features.push_back(UnitFeatures(Symbol, 2 * pi / (TurnFraction), Offset, (TurnFraction))); \
-			return unit_features.size() - 1;\
+			return unsigned int(unit_features.size() - 1);\
 		}();\
 		\
 		class UnitClass\
@@ -99,13 +100,13 @@ namespace measures
 		{\
 		public:\
 			typedef MainUnitClass base_unit;\
-			explicit MagnitudeClass(int unit_id): unit_id_(unit_id) { }\
-			operator int() const { return unit_id_; }\
+			explicit MagnitudeClass(unsigned int unit_id): unit_id_(unit_id) { }\
+			operator unsigned int() const { return unit_id_; }\
 			const char* symbol() const { return unit_features[unit_id_].symbol; }\
 			double ratio() const { return unit_features[unit_id_].ratio; }\
 			double offset() const { return unit_features[unit_id_].offset; }\
 		private:\
-			int unit_id_;\
+			unsigned int unit_id_;\
 		};\
 	}\
 	DEFINE_UNIT(MainUnitClass, MagnitudeClass, MainUnitSymbol, 1, 0)
@@ -2473,7 +2474,7 @@ namespace measures
     {
 		ASSERT_IS_NUMERIC(ToNum);
 		ASSERT_IS_NUMERIC(FromNum);
-        return point2<ToUnit,Num>(
+        return point2<Unit,ToNum>(
             cast<Unit,ToNum,FromNum>(m.x()),
             cast<Unit,ToNum,FromNum>(m.y()));
     }
@@ -2484,7 +2485,7 @@ namespace measures
     {
 		ASSERT_IS_NUMERIC(ToNum);
 		ASSERT_IS_NUMERIC(FromNum);
-        return vect3<ToUnit,Num>(
+        return vect3<Unit,ToNum>(
             cast<Unit,ToNum,FromNum>(m.x()),
             cast<Unit,ToNum,FromNum>(m.y()),
             cast<Unit,ToNum,FromNum>(m.z()));
@@ -2495,7 +2496,7 @@ namespace measures
     {
 		ASSERT_IS_NUMERIC(ToNum);
 		ASSERT_IS_NUMERIC(FromNum);
-        return point3<ToUnit,Num>(
+        return point3<Unit,ToNum>(
             cast<Unit,ToNum,FromNum>(m.x()),
             cast<Unit,ToNum,FromNum>(m.y()),
             cast<Unit,ToNum,FromNum>(m.z()));
@@ -5376,7 +5377,7 @@ namespace measures
     {
 		ASSERT_IS_NUMERIC(ToNum);
 		ASSERT_IS_NUMERIC(FromNum);
-        return dyn_point2<ToMagnitude,Num>(m.unit(),
+        return dyn_point2<Magnitude,ToNum>(m.unit(),
             cast<Magnitude,ToNum,FromNum>(m.x()),
             cast<Magnitude,ToNum,FromNum>(m.y()));
     }
@@ -5387,7 +5388,7 @@ namespace measures
     {
 		ASSERT_IS_NUMERIC(ToNum);
 		ASSERT_IS_NUMERIC(FromNum);
-        return dyn_vect3<ToMagnitude,Num>(m.unit(),
+        return dyn_vect3<Magnitude,ToNum>(m.unit(),
             cast<Magnitude,ToNum,FromNum>(m.x()),
             cast<Magnitude,ToNum,FromNum>(m.y()),
             cast<Magnitude,ToNum,FromNum>(m.z()));
@@ -5398,27 +5399,27 @@ namespace measures
     {
 		ASSERT_IS_NUMERIC(ToNum);
 		ASSERT_IS_NUMERIC(FromNum);
-        return dyn_point3<ToMagnitude,Num>(m.unit(),
+        return dyn_point3<Magnitude,ToNum>(m.unit(),
             cast<Magnitude,ToNum,FromNum>(m.x()),
             cast<Magnitude,ToNum,FromNum>(m.y()),
             cast<Magnitude,ToNum,FromNum>(m.z()));
     }
 
 	// Azimuths
-    template <class Magnitude, typename ToNum, typename FromNum>
-    signed_azimuth<Magnitude,ToNum> cast(signed_azimuth<Magnitude,FromNum> m)
+    template <typename ToNum, typename FromNum>
+    dyn_signed_azimuth<ToNum> cast(dyn_signed_azimuth<FromNum> m)
     {
 		ASSERT_IS_NUMERIC(ToNum);
 		ASSERT_IS_NUMERIC(FromNum);
-        return signed_azimuth<Magnitude,ToNum>(m.unit(), static_cast<ToNum>(m.value()));
+        return dyn_signed_azimuth<ToNum>(m.unit(), static_cast<ToNum>(m.value()));
     }
 
-    template <class Magnitude, typename ToNum, typename FromNum>
-    unsigned_azimuth<Magnitude,ToNum> cast(unsigned_azimuth<Magnitude,FromNum> m)
+    template <typename ToNum, typename FromNum>
+    dyn_unsigned_azimuth<ToNum> cast(dyn_unsigned_azimuth<FromNum> m)
     {
 		ASSERT_IS_NUMERIC(ToNum);
 		ASSERT_IS_NUMERIC(FromNum);
-        return unsigned_azimuth<Magnitude,ToNum>(m.unit(), static_cast<ToNum>(m.value()));
+        return dyn_unsigned_azimuth<ToNum>(m.unit(), static_cast<ToNum>(m.value()));
     }
 }
 #endif

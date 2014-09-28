@@ -2072,15 +2072,6 @@ void generate_program(ostream& os)
 {
 	// Add the associations between pre-defined unit names and their magnitude names.
 	magnitudes["radians"] = "Angle";
-//	magnitudes["degrees"] = "Angle";
-//	magnitudes["gradians"] = "Angle";
-	magnitudes["turns"] = "Angle";
-	
-//	magnitudes["steradians"] = "SolidAngle";
-//	magnitudes["allrounds"] = "SolidAngle";
-//	magnitudes["square_degrees"] = "SolidAngle";
-	
-//	magnitudes["nounit"] = "Unitless";
 	
 	// Begin generated file with header inclusion.
     os << "#include \"measures.hpp\"" << endl;
@@ -2088,13 +2079,14 @@ void generate_program(ostream& os)
     os << endl;
 	
 	// Define alternative angle units.
-	os << "DEFINE_UNIT(degrees, Angle, \"°\", 3.1415926535897932384626433832795/180, 0)" << endl; magnitudes["degrees"] = "Angle";
-	os << "DEFINE_UNIT(gradians, Angle, \" gon\", 3.1415926535897932384626433832795/200, 0)" << endl; magnitudes["gradians"] = "Angle";
+	os << "DEFINE_ANGLE_UNIT(degrees, \"^\", 360, 0)" << endl; magnitudes["degrees"] = "Angle";
+	os << "DEFINE_ANGLE_UNIT(gradians, \" gon\", 400, 0)" << endl; magnitudes["gradians"] = "Angle";
+	os << "DEFINE_ANGLE_UNIT(turns, \" rev\", 1, 0)" << endl; magnitudes["turns"] = "Angle";
 	
 	// Define solid angles with three units.
 	os << "DEFINE_MAGNITUDE(SolidAngle, steradians, \" sr\")" << endl; magnitudes["steradians"] = "SolidAngle";
 	os << "DEFINE_UNIT(allrounds, SolidAngle, \" all-round\", 4*3.1415926535897932384626433832795, 0)" << endl; magnitudes["allrounds"] = "SolidAngle";
-	os << "DEFINE_UNIT(square_degrees, SolidAngle, \"°°\", 3.1415926535897932384626433832795/180*3.1415926535897932384626433832795/180, 0)" << endl; magnitudes["square_degrees"] = "SolidAngle";
+	os << "DEFINE_UNIT(square_degrees, SolidAngle, \"^^\", 3.1415926535897932384626433832795/180*3.1415926535897932384626433832795/180, 0)" << endl; magnitudes["square_degrees"] = "SolidAngle";
 	
 	// Define unitless measures.
 	os << "DEFINE_MAGNITUDE(Unitless, nounit, \"\")" << endl; magnitudes["nounit"] = "Unitless";
@@ -2144,9 +2136,8 @@ void generate_program(ostream& os)
     os << "int main()" << endl;
     os << "{" << endl;
 	
-//#if 0
+#if 0
 	// Consider statically-typed and dynamically-typed measures.
-//    int i_dynamic = 1;
     for (int i_dynamic = 0; i_dynamic <= 1; ++i_dynamic)
     {
 		bool dyn = i_dynamic == 1;
@@ -2195,11 +2186,10 @@ void generate_program(ostream& os)
                 generate_undefined_derived_units(os, dyn, absolute, dim);
                 generate_defined_derived_units_with_different_number_types(os, dyn, absolute, dim, "float", "double");
                 generate_defined_derived_units_with_different_number_types(os, dyn, absolute, dim, "double", "float");
-// */
             }
         }
     }
-//#endif
+#endif
 
 	// Plane directions, i.e. signed_azimuth and unsigned_azimuth.
 	// Plane directions are only scalar and only absolute.

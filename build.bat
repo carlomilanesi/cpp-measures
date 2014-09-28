@@ -6,9 +6,12 @@ setlocal
 rd /S /Q ..\gen 2>NUL
 mkdir ..\gen
 
-cl /nologo /EHsc /Ox /Fo..\gen\ /Fe..\gen\static_tester.exe static_tester.cpp
 copy measures.hpp ..\gen\
 copy measures_io.hpp ..\gen\
+
+rem goto dyntest
+
+cl /nologo /EHsc /Ox /Fo..\gen\ /Fe..\gen\static_tester.exe static_tester.cpp
 
 rem TODO benchmark
 rem TODO program using several source files
@@ -39,9 +42,16 @@ set COMPILER_BASE_WARNINGS_COMMAND=g++ -std=c++11 -Wfatal-errors -pedantic -Werr
 if errorlevel 1 goto test_errors
 del ..\gen\_* 2>NUL >NUL
 
+:dyntest
 echo.
 echo ==== Dynamic tests ====
-cl /nologo /Ox /EHsc /I ..\gtest-1.7.0\include /D _VARIADIC_MAX=10 dyn_tests.cpp /Fo..\gen\ /Fe..\gen\dyn_tests.exe /link /LIBPATH:..\gtest-1.7.0\msvc\gtest\Release gtest.lib
+
+rem Use the following command when using GTest for Windows x32 (32-bit) 
+rem cl /nologo /Ox /EHsc /I ..\gtest-1.7.0\include /D _VARIADIC_MAX=10 dyn_tests.cpp /Fo..\gen\ /Fe..\gen\dyn_tests.exe /link /LIBPATH:..\gtest-1.7.0\msvc\gtest\Release gtest.lib
+
+rem Use the following command when using GTest for Windows x64 (64-bit)
+cl /nologo /Ox /EHsc /I ..\gtest-1.7.0\include /D _VARIADIC_MAX=10 dyn_tests.cpp /Fo..\gen\ /Fe..\gen\dyn_tests.exe /link /LIBPATH:..\gtest-1.7.0\msvc\x64\Release gtest.lib
+
 if errorlevel 1 goto test_errors
 ..\gen\dyn_tests.exe
 :fine

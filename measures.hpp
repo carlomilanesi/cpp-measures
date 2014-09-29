@@ -1269,8 +1269,11 @@ namespace measures
         vect1(const vect1<Unit,Num>& o):
             x_(o.value()) { }
 
-        // Get the value.
+        // Get unmutable value.
         Num value() const { return x_; }
+
+        // Get mutable value.
+        Num& value() { return x_; }
 
         // +vect1 -> vect1
         vect1<Unit,Num> operator +() const
@@ -1421,8 +1424,11 @@ namespace measures
         point1(const point1<Unit,Num>& o):
             x_(o.value()) { }
 
-        // Get the value.
+        // Get unmutable value.
         Num value() const { return x_; }
+
+        // Get mutable value.
+        Num& value() { return x_; }
 
         // point1 += vect1 -> point1
         point1<Unit,Num> operator +=(vect1<Unit,Num> m2)
@@ -1759,17 +1765,23 @@ namespace measures
             return *this;
         }
 
-        // Getter of x component.
+        // Get unmutable component array.
+        Num const* data() const { return &x_; }
+
+        // Get mutable component array.
+        Num* data() { return &x_; }
+		
+        // Get unmutable x component.
         vect1<Unit,Num> const x() const { return vect1<Unit,Num>(x_); }
 
-        // Setter of x component.
-        void x(const vect1<Unit,Num> new_x) { x_ = new_x.value(); }
+		// Get mutable x component.
+        vect1<Unit,Num>& x() { return reinterpret_cast<vect1<Unit,Num>&>(x_); }
 
-        // Getter of y component.
+        // Get unmutable y component.
         vect1<Unit,Num> const y() const { return vect1<Unit,Num>(y_); }
 
-        // Setter of y component.
-        void y(const vect1<Unit,Num> new_y) { y_ = new_y.value(); }
+		// Get mutable y component.
+        vect1<Unit,Num>& y() { return reinterpret_cast<vect1<Unit,Num>&>(y_); }
 
     private:
 
@@ -1848,17 +1860,23 @@ namespace measures
             return *this;
         }
 
-        // Getter of x component.
+        // Get unmutable component array.
+        Num const* data() const { return &x_; }
+
+        // Get mutable component array.
+        Num* data() { return &x_; }
+		
+        // Get unmutable x component.
         point1<Unit,Num> const x() const { return point1<Unit,Num>(x_); }
 
-        // Setter of x component.
-        void x(const point1<Unit,Num> new_x) { x_ = new_x.value(); }
+		// Get mutable x component.
+        point1<Unit,Num>& x() { return reinterpret_cast<point1<Unit,Num>&>(x_); }
 
-        // Getter of y component.
+        // Get unmutable y component.
         point1<Unit,Num> const y() const { return point1<Unit,Num>(y_); }
 
-        // Setter of y component.
-        void y(const point1<Unit,Num> new_y) { y_ = new_y.value(); }
+		// Get mutable y component.
+        point1<Unit,Num>& y() { return reinterpret_cast<point1<Unit,Num>&>(y_); }
 
     private:
 
@@ -2110,23 +2128,29 @@ namespace measures
             return *this;
         }
 
-        // Getter of x component.
+        // Get unmutable component array.
+        Num const* data() const { return &x_; }
+
+        // Get mutable component array.
+        Num* data() { return &x_; }
+		
+        // Get unmutable x component.
         vect1<Unit,Num> const x() const { return vect1<Unit,Num>(x_); }
 
-        // Setter of x component.
-        void x(const vect1<Unit,Num> new_x) { x_ = new_x.value(); }
+		// Get mutable x component.
+        vect1<Unit,Num>& x() { return reinterpret_cast<vect1<Unit,Num>&>(x_); }
 
-        // Getter of y component.
+        // Get unmutable y component.
         vect1<Unit,Num> const y() const { return vect1<Unit,Num>(y_); }
 
-        // Setter of y component.
-        void y(const vect1<Unit,Num> new_y) { y_ = new_y.value(); }
+		// Get mutable y component.
+        vect1<Unit,Num>& y() { return reinterpret_cast<vect1<Unit,Num>&>(y_); }
 
-        // Getter of z component.
+        // Get unmutable z component.
         vect1<Unit,Num> const z() const { return vect1<Unit,Num>(z_); }
 
-        // Setter of z component.
-        void z(const vect1<Unit,Num> new_z) { z_ = new_z.value(); }
+		// Get mutable z component.
+        vect1<Unit,Num>& z() { return reinterpret_cast<vect1<Unit,Num>&>(z_); }
 
     private:
 
@@ -2205,23 +2229,29 @@ namespace measures
             return *this;
         }
 
-        // Getter of x component.
+        // Get unmutable component array.
+        Num const* data() const { return &x_; }
+
+        // Get mutable component array.
+        Num* data() { return &x_; }
+		
+        // Get unmutable x component.
         point1<Unit,Num> const x() const { return point1<Unit,Num>(x_); }
 
-        // Setter of x component.
-        void x(const point1<Unit,Num> new_x) { x_ = new_x.value(); }
+		// Get mutable x component.
+        point1<Unit,Num>& x() { return reinterpret_cast<point1<Unit,Num>&>(x_); }
 
-        // Getter of y component.
+        // Get unmutable y component.
         point1<Unit,Num> const y() const { return point1<Unit,Num>(y_); }
 
-        // Setter of y component.
-        void y(const point1<Unit,Num> new_y) { y_ = new_y.value(); }
+		// Get mutable y component.
+        point1<Unit,Num>& y() { return reinterpret_cast<point1<Unit,Num>&>(y_); }
 
-        // Getter of z component.
+        // Get unmutable z component.
         point1<Unit,Num> const z() const { return point1<Unit,Num>(z_); }
 
-        // Setter of z component.
-        void z(const point1<Unit,Num> new_z) { z_ = new_z.value(); }
+		// Get mutable z component.
+        point1<Unit,Num>& z() { return reinterpret_cast<point1<Unit,Num>&>(z_); }
 
     private:
 
@@ -2730,7 +2760,7 @@ namespace measures
 			return point1<Unit,Num>(v_);
 		}
 
-        // Get the value.
+        // Get unmutable value (mutable getter not available).
         Num value() const { return v_; }
 
         // signed_azimuth += vect1 -> signed_azimuth
@@ -2900,7 +2930,7 @@ namespace measures
 			return point1<Unit,Num>(v_);
 		}
 		
-        // Get the value.
+        // Get unmutable value (mutable getter not available).
         Num value() const { return v_; }
 
         // unsigned_azimuth += vect1 -> unsigned_azimuth
@@ -3128,8 +3158,11 @@ namespace measures
         // Get the unit.
 		Magnitude unit() const { return unit_; }
 
-        // Get the value.
+        // Get unmutable value.
         Num value() const { return x_; }
+
+        // Get mutable value.
+        Num& value() { return x_; }
 
         // +dyn_vect1 -> dyn_vect1
         dyn_vect1<Magnitude,Num> operator +() const
@@ -3324,8 +3357,11 @@ namespace measures
         // Get the unit.
 		Magnitude unit() const { return unit_; }
 
-        // Get the value.
+        // Get unmutable value.
         Num value() const { return x_; }
+
+        // Get mutable value.
+        Num& value() { return x_; }
 
         // dyn_point1 += dyn_vect1 -> dyn_point1
         dyn_point1<Magnitude,Num> operator +=(dyn_vect1<Magnitude,Num> m)
@@ -3809,13 +3845,25 @@ namespace measures
         // Get the unit.
 		Magnitude unit() const { return unit_; }
 
-        // Getter of x component.
+        // Get unmutable component array.
+        Num const* data() const { return &x_; }
+
+        // Get mutable component array.
+        Num* data() { return &x_; }
+		
+        // Get unmutable x component (mutable getter not available).
         dyn_vect1<Magnitude,Num> const x() const
 		{
 			return dyn_vect1<Magnitude,Num>(unit_, x_);
 		}
 
-        // Setter of x component.
+        // Get unmutable y component (mutable getter not available).
+        dyn_vect1<Magnitude,Num> const y() const
+		{
+			return dyn_vect1<Magnitude,Num>(unit_, y_);
+		}
+
+        // Set x component.
         template <typename Num2>
         void x(const dyn_vect1<Magnitude,Num2> new_x)
 		{
@@ -3824,13 +3872,7 @@ namespace measures
 				convert(unit_, new_x)).value();
         }
 
-        // Getter of y component.
-        dyn_vect1<Magnitude,Num> const y() const
-		{
-			return dyn_vect1<Magnitude,Num>(unit_, y_);
-		}
-
-        // Setter of y component.
+        // Set y component.
         template <typename Num2>
         void y(const dyn_vect1<Magnitude,Num2> new_y)
         {
@@ -3838,7 +3880,7 @@ namespace measures
 			y_ = (unit_ == new_y.unit() ? new_y :
 				convert(unit_, new_y)).value();
         }
-
+		
     private:
 		Magnitude unit_;
 
@@ -3955,28 +3997,38 @@ namespace measures
         // Get the unit.
 		Magnitude unit() const { return unit_; }
 
-        // Getter of x component.
+        // Get unmutable component array.
+        Num const* data() const { return &x_; }
+
+        // Get mutable component array.
+        Num* data() { return &x_; }
+		
+        // Get unmutable x component (mutable getter not available).
         dyn_point1<Magnitude,Num> const x() const
 		{
 			return dyn_point1<Magnitude,Num>(unit_, x_);
 		}
 
-        // Setter of x component.
-        void x(const dyn_point1<Magnitude,Num> new_x)
-        {
-			x_ = (unit_ == new_x.unit() ? new_x :
-				convert(unit_, new_x)).value();
-        }
-
-        // Getter of y component.
+        // Get unmutable y component (mutable getter not available).
         dyn_point1<Magnitude,Num> const y() const
 		{
 			return dyn_point1<Magnitude,Num>(unit_, y_);
 		}
 
-        // Setter of y component.
-        void y(const dyn_point1<Magnitude,Num> new_y)
+        // Set x component.
+        template <typename Num2>
+        void x(const dyn_point1<Magnitude,Num2> new_x)
+		{
+			ASSERT_IS_NUMERIC(Num2)
+			x_ = (unit_ == new_x.unit() ? new_x :
+				convert(unit_, new_x)).value();
+        }
+
+        // Set y component.
+        template <typename Num2>
+        void y(const dyn_point1<Magnitude,Num2> new_y)
         {
+			ASSERT_IS_NUMERIC(Num2)
 			y_ = (unit_ == new_y.unit() ? new_y :
 				convert(unit_, new_y)).value();
         }
@@ -4379,28 +4431,40 @@ namespace measures
         // Get the unit.
 		Magnitude unit() const { return unit_; }
 
-        // Getter of x component.
+        // Get unmutable component array.
+        Num const* data() const { return &x_; }
+
+        // Get mutable component array.
+        Num* data() { return &x_; }
+		
+        // Get unmutable x component (mutable getter not available).
         dyn_vect1<Magnitude,Num> const x() const
 		{
 			return dyn_vect1<Magnitude,Num>(unit_, x_);
 		}
 
-        // Setter of x component.
-        template <typename Num2>
-        void x(const dyn_vect1<Magnitude,Num2> new_x)
-        {
-			ASSERT_IS_NUMERIC(Num2)
-			x_ = (unit_ == new_x.unit() ? new_x :
-				convert(unit_, new_x)).value();
-        }
-
-        // Getter of y component.
+        // Get unmutable y component (mutable getter not available).
         dyn_vect1<Magnitude,Num> const y() const
 		{
 			return dyn_vect1<Magnitude,Num>(unit_, y_);
 		}
 
-        // Setter of y component.
+        // Get unmutable z component (mutable getter not available).
+        dyn_vect1<Magnitude,Num> const z() const
+		{
+			return dyn_vect1<Magnitude,Num>(unit_, z_);
+		}
+
+        // Set x component.
+        template <typename Num2>
+        void x(const dyn_vect1<Magnitude,Num2> new_x)
+		{
+			ASSERT_IS_NUMERIC(Num2)
+			x_ = (unit_ == new_x.unit() ? new_x :
+				convert(unit_, new_x)).value();
+        }
+
+        // Set y component.
         template <typename Num2>
         void y(const dyn_vect1<Magnitude,Num2> new_y)
         {
@@ -4409,13 +4473,7 @@ namespace measures
 				convert(unit_, new_y)).value();
         }
 
-        // Getter of z component.
-        dyn_vect1<Magnitude,Num> const z() const
-		{
-			return dyn_vect1<Magnitude,Num>(unit_, z_);
-		}
-
-        // Setter of z component.
+        // Set z component.
         template <typename Num2>
         void z(const dyn_vect1<Magnitude,Num2> new_z)
         {
@@ -4551,28 +4609,40 @@ namespace measures
         // Get the unit.
 		Magnitude unit() const { return unit_; }
 
-        // Getter of x component.
+        // Get unmutable component array.
+        Num const* data() const { return &x_; }
+
+        // Get mutable component array.
+        Num* data() { return &x_; }
+		
+        // Get unmutable x component (mutable getter not available).
         dyn_point1<Magnitude,Num> const x() const
 		{
 			return dyn_point1<Magnitude,Num>(unit_, x_);
 		}
 
-        // Setter of x component.
-        template <typename Num2>
-        void x(const dyn_point1<Magnitude,Num2> new_x)
-        {
-			ASSERT_IS_NUMERIC(Num2)
-			x_ = (unit_ == new_x.unit() ? new_x :
-				convert(unit_, new_x)).value();
-        }
-
-        // Getter of y component.
+        // Get unmutable y component (mutable getter not available).
         dyn_point1<Magnitude,Num> const y() const
 		{
 			return dyn_point1<Magnitude,Num>(unit_, y_);
 		}
 
-        // Setter of y component.
+        // Get unmutable z component (mutable getter not available).
+        dyn_point1<Magnitude,Num> const z() const
+		{
+			return dyn_point1<Magnitude,Num>(unit_, z_);
+		}
+
+        // Set x component.
+        template <typename Num2>
+        void x(const dyn_point1<Magnitude,Num2> new_x)
+		{
+			ASSERT_IS_NUMERIC(Num2)
+			x_ = (unit_ == new_x.unit() ? new_x :
+				convert(unit_, new_x)).value();
+        }
+
+        // Set y component.
         template <typename Num2>
         void y(const dyn_point1<Magnitude,Num2> new_y)
         {
@@ -4581,13 +4651,7 @@ namespace measures
 				convert(unit_, new_y)).value();
         }
 
-        // Getter of z component.
-        dyn_point1<Magnitude,Num> const z() const
-		{
-			return dyn_point1<Magnitude,Num>(unit_, z_);
-		}
-
-        // Setter of z component.
+        // Set z component.
         template <typename Num2>
         void z(const dyn_point1<Magnitude,Num2> new_z)
         {
@@ -5000,9 +5064,9 @@ namespace measures
         // Get the unit.
 		Angle unit() const { return unit_; }
 		
-        // Get the value.
+        // Get unmutable value (mutable getter not available).
         Num value() const { return x_; }
-		
+
         // dyn_signed_azimuth += dyn_vect1 -> dyn_signed_azimuth
         dyn_signed_azimuth<Num> operator +=(dyn_vect1<Angle,Num> m)
         {
@@ -5213,7 +5277,7 @@ namespace measures
         // Get the unit.
 		Angle unit() const { return unit_; }
 		
-        // Get the value.
+        // Get unmutable value (mutable getter not available).
         Num value() const { return x_; }
 		
         // dyn_unsigned_azimuth += dyn_vect1 -> dyn_unsigned_azimuth

@@ -16,9 +16,6 @@ inline void assert_same_type(T, T) { }
 	assert_same_type(typename U1::magnitude(0), typename U2::magnitude(0));
 #define ASSERT_IS_ANGLE(U)\
 	assert_same_type(typename U::magnitude(0), Angle(0));
-#define ASSERT_IS_NUMERIC(Num) \
-	static_assert(std::is_arithmetic<Num>::value, "The '" #Num "' type must be arithmetic");\
-	static_assert(sizeof(Num) >= sizeof(int), "The '" #Num "' type must be not shorter than an int");
 
 ///////////////////////// UNIT FEATURES /////////////////////////
 
@@ -27,7 +24,6 @@ namespace measures
 	template <typename Num>
 	Num sqr(Num x)
 	{
-		ASSERT_IS_NUMERIC(Num)\
 		return x * x;
 	}
 	
@@ -54,9 +50,9 @@ namespace measures
 #define DEFINE_UNIT(UnitClass,MagnitudeClass,Symbol,Ratio,Offset)\
     namespace measures\
     {\
-		static unsigned int const UnitClass##id_ = []() {\
+		static unsigned const UnitClass##id_ = []() {\
 			unit_features.push_back(UnitFeatures(Symbol, Ratio, Offset)); \
-			return unsigned int(unit_features.size() - 1);\
+			return unsigned(unit_features.size() - 1);\
 		}();\
 		\
 		class UnitClass\
@@ -73,9 +69,9 @@ namespace measures
 #define DEFINE_ANGLE_UNIT(UnitClass,Symbol,TurnFraction,Offset)\
     namespace measures\
     {\
-		static unsigned int const UnitClass##id_ = []() {\
+		static unsigned const UnitClass##id_ = []() {\
 			unit_features.push_back(UnitFeatures(Symbol, 2 * pi / (TurnFraction), Offset, (TurnFraction))); \
-			return unsigned int(unit_features.size() - 1);\
+			return unsigned(unit_features.size() - 1);\
 		}();\
 		\
 		class UnitClass\
@@ -100,13 +96,13 @@ namespace measures
 		{\
 		public:\
 			typedef MainUnitClass base_unit;\
-			explicit MagnitudeClass(unsigned int unit_id): unit_id_(unit_id) { }\
-			operator unsigned int() const { return unit_id_; }\
+			explicit MagnitudeClass(unsigned unit_id): unit_id_(unit_id) { }\
+			operator unsigned() const { return unit_id_; }\
 			const char* symbol() const { return unit_features[unit_id_].symbol; }\
 			double ratio() const { return unit_features[unit_id_].ratio; }\
 			double offset() const { return unit_features[unit_id_].offset; }\
 		private:\
-			unsigned int unit_id_;\
+			unsigned unit_id_;\
 		};\
 	}\
 	DEFINE_UNIT(MainUnitClass, MagnitudeClass, MainUnitSymbol, 1, 0)
@@ -259,8 +255,6 @@ namespace measures
             dyn_vect1<M1,Num1> m1,\
             dyn_vect2<M2,Num2> m2)\
         {\
-			ASSERT_IS_NUMERIC(Num1)\
-			ASSERT_IS_NUMERIC(Num2)\
 			auto result = DerivationRules3.find(std::make_pair(m1.unit(), m2.unit()));\
 			if (result != DerivationRules3.end()) {\
 				return dyn_vect2<M3,decltype(Num1()*Num2())>(\
@@ -282,8 +276,6 @@ namespace measures
             dyn_vect2<M2,Num1> m2,\
             dyn_vect1<M1,Num2> m1)\
         {\
-			ASSERT_IS_NUMERIC(Num1)\
-			ASSERT_IS_NUMERIC(Num2)\
 			auto result = DerivationRules3.find(std::make_pair(m1.unit(), m2.unit()));\
 			if (result != DerivationRules3.end()) {\
 				return dyn_vect2<M3,decltype(Num1()*Num2())>(\
@@ -305,8 +297,6 @@ namespace measures
             dyn_vect2<M3,Num1> m3,\
             dyn_vect1<M1,Num2> m1)\
         {\
-			ASSERT_IS_NUMERIC(Num1)\
-			ASSERT_IS_NUMERIC(Num2)\
 			auto result = DerivationRules2.find(std::make_pair(m1.unit(), m3.unit()));\
 			if (result != DerivationRules2.end()) {\
 				return dyn_vect2<M2,decltype(Num1()/Num2())>(\
@@ -328,8 +318,6 @@ namespace measures
             dyn_vect1<M1,Num1> m1,\
             dyn_vect3<M2,Num2> m2)\
         {\
-			ASSERT_IS_NUMERIC(Num1)\
-			ASSERT_IS_NUMERIC(Num2)\
 			auto result = DerivationRules3.find(std::make_pair(m1.unit(), m2.unit()));\
 			if (result != DerivationRules3.end()) {\
 				return dyn_vect3<M3,decltype(Num1()*Num2())>(\
@@ -353,8 +341,6 @@ namespace measures
             dyn_vect3<M2,Num1> m2,\
             dyn_vect1<M1,Num2> m1)\
         {\
-			ASSERT_IS_NUMERIC(Num1)\
-			ASSERT_IS_NUMERIC(Num2)\
 			auto result = DerivationRules3.find(std::make_pair(m1.unit(), m2.unit()));\
 			if (result != DerivationRules3.end()) {\
 				return dyn_vect3<M3,decltype(Num1()*Num2())>(\
@@ -378,8 +364,6 @@ namespace measures
             dyn_vect3<M3,Num1> m3,\
             dyn_vect1<M1,Num2> m1)\
         {\
-			ASSERT_IS_NUMERIC(Num1)\
-			ASSERT_IS_NUMERIC(Num2)\
 			auto result = DerivationRules2.find(std::make_pair(m1.unit(), m3.unit()));\
 			if (result != DerivationRules2.end()) {\
 				return dyn_vect3<M2,decltype(Num1()/Num2())>(\
@@ -412,8 +396,6 @@ namespace measures
             dyn_vect2<M1,Num1> m1,\
             dyn_vect2<M2,Num2> m2)\
         {\
-			ASSERT_IS_NUMERIC(Num1)\
-			ASSERT_IS_NUMERIC(Num2)\
 			auto result = DerivationRules3.find(\
 				std::make_pair(m1.unit(), m2.unit()));\
 			if (result != DerivationRules3.end()) {\
@@ -436,8 +418,6 @@ namespace measures
             dyn_vect2<M2,Num1> m2,\
             dyn_vect2<M1,Num2> m1)\
         {\
-			ASSERT_IS_NUMERIC(Num1)\
-			ASSERT_IS_NUMERIC(Num2)\
 			auto result = DerivationRules3.find(\
 				std::make_pair(m1.unit(), m2.unit()));\
 			if (result != DerivationRules3.end()) {\
@@ -460,8 +440,6 @@ namespace measures
             dyn_vect2<M1,Num1> m1,\
             dyn_vect2<M2,Num2> m2)\
         {\
-			ASSERT_IS_NUMERIC(Num1)\
-			ASSERT_IS_NUMERIC(Num2)\
 			auto result = DerivationRules3.find(\
 				std::make_pair(m1.unit(), m2.unit()));\
 			if (result != DerivationRules3.end()) {\
@@ -484,8 +462,6 @@ namespace measures
             dyn_vect2<M2,Num1> m2,\
             dyn_vect2<M1,Num2> m1)\
         {\
-			ASSERT_IS_NUMERIC(Num1)\
-			ASSERT_IS_NUMERIC(Num2)\
 			auto result = DerivationRules3.find(\
 				std::make_pair(m1.unit(), m2.unit()));\
 			if (result != DerivationRules3.end()) {\
@@ -508,8 +484,6 @@ namespace measures
             dyn_vect3<M1,Num1> m1,\
             dyn_vect3<M2,Num2> m2)\
         {\
-			ASSERT_IS_NUMERIC(Num1)\
-			ASSERT_IS_NUMERIC(Num2)\
 			auto result = DerivationRules3.find(\
 				std::make_pair(m1.unit(), m2.unit()));\
 			if (result != DerivationRules3.end()) {\
@@ -534,8 +508,6 @@ namespace measures
             dyn_vect3<M2,Num1> m2,\
             dyn_vect3<M1,Num2> m1)\
         {\
-			ASSERT_IS_NUMERIC(Num1)\
-			ASSERT_IS_NUMERIC(Num2)\
 			auto result = DerivationRules3.find(\
 				std::make_pair(m1.unit(), m2.unit()));\
 			if (result != DerivationRules3.end()) {\
@@ -560,8 +532,6 @@ namespace measures
             dyn_vect3<M1,Num1> m1,\
             dyn_vect3<M2,Num2> m2)\
         {\
-			ASSERT_IS_NUMERIC(Num1)\
-			ASSERT_IS_NUMERIC(Num2)\
 			auto result = DerivationRules3.find(\
 				std::make_pair(m1.unit(), m2.unit()));\
 			if (result != DerivationRules3.end()) {\
@@ -592,8 +562,6 @@ namespace measures
             dyn_vect3<M2,Num1> m2,\
             dyn_vect3<M1,Num2> m1)\
         {\
-			ASSERT_IS_NUMERIC(Num1)\
-			ASSERT_IS_NUMERIC(Num2)\
 			auto result = DerivationRules3.find(\
 				std::make_pair(m1.unit(), m2.unit()));\
 			if (result != DerivationRules3.end()) {\
@@ -632,8 +600,6 @@ namespace measures
             dyn_vect2<M1,Num1> m1,\
             dyn_vect2<M1,Num2> m2)\
         {\
-			ASSERT_IS_NUMERIC(Num1)\
-			ASSERT_IS_NUMERIC(Num2)\
 			auto result = DerivationRules3.find(\
 				std::make_pair(m1.unit(), m2.unit()));\
 			if (result != DerivationRules3.end()) {\
@@ -656,8 +622,6 @@ namespace measures
             dyn_vect2<M1,Num1> m1,\
             dyn_vect2<M1,Num2> m2)\
         {\
-			ASSERT_IS_NUMERIC(Num1)\
-			ASSERT_IS_NUMERIC(Num2)\
 			auto result = DerivationRules3.find(\
 				std::make_pair(m1.unit(), m2.unit()));\
 			if (result != DerivationRules3.end()) {\
@@ -680,8 +644,6 @@ namespace measures
             dyn_vect3<M1,Num1> m1,\
             dyn_vect3<M1,Num2> m2)\
         {\
-			ASSERT_IS_NUMERIC(Num1)\
-			ASSERT_IS_NUMERIC(Num2)\
 			auto result = DerivationRules3.find(\
 				std::make_pair(m1.unit(), m2.unit()));\
 			if (result != DerivationRules3.end()) {\
@@ -706,8 +668,6 @@ namespace measures
             dyn_vect3<M1,Num1> m1,\
             dyn_vect3<M1,Num2> m2)\
         {\
-			ASSERT_IS_NUMERIC(Num1)\
-			ASSERT_IS_NUMERIC(Num2)\
 			auto result = DerivationRules3.find(\
 				std::make_pair(m1.unit(), m2.unit()));\
 			if (result != DerivationRules3.end()) {\
@@ -745,8 +705,6 @@ namespace measures
         vect1<U3,decltype(Num1()*Num2())> operator *(\
             vect1<U1,Num1> m1, vect1<U2,Num2> m2)\
         {\
-			ASSERT_IS_NUMERIC(Num1)\
-			ASSERT_IS_NUMERIC(Num2)\
             return vect1<U3,decltype(Num1()*Num2())>(m1.value() * m2.value());\
         }\
         \
@@ -755,8 +713,6 @@ namespace measures
         vect1<U3,decltype(Num1()*Num2())> operator *(\
             vect1<U2,Num1> m2, vect1<U1,Num2> m1)\
         {\
-			ASSERT_IS_NUMERIC(Num1)\
-			ASSERT_IS_NUMERIC(Num2)\
             return vect1<U3,decltype(Num1()*Num2())>(m2.value() * m1.value());\
         }\
         \
@@ -765,8 +721,6 @@ namespace measures
         vect1<U2,decltype(Num1()/Num2())> operator /(\
             vect1<U3,Num1> m3, vect1<U1,Num2> m1)\
         {\
-			ASSERT_IS_NUMERIC(Num1)\
-			ASSERT_IS_NUMERIC(Num2)\
             return vect1<U2,decltype(Num1()/Num2())>(m3.value() / m1.value());\
         }\
         \
@@ -775,8 +729,6 @@ namespace measures
         vect1<U1,decltype(Num1()/Num2())> operator /(\
             vect1<U3,Num1> m3, vect1<U2,Num2> m2)\
         {\
-			ASSERT_IS_NUMERIC(Num1)\
-			ASSERT_IS_NUMERIC(Num2)\
             return vect1<U1,decltype(Num1()/Num2())>(m3.value() / m2.value());\
         }\
     }
@@ -792,8 +744,6 @@ namespace measures
         vect1<U2,decltype(Num1()*Num2())> operator *(\
             vect1<U1,Num1> m1, vect1<U1,Num2> m2)\
         {\
-			ASSERT_IS_NUMERIC(Num1)\
-			ASSERT_IS_NUMERIC(Num2)\
             return vect1<U2,decltype(Num1()*Num2())>(\
 				m1.value() * m2.value());\
         }\
@@ -803,8 +753,6 @@ namespace measures
         vect1<U1,decltype(Num1()/Num2())> operator /(\
             vect1<U2,Num1> m2, vect1<U1,Num2> m1)\
         {\
-			ASSERT_IS_NUMERIC(Num1)\
-			ASSERT_IS_NUMERIC(Num2)\
             return vect1<U1,decltype(Num1()/Num2())>(\
 				m2.value() / m1.value());\
         }\
@@ -813,7 +761,6 @@ namespace measures
         template <typename Num>\
         vect1<U1,Num> sqroot(vect1<U2,Num> m2)\
         {\
-			ASSERT_IS_NUMERIC(Num)\
             return vect1<U1,Num>(\
 				static_cast<Num>(sqrt(m2.value())));\
         }\
@@ -830,8 +777,6 @@ namespace measures
         vect2<U3,decltype(Num1()*Num2())> operator *(\
             vect1<U1,Num1> m1, vect2<U2,Num2> m2)\
         {\
-			ASSERT_IS_NUMERIC(Num1)\
-			ASSERT_IS_NUMERIC(Num2)\
             return vect2<U3,decltype(Num1()*Num2())>(\
                 m1.value() * m2.x().value(),\
                 m1.value() * m2.y().value());\
@@ -842,8 +787,6 @@ namespace measures
         vect2<U3,decltype(Num2()*Num1())> operator *(\
             vect2<U2,Num2> m2, vect1<U1,Num1> m1)\
         {\
-			ASSERT_IS_NUMERIC(Num1)\
-			ASSERT_IS_NUMERIC(Num2)\
             return vect2<U3,decltype(Num2()*Num1())>(\
                 m2.x().value() * m1.value(),\
                 m2.y().value() * m1.value());\
@@ -854,8 +797,6 @@ namespace measures
         vect2<U2,decltype(Num3()/Num1())> operator /(\
             vect2<U3,Num3> m3, vect1<U1,Num1> m1)\
         {\
-			ASSERT_IS_NUMERIC(Num1)\
-			ASSERT_IS_NUMERIC(Num3)\
             return vect2<U2,decltype(Num3()/Num1())>(\
                 m3.x().value() / m1.value(),\
                 m3.y().value() / m1.value());\
@@ -866,8 +807,6 @@ namespace measures
         vect3<U3,decltype(Num1()*Num2())> operator *(\
             vect1<U1,Num1> m1, vect3<U2,Num2> m2)\
         {\
-			ASSERT_IS_NUMERIC(Num1)\
-			ASSERT_IS_NUMERIC(Num2)\
             return vect3<U3,decltype(Num1()*Num2())>(\
                 m1.value() * m2.x().value(),\
                 m1.value() * m2.y().value(),\
@@ -879,8 +818,6 @@ namespace measures
         vect3<U3,decltype(Num2()*Num1())> operator *(\
             vect3<U2,Num2> m2, vect1<U1,Num1> m1)\
         {\
-			ASSERT_IS_NUMERIC(Num1)\
-			ASSERT_IS_NUMERIC(Num2)\
             return vect3<U3,decltype(Num2()*Num1())>(\
                 m2.x().value() * m1.value(),\
                 m2.y().value() * m1.value(),\
@@ -892,8 +829,6 @@ namespace measures
         vect3<U2,decltype(Num3()*Num1())> operator /(\
             vect3<U3,Num3> m3, vect1<U1,Num1> m1)\
         {\
-			ASSERT_IS_NUMERIC(Num1)\
-			ASSERT_IS_NUMERIC(Num3)\
             return vect3<U2,decltype(Num3()*Num1())>(\
                 m3.x().value() / m1.value(),\
                 m3.y().value() / m1.value(),\
@@ -913,8 +848,6 @@ namespace measures
         vect1<U3,decltype(Num1()*Num2())> operator *(\
             vect2<U1,Num1> m1, vect2<U2,Num2> m2)\
         {\
-			ASSERT_IS_NUMERIC(Num1)\
-			ASSERT_IS_NUMERIC(Num2)\
             return vect1<U3,decltype(Num1()*Num2())>(\
                 m1.x().value() * m2.x().value() +\
                 m1.y().value() * m2.y().value());\
@@ -925,8 +858,6 @@ namespace measures
         vect1<U3,decltype(Num2()*Num1())> operator *(\
             vect2<U2,Num1> m2, vect2<U1,Num2> m1)\
         {\
-			ASSERT_IS_NUMERIC(Num1)\
-			ASSERT_IS_NUMERIC(Num2)\
             return vect1<U3,decltype(Num2()*Num1())>(\
                 m2.x().value() * m1.x().value() +\
                 m2.y().value() * m1.y().value());\
@@ -937,8 +868,6 @@ namespace measures
         vect1<U3,decltype(Num1()*Num2())> cross_product(\
             vect2<U1,Num1> m1, vect2<U2,Num2> m2)\
         {\
-			ASSERT_IS_NUMERIC(Num1)\
-			ASSERT_IS_NUMERIC(Num2)\
             return vect1<U3,decltype(Num1()*Num2())>(\
                 m1.x().value() * m2.y().value() -\
                 m1.y().value() * m2.x().value());\
@@ -949,8 +878,6 @@ namespace measures
         vect1<U3,decltype(Num2()*Num1())> cross_product(\
             vect2<U2,Num1> m2, vect2<U1,Num2> m1)\
         {\
-			ASSERT_IS_NUMERIC(Num1)\
-			ASSERT_IS_NUMERIC(Num2)\
             return vect1<U3,decltype(Num2()*Num1())>(\
                 m2.x().value() * m1.y().value() -\
                 m2.y().value() * m1.x().value());\
@@ -961,8 +888,6 @@ namespace measures
         vect1<U3,decltype(Num1()*Num2())> operator *(\
             vect3<U1,Num1> m1, vect3<U2,Num2> m2)\
         {\
-			ASSERT_IS_NUMERIC(Num1)\
-			ASSERT_IS_NUMERIC(Num2)\
             return vect1<U3,decltype(Num1()*Num2())>(\
                 m1.x().value() * m2.x().value() +\
                 m1.y().value() * m2.y().value() +\
@@ -974,8 +899,6 @@ namespace measures
         vect1<U3,decltype(Num2()*Num1())> operator *(\
             vect3<U2,Num2> m2, vect3<U1,Num1> m1)\
         {\
-			ASSERT_IS_NUMERIC(Num1)\
-			ASSERT_IS_NUMERIC(Num2)\
             return vect1<U3,decltype(Num2()*Num1())>(\
                 m2.x().value() * m1.x().value() +\
                 m2.y().value() * m1.y().value() +\
@@ -987,8 +910,6 @@ namespace measures
         vect3<U3,decltype(Num1()*Num2())> cross_product(\
             vect3<U1,Num1> m1, vect3<U2,Num2> m2)\
         {\
-			ASSERT_IS_NUMERIC(Num1)\
-			ASSERT_IS_NUMERIC(Num2)\
             return vect3<U3,decltype(Num1()*Num2())>(\
                 m1.y().value() * m2.z().value() -\
                 m1.z().value() * m2.y().value(),\
@@ -1003,8 +924,6 @@ namespace measures
         vect3<U3,decltype(Num2()*Num1())> cross_product(\
             vect3<U2,Num2> m2, vect3<U1,Num1> m1)\
         {\
-			ASSERT_IS_NUMERIC(Num1)\
-			ASSERT_IS_NUMERIC(Num2)\
             return vect3<U3,decltype(Num2()*Num1())>(\
                 m2.y().value() * m1.z().value() -\
                 m2.z().value() * m1.y().value(),\
@@ -1026,8 +945,6 @@ namespace measures
         vect1<U2,decltype(Num1()*Num2())> operator *(\
             vect2<U1,Num1> m1, vect2<U1,Num2> m2)\
         {\
-			ASSERT_IS_NUMERIC(Num1)\
-			ASSERT_IS_NUMERIC(Num2)\
             return vect1<U2,decltype(Num1()*Num2())>(\
                 m1.x().value() * m2.x().value() + \
                 m1.y().value() * m2.y().value());\
@@ -1038,8 +955,6 @@ namespace measures
         vect1<U2,decltype(Num1()*Num2())> cross_product(\
             vect2<U1,Num1> m1, vect2<U1,Num2> m2)\
         {\
-			ASSERT_IS_NUMERIC(Num1)\
-			ASSERT_IS_NUMERIC(Num2)\
             return vect1<U2,decltype(Num1()*Num2())>(\
                 m1.x().value() * m2.y().value() -\
                 m1.y().value() * m2.x().value());\
@@ -1050,8 +965,6 @@ namespace measures
         vect1<U2,decltype(Num1()*Num2())> operator *(\
             vect3<U1,Num1> m1, vect3<U1,Num2> m2)\
         {\
-			ASSERT_IS_NUMERIC(Num1)\
-			ASSERT_IS_NUMERIC(Num2)\
             return vect1<U2,decltype(Num1()*Num2())>(\
                 m1.x().value() * m2.x().value() + \
                 m1.y().value() * m2.y().value() + \
@@ -1063,8 +976,6 @@ namespace measures
         vect3<U2,decltype(Num1()*Num2())> cross_product(\
             vect3<U1,Num1> m1, vect3<U1,Num2> m2)\
         {\
-			ASSERT_IS_NUMERIC(Num1)\
-			ASSERT_IS_NUMERIC(Num2)\
             return vect3<U2,decltype(Num1()*Num2())>(\
                 m1.y().value() * m2.z().value() -\
                 m1.z().value() * m2.y().value(),\
@@ -1109,8 +1020,6 @@ namespace measures
             dyn_vect1<M1,Num1> m1,\
             dyn_vect1<M2,Num2> m2)\
         {\
-			ASSERT_IS_NUMERIC(Num1)\
-			ASSERT_IS_NUMERIC(Num2)\
 			auto result = DerivationRules3.find(\
 				std::make_pair(m1.unit(), m2.unit()));\
 			if (result != DerivationRules3.end()) {\
@@ -1129,8 +1038,6 @@ namespace measures
             dyn_vect1<M2,Num2> m2,\
             dyn_vect1<M1,Num1> m1)\
         {\
-			ASSERT_IS_NUMERIC(Num1)\
-			ASSERT_IS_NUMERIC(Num2)\
 			auto result = DerivationRules3.find(\
 				std::make_pair(m1.unit(), m2.unit()));\
 			if (result != DerivationRules3.end()) {\
@@ -1149,8 +1056,6 @@ namespace measures
             dyn_vect1<M3,Num3> m3,\
             dyn_vect1<M1,Num1> m1)\
         {\
-			ASSERT_IS_NUMERIC(Num1)\
-			ASSERT_IS_NUMERIC(Num3)\
 			auto result = DerivationRules2.find(\
 				std::make_pair(m1.unit(), m3.unit()));\
 			if (result != DerivationRules2.end()) {\
@@ -1169,8 +1074,6 @@ namespace measures
             dyn_vect1<M3,Num3> m3,\
             dyn_vect1<M2,Num2> m2)\
         {\
-			ASSERT_IS_NUMERIC(Num2)\
-			ASSERT_IS_NUMERIC(Num3)\
 			auto result = DerivationRules1.find(\
 				std::make_pair(m2.unit(), m3.unit()));\
 			if (result != DerivationRules1.end()) {\
@@ -1195,8 +1098,6 @@ namespace measures
             dyn_vect1<M1,Num1> m1,\
             dyn_vect1<M1,Num2> m2)\
         {\
-			ASSERT_IS_NUMERIC(Num1)\
-			ASSERT_IS_NUMERIC(Num2)\
 			auto result = DerivationRules3.find(\
 				std::make_pair(m1.unit(), m2.unit()));\
 			if (result != DerivationRules3.end()) {\
@@ -1215,8 +1116,6 @@ namespace measures
             dyn_vect1<M2,Num2> m2,\
             dyn_vect1<M1,Num1> m1)\
         {\
-			ASSERT_IS_NUMERIC(Num1)\
-			ASSERT_IS_NUMERIC(Num2)\
 			auto result = DerivationRules2.find(\
 				std::make_pair(m1.unit(), m2.unit()));\
 			if (result != DerivationRules2.end()) {\
@@ -1233,7 +1132,6 @@ namespace measures
         template <typename Num>\
         dyn_vect1<M1,Num> sqroot(dyn_vect1<M2,Num> m2)\
         {\
-			ASSERT_IS_NUMERIC(Num)\
 			auto result = DerivationRulesSquared.find(m2.unit());\
 			if (result != DerivationRulesSquared.end()) {\
 				return dyn_vect1<M1,Num>(\
@@ -1253,7 +1151,6 @@ namespace measures
     template <class Unit, typename Num = double>
     class vect1
     {
-	ASSERT_IS_NUMERIC(Num)
     public:
 		typedef Unit unit;
 		typedef Num numeric_type;
@@ -1305,7 +1202,6 @@ namespace measures
 		template <typename Num2>
         vect1<Unit,Num> operator *=(Num2 n)
         {
-			ASSERT_IS_NUMERIC(Num2)
             x_ *= static_cast<Num>(n);
             return *this;
         }
@@ -1314,7 +1210,6 @@ namespace measures
 		template <typename Num2>
         vect1<Unit,Num> operator /=(Num2 n)
         {
-			ASSERT_IS_NUMERIC(Num2)
             x_ /= static_cast<Num>(n);
             return *this;
         }
@@ -1327,7 +1222,6 @@ namespace measures
     template <class Unit, typename Num>
     bool operator ==(vect1<Unit,Num> m1, vect1<Unit,Num> m2)
     {
-		ASSERT_IS_NUMERIC(Num)
         return m1.value() == m2.value();
     }
 
@@ -1335,7 +1229,6 @@ namespace measures
     template <class Unit, typename Num>
     bool operator !=(vect1<Unit,Num> m1, vect1<Unit,Num> m2)
     {
-		ASSERT_IS_NUMERIC(Num)
         return m1.value() != m2.value();
     }
 
@@ -1343,7 +1236,6 @@ namespace measures
     template <class Unit, typename Num>
     bool operator <(vect1<Unit,Num> m1, vect1<Unit,Num> m2)
     {
-		ASSERT_IS_NUMERIC(Num)
         return m1.value() < m2.value();
     }
 
@@ -1351,7 +1243,6 @@ namespace measures
     template <class Unit, typename Num>
     bool operator <=(vect1<Unit,Num> m1, vect1<Unit,Num> m2)
     {
-		ASSERT_IS_NUMERIC(Num)
         return m1.value() <= m2.value();
     }
 
@@ -1359,7 +1250,6 @@ namespace measures
     template <class Unit, typename Num>
     bool operator >(vect1<Unit,Num> m1, vect1<Unit,Num> m2)
     {
-		ASSERT_IS_NUMERIC(Num)
         return m1.value() > m2.value();
     }
 
@@ -1367,7 +1257,6 @@ namespace measures
     template <class Unit, typename Num>
     bool operator >=(vect1<Unit,Num> m1, vect1<Unit,Num> m2)
     {
-		ASSERT_IS_NUMERIC(Num)
         return m1.value() >= m2.value();
     }
 
@@ -1376,10 +1265,7 @@ namespace measures
     bool is_equal(vect1<Unit,Num1> m1, vect1<Unit,Num2> m2,
 		vect1<Unit,Num3> tolerance)
     {
-		ASSERT_IS_NUMERIC(Num1)
-		ASSERT_IS_NUMERIC(Num2)
-		ASSERT_IS_NUMERIC(Num3)
-        return static_cast<Num3>(abs(m1.value() - m2.value()))
+        return static_cast<Num3>(std::abs(m1.value() - m2.value()))
 			<= tolerance.value();
     }
 
@@ -1387,9 +1273,6 @@ namespace measures
     template <class Unit, typename Num1, typename Num2, typename Num3>
     bool is_less(vect1<Unit,Num1> m1, vect1<Unit,Num2> m2, vect1<Unit,Num3> tolerance)
     {
-		ASSERT_IS_NUMERIC(Num1)
-		ASSERT_IS_NUMERIC(Num2)
-		ASSERT_IS_NUMERIC(Num3)
         return static_cast<Num3>(m1.value())
 			< static_cast<Num3>(m2.value()) - tolerance.value();
     }
@@ -1398,9 +1281,6 @@ namespace measures
     template <class Unit, typename Num1, typename Num2, typename Num3>
     bool is_less_or_equal(vect1<Unit,Num1> m1, vect1<Unit,Num2> m2, vect1<Unit,Num3> tolerance)
     {
-		ASSERT_IS_NUMERIC(Num1)
-		ASSERT_IS_NUMERIC(Num2)
-		ASSERT_IS_NUMERIC(Num3)
         return static_cast<Num3>(m1.value())
 			<= static_cast<Num3>(m2.value()) + tolerance.value();
     }
@@ -1408,7 +1288,6 @@ namespace measures
     template <class Unit, typename Num = double>
     class point1
     {
-	ASSERT_IS_NUMERIC(Num)
     public:
 		typedef Unit unit;
 		typedef Num numeric_type;
@@ -1453,9 +1332,6 @@ namespace measures
 	point1<Unit,decltype((Num1()+Num2())*Num3())> midpoint(
 		point1<Unit,Num1> p1, point1<Unit,Num2> p2, Num3 weight = 0.5f)
 	{
-		ASSERT_IS_NUMERIC(Num1)
-		ASSERT_IS_NUMERIC(Num2)
-		ASSERT_IS_NUMERIC(Num3)
 		//return p1 + (p2 - p1) * weight;
 		return point1<Unit,decltype((Num1()+Num2())*Num3())>(
 			p1.value() * (1 - weight) + p2.value() * weight);
@@ -1466,7 +1342,6 @@ namespace measures
 	point1<Unit,Num> barycentric_combination(
 		int n, point1<Unit,Num> p[], Num weights[])
 	{
-		ASSERT_IS_NUMERIC(Num)
 		Num result = 0;
 		for (int i = 0; i < n; ++i)
 		{
@@ -1480,8 +1355,6 @@ namespace measures
 	vect1<Unit,decltype(Num1()-Num2())> operator -(
 		point1<Unit,Num1> m1, point1<Unit,Num2> m2)
 	{
-		ASSERT_IS_NUMERIC(Num1)
-		ASSERT_IS_NUMERIC(Num2)
 		return vect1<Unit,decltype(Num1()-Num2())>(
 			m1.value() - m2.value());
 	}
@@ -1490,7 +1363,6 @@ namespace measures
     template <class Unit, typename Num>
     bool operator ==(point1<Unit,Num> m1, point1<Unit,Num> m2)
     {
-		ASSERT_IS_NUMERIC(Num)
         return m1.value() == m2.value();
     }
 
@@ -1498,7 +1370,6 @@ namespace measures
     template <class Unit, typename Num>
     bool operator !=(point1<Unit,Num> m1, point1<Unit,Num> m2)
     {
-		ASSERT_IS_NUMERIC(Num)
         return m1.value() != m2.value();
     }
 
@@ -1506,7 +1377,6 @@ namespace measures
     template <class Unit, typename Num>
     bool operator <(point1<Unit,Num> m1, point1<Unit,Num> m2)
     {
-		ASSERT_IS_NUMERIC(Num)
         return m1.value() < m2.value();
     }
 
@@ -1514,7 +1384,6 @@ namespace measures
     template <class Unit, typename Num>
     bool operator <=(point1<Unit,Num> m1, point1<Unit,Num> m2)
     {
-		ASSERT_IS_NUMERIC(Num)
         return m1.value() <= m2.value();
     }
 
@@ -1522,7 +1391,6 @@ namespace measures
     template <class Unit, typename Num>
     bool operator >(point1<Unit,Num> m1, point1<Unit,Num> m2)
     {
-		ASSERT_IS_NUMERIC(Num)
         return m1.value() > m2.value();
     }
 
@@ -1530,7 +1398,6 @@ namespace measures
     template <class Unit, typename Num>
     bool operator >=(point1<Unit,Num> m1, point1<Unit,Num> m2)
     {
-		ASSERT_IS_NUMERIC(Num)
         return m1.value() >= m2.value();
     }
 
@@ -1539,10 +1406,7 @@ namespace measures
     bool is_equal(point1<Unit,Num1> m1, point1<Unit,Num2> m2,
 		vect1<Unit,Num3> tolerance)
     {
-		ASSERT_IS_NUMERIC(Num1)
-		ASSERT_IS_NUMERIC(Num2)
-		ASSERT_IS_NUMERIC(Num3)
-        return static_cast<Num3>(abs(m1.value() - m2.value()))
+        return static_cast<Num3>(std::abs(m1.value() - m2.value()))
 			<= tolerance.value();
     }
 
@@ -1550,9 +1414,6 @@ namespace measures
     template <class Unit, typename Num1, typename Num2, typename Num3>
     bool is_less(point1<Unit,Num1> m1, point1<Unit,Num2> m2, vect1<Unit,Num3> tolerance)
     {
-		ASSERT_IS_NUMERIC(Num1)
-		ASSERT_IS_NUMERIC(Num2)
-		ASSERT_IS_NUMERIC(Num3)
         return static_cast<Num3>(m1.value())
 			< static_cast<Num3>(m2.value()) - tolerance.value();
     }
@@ -1561,9 +1422,6 @@ namespace measures
     template <class Unit, typename Num1, typename Num2, typename Num3>
     bool is_less_or_equal(point1<Unit,Num1> m1, point1<Unit,Num2> m2, vect1<Unit,Num3> tolerance)
     {
-		ASSERT_IS_NUMERIC(Num1)
-		ASSERT_IS_NUMERIC(Num2)
-		ASSERT_IS_NUMERIC(Num3)
         return static_cast<Num3>(m1.value())
 			<= static_cast<Num3>(m2.value()) + tolerance.value();
     }
@@ -1572,8 +1430,6 @@ namespace measures
     template <class Unit, typename Num1, typename Num2>
     point1<Unit,decltype(Num1()+Num2())> operator +(point1<Unit,Num1> m1, vect1<Unit,Num2> m2)
     {
-		ASSERT_IS_NUMERIC(Num1)
-		ASSERT_IS_NUMERIC(Num2)
         return point1<Unit,decltype(Num1()+Num2())>(m1.value() + m2.value());
     }
 
@@ -1582,8 +1438,6 @@ namespace measures
     point1<Unit,decltype(Num1()-Num2())> operator -(
 		point1<Unit,Num1> m1, vect1<Unit,Num2> m2)
     {
-		ASSERT_IS_NUMERIC(Num1)
-		ASSERT_IS_NUMERIC(Num2)
         return point1<Unit,decltype(Num1()-Num2())>(
 			m1.value() - m2.value());
     }
@@ -1592,8 +1446,6 @@ namespace measures
     template <class Unit, typename Num1, typename Num2>
     vect1<Unit,decltype(Num1()+Num2())> operator +(vect1<Unit,Num1> m1, vect1<Unit,Num2> m2)
     {
-		ASSERT_IS_NUMERIC(Num1)
-		ASSERT_IS_NUMERIC(Num2)
         return vect1<Unit,decltype(Num1()+Num2())>(m1.value() + m2.value());
     }
 
@@ -1602,8 +1454,6 @@ namespace measures
     vect1<Unit,decltype(Num1()-Num2())> operator -(
 		vect1<Unit,Num1> m1, vect1<Unit,Num2> m2)
     {
-		ASSERT_IS_NUMERIC(Num1)
-		ASSERT_IS_NUMERIC(Num2)
         return vect1<Unit,decltype(Num1()-Num2())>(
 			m1.value() - m2.value());
     }
@@ -1612,8 +1462,6 @@ namespace measures
     template <class Unit, typename Num1, typename Num2>
     vect1<Unit,decltype(Num1()*Num2())> operator *(Num1 n, vect1<Unit,Num2> m)
     {
-		ASSERT_IS_NUMERIC(Num1)
-		ASSERT_IS_NUMERIC(Num2)
         return vect1<Unit,decltype(Num1()*Num2())>(n * m.value());
     }
 
@@ -1621,8 +1469,6 @@ namespace measures
     template <class Unit, typename Num1, typename Num2>
     vect1<Unit,decltype(Num1()*Num2())> operator *(vect1<Unit,Num1> m, Num2 n)
     {
-		ASSERT_IS_NUMERIC(Num1)
-		ASSERT_IS_NUMERIC(Num2)
         return vect1<Unit,decltype(Num1()*Num2())>(m.value() * n);
     }
 
@@ -1630,8 +1476,6 @@ namespace measures
     template <class Unit, typename Num1, typename Num2>
     vect1<Unit,decltype(Num1()/Num2())> operator /(vect1<Unit,Num1> m, Num2 n)
     {
-		ASSERT_IS_NUMERIC(Num1)
-		ASSERT_IS_NUMERIC(Num2)
         return vect1<Unit,decltype(Num1()/Num2())>(m.value() / n);
     }
 
@@ -1639,8 +1483,6 @@ namespace measures
     template <class Unit, typename Num1, typename Num2>
     decltype(Num1()/Num2()) operator /(vect1<Unit,Num1> m1, vect1<Unit,Num2> m2)
     {
-		ASSERT_IS_NUMERIC(Num1)
-		ASSERT_IS_NUMERIC(Num2)
         return m1.value() / m2.value();
     }
 
@@ -1648,7 +1490,6 @@ namespace measures
 	template <class Unit, typename Num>
     Num squared_norm_value(vect1<Unit,Num> v)
     {
-		ASSERT_IS_NUMERIC(Num)
         return sqr(v.value());
     }
 
@@ -1656,8 +1497,7 @@ namespace measures
     template <class Unit, typename Num>
     vect1<Unit,Num> norm(vect1<Unit,Num> v)
     {
-		ASSERT_IS_NUMERIC(Num)
-        return vect1<Unit,Num>(abs(v.value()));
+        return vect1<Unit,Num>(std::abs(v.value()));
     }
 	
     ///////////////////////// STATIC-UNIT 2-DIMENSIONAL VECTORS AND POINTS /////////////////////////
@@ -1669,7 +1509,6 @@ namespace measures
     template <class Unit, typename Num = double>
     class vect2
 	{
-	ASSERT_IS_NUMERIC(Num)
     public:
 		typedef Unit unit;
 		typedef Num numeric_type;
@@ -1695,7 +1534,6 @@ namespace measures
             x_(static_cast<Num>(cos(a))),
             y_(static_cast<Num>(sin(a)))
         {
-			ASSERT_IS_NUMERIC(Num2)
             ASSERT_IS_ANGLE(Unit2)
         }
 
@@ -1703,19 +1541,13 @@ namespace measures
         template <class Unit2, typename Num2>
         explicit vect2(const signed_azimuth<Unit2,Num2>& a):
             x_(static_cast<Num>(cos(a))),
-            y_(static_cast<Num>(sin(a)))
-		{
-			ASSERT_IS_NUMERIC(Num2)
-		}
+            y_(static_cast<Num>(sin(a))) { }
 
         // Construct a versor using an unsigned_azimuth.
         template <class Unit2, typename Num2>
         explicit vect2(const unsigned_azimuth<Unit2,Num2>& a):
             x_(static_cast<Num>(cos(a))),
-            y_(static_cast<Num>(sin(a)))
-		{
-			ASSERT_IS_NUMERIC(Num2)
-		}
+            y_(static_cast<Num>(sin(a))) { }
 
         // +vect2 -> vect2
         vect2<Unit,Num> operator +() const
@@ -1749,7 +1581,6 @@ namespace measures
         template <typename Num2>
         vect2<Unit,Num> operator *=(Num2 n)
         {
-			ASSERT_IS_NUMERIC(Num2)
             x_ *= static_cast<Num>(n);
             y_ *= static_cast<Num>(n);
             return *this;
@@ -1759,7 +1590,6 @@ namespace measures
         template <typename Num2>
         vect2<Unit,Num> operator /=(Num2 n)
         {
-			ASSERT_IS_NUMERIC(Num2)
             x_ /= static_cast<Num>(n);
             y_ /= static_cast<Num>(n);
             return *this;
@@ -1793,7 +1623,6 @@ namespace measures
     template <class Unit, typename Num>
     bool operator ==(vect2<Unit,Num> m1, vect2<Unit,Num> m2)
     {
-		ASSERT_IS_NUMERIC(Num)
         return m1.x().value() == m2.x().value()
             && m1.y().value() == m2.y().value();
     }
@@ -1802,7 +1631,6 @@ namespace measures
     template <class Unit, typename Num>
     bool operator !=(vect2<Unit,Num> m1, vect2<Unit,Num> m2)
     {
-		ASSERT_IS_NUMERIC(Num)
         return m1.x().value() != m2.x().value()
             || m1.y().value() != m2.y().value();
     }
@@ -1811,9 +1639,6 @@ namespace measures
     template <class Unit, typename Num1, typename Num2, typename Num3>
     bool is_equal(vect2<Unit,Num1> m1, vect2<Unit,Num2> m2, vect1<Unit,Num3> tolerance)
     {
-		ASSERT_IS_NUMERIC(Num1)
-		ASSERT_IS_NUMERIC(Num2)
-		ASSERT_IS_NUMERIC(Num3)
         return static_cast<Num3>(squared_norm_value(m1 - m2))
 			<= squared_norm_value(tolerance);
     }
@@ -1821,7 +1646,6 @@ namespace measures
     template <class Unit, typename Num = double>
     class point2
 	{
-	ASSERT_IS_NUMERIC(Num)
     public:
 		typedef Unit unit;
 		typedef Num numeric_type;
@@ -1839,10 +1663,7 @@ namespace measures
         // Construct using another point2 of the same unit and number type.
         template <typename Num2>
         point2(const point2<Unit,Num2>& o):
-            x_(o.x_), y_(o.y_)
-		{
-			ASSERT_IS_NUMERIC(Num2)
-		}
+            x_(o.x_), y_(o.y_) { }
 
         // point2 += vect2 -> point2
         point2<Unit,Num> operator +=(vect2<Unit,Num> m2)
@@ -1889,9 +1710,6 @@ namespace measures
 	point2<Unit,decltype((Num1()+Num2())*Num3())> midpoint(
 		point2<Unit,Num1> p1, point2<Unit,Num2> p2, Num3 weight = 0.5f)
 	{
-		ASSERT_IS_NUMERIC(Num1)
-		ASSERT_IS_NUMERIC(Num2)
-		ASSERT_IS_NUMERIC(Num3)
 		//return p1 + (p2 - p1) * weight;
 		return point2<Unit,decltype((Num1()+Num2())*Num3())>(
 			p1.x().value() * (1 - weight) + p2.x().value() * weight,
@@ -1903,7 +1721,6 @@ namespace measures
 	point2<Unit,Num> barycentric_combination(
 		int n, point2<Unit,Num> p[], Num weights[])
 	{
-		ASSERT_IS_NUMERIC(Num)
 		Num result_x = 0;
 		Num result_y = 0;
 		for (int i = 0; i < n; ++i)
@@ -1919,8 +1736,6 @@ namespace measures
 	vect2<Unit,decltype(Num1()-Num2())> operator -(
 		point2<Unit,Num1> m1, point2<Unit,Num2> m2)
 	{
-		ASSERT_IS_NUMERIC(Num1)
-		ASSERT_IS_NUMERIC(Num2)
 		return vect2<Unit,decltype(Num1()-Num2())>(
 			m1.x().value() - m2.x().value(),
 			m1.y().value() - m2.y().value());
@@ -1930,7 +1745,6 @@ namespace measures
     template <class Unit, typename Num>
     bool operator ==(point2<Unit,Num> m1, point2<Unit,Num> m2)
     {
-		ASSERT_IS_NUMERIC(Num)
         return m1.x().value() == m2.x().value()
             && m1.y().value() == m2.y().value();
     }
@@ -1939,7 +1753,6 @@ namespace measures
     template <class Unit, typename Num>
     bool operator !=(point2<Unit,Num> m1, point2<Unit,Num> m2)
     {
-		ASSERT_IS_NUMERIC(Num)
         return m1.x().value() != m2.x().value()
             || m1.y().value() != m2.y().value();
     }
@@ -1949,9 +1762,6 @@ namespace measures
     bool is_equal(point2<Unit,Num1> m1, point2<Unit,Num2> m2,
 		vect1<Unit,Num3> tolerance)
     {
-		ASSERT_IS_NUMERIC(Num1)
-		ASSERT_IS_NUMERIC(Num2)
-		ASSERT_IS_NUMERIC(Num3)
         return static_cast<Num3>(squared_norm_value(m1 - m2))
 			<= squared_norm_value(tolerance);
     }
@@ -1961,8 +1771,6 @@ namespace measures
     point2<Unit,decltype(Num1()+Num2())> operator +(
 		point2<Unit,Num1> m1, vect2<Unit,Num2> m2)
     {
-		ASSERT_IS_NUMERIC(Num1)
-		ASSERT_IS_NUMERIC(Num2)
         return point2<Unit,decltype(Num1()+Num2())>(
 			m1.x().value() + m2.x().value(),
 			m1.y().value() + m2.y().value());
@@ -1973,8 +1781,6 @@ namespace measures
     point2<Unit,decltype(Num1()-Num2())> operator -(
 		point2<Unit,Num1> m1, vect2<Unit,Num2> m2)
     {
-		ASSERT_IS_NUMERIC(Num1)
-		ASSERT_IS_NUMERIC(Num2)
         return point2<Unit,decltype(Num1()-Num2())>(
 			m1.x().value() - m2.x().value(),
 			m1.y().value() - m2.y().value());
@@ -1984,8 +1790,6 @@ namespace measures
     template <class Unit, typename Num1, typename Num2>
     vect2<Unit,decltype(Num1()+Num2())> operator +(vect2<Unit,Num1> m1, vect2<Unit,Num2> m2)
     {
-		ASSERT_IS_NUMERIC(Num1)
-		ASSERT_IS_NUMERIC(Num2)
         return vect2<Unit,decltype(Num1()+Num2())>(
 			m1.x().value() + m2.x().value(),
 			m1.y().value() + m2.y().value());
@@ -1996,8 +1800,6 @@ namespace measures
     vect2<Unit,decltype(Num1()-Num2())> operator -(
 		vect2<Unit,Num1> m1, vect2<Unit,Num2> m2)
     {
-		ASSERT_IS_NUMERIC(Num1)
-		ASSERT_IS_NUMERIC(Num2)
         return vect2<Unit,decltype(Num1()-Num2())>(
 			m1.x().value() - m2.x().value(),
 			m1.y().value() - m2.y().value());
@@ -2007,8 +1809,6 @@ namespace measures
     template <class Unit, typename Num1, typename Num2>
     vect2<Unit,decltype(Num1()*Num2())> operator *(Num1 n, vect2<Unit,Num2> m)
     {
-		ASSERT_IS_NUMERIC(Num1)
-		ASSERT_IS_NUMERIC(Num2)
         return vect2<Unit,decltype(Num1()*Num2())>(
 			n * m.x().value(),
 			n * m.y().value());
@@ -2018,8 +1818,6 @@ namespace measures
     template <class Unit, typename Num1, typename Num2>
     vect2<Unit,decltype(Num1()*Num2())> operator *(vect2<Unit,Num1> m, Num2 n)
     {
-		ASSERT_IS_NUMERIC(Num1)
-		ASSERT_IS_NUMERIC(Num2)
         return vect2<Unit,decltype(Num1()*Num2())>(
 			m.x().value() * n,
 			m.y().value() * n);
@@ -2029,8 +1827,6 @@ namespace measures
     template <class Unit, typename Num1, typename Num2>
     vect2<Unit,decltype(Num1()/Num2())> operator /(vect2<Unit,Num1> m, Num2 n)
     {
-		ASSERT_IS_NUMERIC(Num1)
-		ASSERT_IS_NUMERIC(Num2)
         return vect2<Unit,decltype(Num1()*Num2())>(
 			m.x().value() / n,
 			m.y().value() / n);
@@ -2039,14 +1835,12 @@ namespace measures
     template <class Unit, typename Num>
     Num squared_norm_value(vect2<Unit,Num> v)
     {
-		ASSERT_IS_NUMERIC(Num)
 		return sqr(v.x().value()) + sqr(v.y().value());
     }
 
     template <class Unit, typename Num>
     vect1<Unit,Num> norm(vect2<Unit,Num> v)
     {
-		ASSERT_IS_NUMERIC(Num)
         return vect1<Unit,Num>(
 			static_cast<Num>(sqrt(squared_norm_value(v))));
     }
@@ -2057,7 +1851,6 @@ namespace measures
     template <class Unit, typename Num = double>
     class vect3
 	{
-	ASSERT_IS_NUMERIC(Num)
     public:
 		typedef Unit unit;
 		typedef Num numeric_type;
@@ -2110,7 +1903,6 @@ namespace measures
         template <typename Num2>
         vect3<Unit,Num> operator *=(Num2 n)
         {
-			ASSERT_IS_NUMERIC(Num2)
             x_ *= static_cast<Num>(n);
             y_ *= static_cast<Num>(n);
             z_ *= static_cast<Num>(n);
@@ -2121,7 +1913,6 @@ namespace measures
         template <typename Num2>
         vect3<Unit,Num> operator /=(Num2 n)
         {
-			ASSERT_IS_NUMERIC(Num2)
             x_ /= static_cast<Num>(n);
             y_ /= static_cast<Num>(n);
             z_ /= static_cast<Num>(n);
@@ -2162,7 +1953,6 @@ namespace measures
     template <class Unit, typename Num>
     bool operator ==(vect3<Unit,Num> m1, vect3<Unit,Num> m2)
     {
-		ASSERT_IS_NUMERIC(Num)
         return m1.x().value() == m2.x().value()
             && m1.y().value() == m2.y().value()
             && m1.z().value() == m2.z().value();
@@ -2172,7 +1962,6 @@ namespace measures
     template <class Unit, typename Num>
     bool operator !=(vect3<Unit,Num> m1, vect3<Unit,Num> m2)
     {
-		ASSERT_IS_NUMERIC(Num)
         return m1.x().value() != m2.x().value()
             || m1.y().value() != m2.y().value()
             || m1.z().value() != m2.z().value();
@@ -2182,9 +1971,6 @@ namespace measures
     template <class Unit, typename Num1, typename Num2, typename Num3>
     bool is_equal(vect3<Unit,Num1> m1, vect3<Unit,Num2> m2, vect1<Unit,Num3> tolerance)
     {
-		ASSERT_IS_NUMERIC(Num1)
-		ASSERT_IS_NUMERIC(Num2)
-		ASSERT_IS_NUMERIC(Num3)
 		return static_cast<Num3>(squared_norm_value(m1 - m2))
 			<= squared_norm_value(tolerance);
     }
@@ -2192,7 +1978,6 @@ namespace measures
     template <class Unit, typename Num = double>
     class point3
 	{
-	ASSERT_IS_NUMERIC(Num)
     public:
 		typedef Unit unit;
 		typedef Num numeric_type;
@@ -2264,9 +2049,6 @@ namespace measures
 	point3<Unit,decltype((Num1()+Num2())*Num3())> midpoint(
 		point3<Unit,Num1> p1, point3<Unit,Num2> p2, Num3 weight = 0.5f)
 	{
-		ASSERT_IS_NUMERIC(Num1)
-		ASSERT_IS_NUMERIC(Num2)
-		ASSERT_IS_NUMERIC(Num3)
 		//return p1 + (p2 - p1) * weight;
 		return point3<Unit,decltype((Num1()+Num2())*Num3())>(
 			p1.x().value() * (1 - weight) + p2.x().value() * weight,
@@ -2279,7 +2061,6 @@ namespace measures
 	point3<Unit,Num> barycentric_combination(
 		int n, point3<Unit,Num> p[], Num weights[])
 	{
-		ASSERT_IS_NUMERIC(Num)
 		Num result_x = 0;
 		Num result_y = 0;
 		Num result_z = 0;
@@ -2297,8 +2078,6 @@ namespace measures
 	vect3<Unit,decltype(Num1()-Num2())> operator -(
 		point3<Unit,Num1> m1, point3<Unit,Num2> m2)
 	{
-		ASSERT_IS_NUMERIC(Num1)
-		ASSERT_IS_NUMERIC(Num2)
 		return vect3<Unit,decltype(Num1()-Num2())>(
 			m1.x().value() - m2.x().value(),
 			m1.y().value() - m2.y().value(),
@@ -2309,7 +2088,6 @@ namespace measures
     template <class Unit, typename Num>
     bool operator ==(point3<Unit,Num> m1, point3<Unit,Num> m2)
     {
-		ASSERT_IS_NUMERIC(Num)
         return m1.x().value() == m2.x().value()
             && m1.y().value() == m2.y().value()
             && m1.z().value() == m2.z().value();
@@ -2319,7 +2097,6 @@ namespace measures
     template <class Unit, typename Num>
     bool operator !=(point3<Unit,Num> m1, point3<Unit,Num> m2)
     {
-		ASSERT_IS_NUMERIC(Num)
         return m1.x().value() != m2.x().value()
             || m1.y().value() != m2.y().value()
             || m1.z().value() != m2.z().value();
@@ -2329,9 +2106,6 @@ namespace measures
     template <class Unit, typename Num1, typename Num2, typename Num3>
     bool is_equal(point3<Unit,Num1> m1, point3<Unit,Num2> m2, vect1<Unit,Num3> tolerance)
     {
-		ASSERT_IS_NUMERIC(Num1)
-		ASSERT_IS_NUMERIC(Num2)
-		ASSERT_IS_NUMERIC(Num3)
 		return static_cast<Num3>(squared_norm_value(m1 - m2))
 			<= squared_norm_value(tolerance);
     }
@@ -2340,8 +2114,6 @@ namespace measures
     template <class Unit, typename Num1, typename Num2>
     point3<Unit,decltype(Num1()+Num2())> operator +(point3<Unit,Num1> m1, vect3<Unit,Num2> m2)
     {
-		ASSERT_IS_NUMERIC(Num1)
-		ASSERT_IS_NUMERIC(Num2)
         return point3<Unit,decltype(Num1()+Num2())>(
 			m1.x().value() + m2.x().value(),
 			m1.y().value() + m2.y().value(),
@@ -2353,8 +2125,6 @@ namespace measures
     point3<Unit,decltype(Num1()-Num2())> operator -(
 		point3<Unit,Num1> m1, vect3<Unit,Num2> m2)
     {
-		ASSERT_IS_NUMERIC(Num1)
-		ASSERT_IS_NUMERIC(Num2)
         return point3<Unit,decltype(Num1()-Num2())>(
 			m1.x().value() - m2.x().value(),
 			m1.y().value() - m2.y().value(),
@@ -2366,8 +2136,6 @@ namespace measures
     template <class Unit, typename Num1, typename Num2>
     vect3<Unit,decltype(Num1()+Num2())> operator +(vect3<Unit,Num1> m1, vect3<Unit,Num2> m2)
     {
-		ASSERT_IS_NUMERIC(Num1)
-		ASSERT_IS_NUMERIC(Num2)
         return vect3<Unit,decltype(Num1()+Num2())>(
 			m1.x().value() + m2.x().value(),
 			m1.y().value() + m2.y().value(),
@@ -2379,8 +2147,6 @@ namespace measures
     vect3<Unit,decltype(Num1()-Num2())> operator -(
 		vect3<Unit,Num1> m1, vect3<Unit,Num2> m2)
     {
-		ASSERT_IS_NUMERIC(Num1)
-		ASSERT_IS_NUMERIC(Num2)
         return vect3<Unit,decltype(Num1()-Num2())>(
 			m1.x().value() - m2.x().value(),
 			m1.y().value() - m2.y().value(),
@@ -2391,8 +2157,6 @@ namespace measures
     template <class Unit, typename Num1, typename Num2>
     vect3<Unit,decltype(Num1()*Num2())> operator *(Num1 n, vect3<Unit,Num2> m)
     {
-		ASSERT_IS_NUMERIC(Num1)
-		ASSERT_IS_NUMERIC(Num2)
         return vect3<Unit,decltype(Num1()*Num2())>(
 			n * m.x().value(),
 			n * m.y().value(),
@@ -2403,8 +2167,6 @@ namespace measures
     template <class Unit, typename Num1, typename Num2>
     vect3<Unit,decltype(Num1()*Num2())> operator *(vect3<Unit,Num1> m, Num2 n)
     {
-		ASSERT_IS_NUMERIC(Num1)
-		ASSERT_IS_NUMERIC(Num2)
         return vect3<Unit,decltype(Num1()*Num2())>(
 			m.x().value() * n,
 			m.y().value() * n,
@@ -2415,8 +2177,6 @@ namespace measures
     template <class Unit, typename Num1, typename Num2>
     vect3<Unit,decltype(Num1()/Num2())> operator /(vect3<Unit,Num1> m, Num2 n)
     {
-		ASSERT_IS_NUMERIC(Num1)
-		ASSERT_IS_NUMERIC(Num2)
         return vect3<Unit,decltype(Num1()*Num2())>(
 			m.x().value() / n,
 			m.y().value() / n,
@@ -2426,14 +2186,12 @@ namespace measures
     template <class Unit, typename Num>
     Num squared_norm_value(vect3<Unit,Num> v)
     {
-		ASSERT_IS_NUMERIC(Num)
 		return sqr(v.x().value()) + sqr(v.y().value()) + sqr(v.z().value());
     }
 
     template <class Unit, typename Num>
     vect1<Unit,Num> norm(vect3<Unit,Num> v)
     {
-		ASSERT_IS_NUMERIC(Num)
         return vect1<Unit,Num>(
 			static_cast<Num>(sqrt(squared_norm_value(v))));
     }
@@ -2445,7 +2203,6 @@ namespace measures
     template <class ToUnit, class FromUnit, typename Num>
     vect1<ToUnit,Num> convert(vect1<FromUnit,Num> m)
     {
-		ASSERT_IS_NUMERIC(Num)
         ASSERT_HAVE_SAME_MAGNITUDE(ToUnit, FromUnit)
         return vect1<ToUnit,Num>(static_cast<Num>(
 			FromUnit::ratio() / ToUnit::ratio() * m.value()));
@@ -2454,7 +2211,6 @@ namespace measures
     template <class ToUnit, class FromUnit, typename Num>
     point1<ToUnit,Num> convert(point1<FromUnit,Num> m)
     {
-		ASSERT_IS_NUMERIC(Num)
         ASSERT_HAVE_SAME_MAGNITUDE(ToUnit, FromUnit)
         return point1<ToUnit,Num>(static_cast<Num>(
             (FromUnit::offset() - ToUnit::offset()
@@ -2466,7 +2222,6 @@ namespace measures
     template <class ToUnit, class FromUnit, typename Num>
     vect2<ToUnit,Num> convert(vect2<FromUnit,Num> m)
     {
-		ASSERT_IS_NUMERIC(Num)
         return vect2<ToUnit,Num>(
             convert<ToUnit,FromUnit,Num>(m.x()),
             convert<ToUnit,FromUnit,Num>(m.y()));
@@ -2475,7 +2230,6 @@ namespace measures
     template <class ToUnit, class FromUnit, typename Num>
     point2<ToUnit,Num> convert(point2<FromUnit,Num> m)
     {
-		ASSERT_IS_NUMERIC(Num)
         return point2<ToUnit,Num>(
             convert<ToUnit,FromUnit,Num>(m.x()),
             convert<ToUnit,FromUnit,Num>(m.y()));
@@ -2485,7 +2239,6 @@ namespace measures
     template <class ToUnit, class FromUnit, typename Num>
     vect3<ToUnit,Num> convert(vect3<FromUnit,Num> m)
     {
-		ASSERT_IS_NUMERIC(Num)
         return vect3<ToUnit,Num>(
             convert<ToUnit,FromUnit,Num>(m.x()),
             convert<ToUnit,FromUnit,Num>(m.y()),
@@ -2495,7 +2248,6 @@ namespace measures
     template <class ToUnit, class FromUnit, typename Num>
     point3<ToUnit,Num> convert(point3<FromUnit,Num> m)
     {
-		ASSERT_IS_NUMERIC(Num)
         return point3<ToUnit,Num>(
             convert<ToUnit,FromUnit,Num>(m.x()),
             convert<ToUnit,FromUnit,Num>(m.y()),
@@ -2506,7 +2258,6 @@ namespace measures
     template <class ToUnit, class FromUnit, typename Num>
     signed_azimuth<ToUnit,Num> convert(signed_azimuth<FromUnit,Num> m)
     {
-		ASSERT_IS_NUMERIC(Num)
         ASSERT_HAVE_SAME_MAGNITUDE(ToUnit, FromUnit)
         return signed_azimuth<ToUnit,Num>(convert<ToUnit>(point1<FromUnit>(m.value())));
     }
@@ -2514,7 +2265,6 @@ namespace measures
     template <class ToUnit, class FromUnit, typename Num>
     unsigned_azimuth<ToUnit,Num> convert(unsigned_azimuth<FromUnit,Num> m)
     {
-		ASSERT_IS_NUMERIC(Num)
         ASSERT_HAVE_SAME_MAGNITUDE(ToUnit, FromUnit)
         return unsigned_azimuth<ToUnit,Num>(convert<ToUnit>(point1<FromUnit>(m.value())));
     }
@@ -2526,16 +2276,12 @@ namespace measures
     template <class Unit, typename ToNum, typename FromNum>
     vect1<Unit,ToNum> cast(vect1<Unit,FromNum> m)
     {
-		ASSERT_IS_NUMERIC(ToNum);
-		ASSERT_IS_NUMERIC(FromNum);
         return vect1<Unit,ToNum>(static_cast<ToNum>(m.value()));
     }
 
     template <class Unit, typename ToNum, typename FromNum>
     point1<Unit,ToNum> cast(point1<Unit,FromNum> m)
     {
-		ASSERT_IS_NUMERIC(ToNum);
-		ASSERT_IS_NUMERIC(FromNum);
         return point1<Unit,ToNum>(static_cast<ToNum>(m.value()));
     }
 
@@ -2543,8 +2289,6 @@ namespace measures
     template <class Unit, typename ToNum, typename FromNum>
     vect2<Unit,ToNum> cast(vect2<Unit,FromNum> m)
     {
-		ASSERT_IS_NUMERIC(ToNum);
-		ASSERT_IS_NUMERIC(FromNum);
         return vect2<Unit,ToNum>(
             cast<Unit,ToNum,FromNum>(m.x()),
             cast<Unit,ToNum,FromNum>(m.y()));
@@ -2553,8 +2297,6 @@ namespace measures
     template <class Unit, typename ToNum, typename FromNum>
     point2<Unit,ToNum> cast(point2<Unit,FromNum> m)
     {
-		ASSERT_IS_NUMERIC(ToNum);
-		ASSERT_IS_NUMERIC(FromNum);
         return point2<Unit,ToNum>(
             cast<Unit,ToNum,FromNum>(m.x()),
             cast<Unit,ToNum,FromNum>(m.y()));
@@ -2564,8 +2306,6 @@ namespace measures
     template <class Unit, typename ToNum, typename FromNum>
     vect3<Unit,ToNum> cast(vect3<Unit,FromNum> m)
     {
-		ASSERT_IS_NUMERIC(ToNum);
-		ASSERT_IS_NUMERIC(FromNum);
         return vect3<Unit,ToNum>(
             cast<Unit,ToNum,FromNum>(m.x()),
             cast<Unit,ToNum,FromNum>(m.y()),
@@ -2575,8 +2315,6 @@ namespace measures
     template <class Unit, typename ToNum, typename FromNum>
     point3<Unit,ToNum> cast(point3<Unit,FromNum> m)
     {
-		ASSERT_IS_NUMERIC(ToNum);
-		ASSERT_IS_NUMERIC(FromNum);
         return point3<Unit,ToNum>(
             cast<Unit,ToNum,FromNum>(m.x()),
             cast<Unit,ToNum,FromNum>(m.y()),
@@ -2587,16 +2325,12 @@ namespace measures
     template <class Unit, typename ToNum, typename FromNum>
     signed_azimuth<Unit,ToNum> cast(signed_azimuth<Unit,FromNum> m)
     {
-		ASSERT_IS_NUMERIC(ToNum);
-		ASSERT_IS_NUMERIC(FromNum);
         return signed_azimuth<Unit,ToNum>(static_cast<ToNum>(m.value()));
     }
 
     template <class Unit, typename ToNum, typename FromNum>
     unsigned_azimuth<Unit,ToNum> cast(unsigned_azimuth<Unit,FromNum> m)
     {
-		ASSERT_IS_NUMERIC(ToNum);
-		ASSERT_IS_NUMERIC(FromNum);
         return unsigned_azimuth<Unit,ToNum>(static_cast<ToNum>(m.value()));
     }
 	
@@ -2608,9 +2342,8 @@ namespace measures
 	Num normalize_signed_azimuth(Num x, Num one_turn,
 		typename std::enable_if<std::is_integral<Num>::value >::type* = 0)
 	{
-		ASSERT_IS_NUMERIC(Num)
 		const Num half_turn = one_turn / 2;
-		if (abs(x) < half_turn) return x;
+		if (std::abs(x) < half_turn) return x;
 		Num x2 = (x + half_turn) % one_turn;
 		return x2 >= 0 ? x2 - half_turn : x2 + half_turn;
 	}
@@ -2622,9 +2355,8 @@ namespace measures
 		typename std::enable_if<std::is_floating_point<Num>
 		::value >::type* = 0)
 	{
-		ASSERT_IS_NUMERIC(Num)
 		const Num half_turn = one_turn * 0.5f;
-		if (abs(x) < half_turn) return x;
+		if (std::abs(x) < half_turn) return x;
 		Num x2 = fmod(x + half_turn, one_turn);
 		return x2 >= 0 ? x2 - half_turn : x2 + half_turn;
 	}
@@ -2635,7 +2367,6 @@ namespace measures
 	Num normalize_unsigned_azimuth(Num x, Num one_turn,
 		typename std::enable_if<std::is_integral<Num>::value >::type* = 0)
 	{
-		ASSERT_IS_NUMERIC(Num)
 		Num x2 = x % one_turn;
 		return x2 >= 0 ? x2 : x2 + one_turn;
 	}
@@ -2647,7 +2378,6 @@ namespace measures
 		typename std::enable_if<std::is_floating_point<Num>
 		::value >::type* = 0)
 	{
-		ASSERT_IS_NUMERIC(Num)
 		Num x2 = fmod(x, one_turn);
 		return x2 >= 0 ? x2 : x2 + one_turn;
 	}
@@ -2658,7 +2388,6 @@ namespace measures
     template <class Unit, typename Num>
     Num sin(vect1<Unit,Num> m)
     {
-		ASSERT_IS_NUMERIC(Num)
         ASSERT_IS_ANGLE(Unit)
         return std::sin(convert<radians>(m).value());
     }
@@ -2667,7 +2396,6 @@ namespace measures
     template <class Unit, typename Num>
     Num cos(vect1<Unit,Num> m)
     {
-		ASSERT_IS_NUMERIC(Num)
         ASSERT_IS_ANGLE(Unit)
         return std::cos(convert<radians>(m).value());
     }
@@ -2676,7 +2404,6 @@ namespace measures
     template <class Unit, typename Num>
     Num tan(vect1<Unit,Num> m)
     {
-		ASSERT_IS_NUMERIC(Num)
         ASSERT_IS_ANGLE(Unit)
         return std::tan(convert<radians>(m).value());
     }
@@ -2685,7 +2412,6 @@ namespace measures
     template <class Unit, typename Num>
     Num sin(point1<Unit,Num> m)
     {
-		ASSERT_IS_NUMERIC(Num)
         ASSERT_IS_ANGLE(Unit)
         return std::sin(convert<radians>(m).value());
     }
@@ -2694,7 +2420,6 @@ namespace measures
     template <class Unit, typename Num>
     Num cos(point1<Unit,Num> m)
     {
-		ASSERT_IS_NUMERIC(Num)
         ASSERT_IS_ANGLE(Unit)
         return std::cos(convert<radians>(m).value());
     }
@@ -2703,7 +2428,6 @@ namespace measures
     template <class Unit, typename Num>
     Num tan(point1<Unit,Num> m)
     {
-		ASSERT_IS_NUMERIC(Num)
         ASSERT_IS_ANGLE(Unit)
         return std::tan(convert<radians>(m).value());
     }
@@ -2718,7 +2442,6 @@ namespace measures
     template <class Unit = Angle::base_unit, typename Num = double>
     class signed_azimuth
     {
-	ASSERT_IS_NUMERIC(Num)
     public:
 		typedef Unit unit;
 		typedef Num numeric_type;
@@ -2749,10 +2472,7 @@ namespace measures
 	    explicit signed_azimuth(vect2<Unit2,Num2> v):
             v_(convert<Unit>(signed_azimuth<radians,Num>(
                 static_cast<Num>(atan2(v.y().value(),
-				v.x().value())))).value())
-		{
-			ASSERT_IS_NUMERIC(Num2)
-		}
+				v.x().value())))).value()) { }
 
 		// Convert to a point1.
 		operator point1<Unit,Num>() const
@@ -2793,8 +2513,6 @@ namespace measures
 	vect1<Unit,decltype(Num1()-Num2())> operator -(
 		signed_azimuth<Unit,Num1> m1, signed_azimuth<Unit,Num2> m2)
 	{
-		ASSERT_IS_NUMERIC(Num1)
-		ASSERT_IS_NUMERIC(Num2)
 		auto difference = m1.value() - m2.value();
 		auto one_turn = Unit::turn_fraction();
 		if (difference * 2 < -one_turn) difference += one_turn;
@@ -2806,7 +2524,6 @@ namespace measures
     template <class Unit, typename Num>
     bool operator ==(signed_azimuth<Unit,Num> m1, signed_azimuth<Unit,Num> m2)
     {
-		ASSERT_IS_NUMERIC(Num)
         return m1.value() == m2.value();
     }
 	
@@ -2814,7 +2531,6 @@ namespace measures
     template <class Unit, typename Num>
     bool operator !=(signed_azimuth<Unit,Num> m1, signed_azimuth<Unit,Num> m2)
     {
-		ASSERT_IS_NUMERIC(Num)
         return m1.value() != m2.value();
     }
 	
@@ -2822,8 +2538,7 @@ namespace measures
     template <class Unit, typename Num>
     vect1<Unit,Num> angle_distance(signed_azimuth<Unit,Num> m1, signed_azimuth<Unit,Num> m2)
     {
-		ASSERT_IS_NUMERIC(Num)
-		Num value_distance(abs(m1.value() - m2.value()));
+		Num value_distance(std::abs(m1.value() - m2.value()));
 		if (value_distance * 2 > Unit::turn_fraction())
 			value_distance = Unit::turn_fraction() - value_distance;
 		return vect1<Unit,Num>(value_distance);
@@ -2834,7 +2549,6 @@ namespace measures
     bool is_equal(signed_azimuth<Unit,Num> m1,
 		signed_azimuth<Unit,Num> m2, vect1<Unit,Num> tolerance)
     {
-		ASSERT_IS_NUMERIC(Num)
         return angle_distance(m1, m2) <= tolerance;
     }
 	
@@ -2843,8 +2557,6 @@ namespace measures
     signed_azimuth<Unit,decltype(Num1()+Num2())> operator +(
 		signed_azimuth<Unit,Num1> m1, vect1<Unit,Num2> m2)
     {
-		ASSERT_IS_NUMERIC(Num1)
-		ASSERT_IS_NUMERIC(Num2)
         return signed_azimuth<Unit,decltype(Num1()+Num2())>(
 			m1.value() + m2.value());
     }
@@ -2854,8 +2566,6 @@ namespace measures
     signed_azimuth<Unit,decltype(Num1()-Num2())> operator -(
 		signed_azimuth<Unit,Num1> m1, vect1<Unit,Num2> m2)
     {
-		ASSERT_IS_NUMERIC(Num1)
-		ASSERT_IS_NUMERIC(Num2)
         return signed_azimuth<Unit,decltype(Num1()-Num2())>(
 			m1.value() - m2.value());
     }
@@ -2864,7 +2574,6 @@ namespace measures
     template <class Unit, typename Num>
     Num sin(signed_azimuth<Unit,Num> m)
     {
-		ASSERT_IS_NUMERIC(Num)
         return std::sin(convert<radians>(m).value());
     }
 
@@ -2872,7 +2581,6 @@ namespace measures
     template <class Unit, typename Num>
     Num cos(signed_azimuth<Unit,Num> m)
     {
-		ASSERT_IS_NUMERIC(Num)
         return std::cos(convert<radians>(m).value());
     }
 
@@ -2880,14 +2588,12 @@ namespace measures
     template <class Unit, typename Num>
     Num tan(signed_azimuth<Unit,Num> m)
     {
-		ASSERT_IS_NUMERIC(Num)
         return std::tan(convert<radians>(m).value());
     }
 
     template <class Unit = Angle::base_unit, typename Num = double>
     class unsigned_azimuth
     {
-	ASSERT_IS_NUMERIC(Num)
     public:
 		typedef Unit unit;
 		typedef Num numeric_type;
@@ -2919,10 +2625,7 @@ namespace measures
 	    explicit unsigned_azimuth(vect2<Unit2,Num2> v):
             v_(convert<Unit>(unsigned_azimuth<radians,Num>(
                 static_cast<Num>(atan2(v.y().value(),
-				v.x().value())))).value())
-		{
-			ASSERT_IS_NUMERIC(Num2)
-		}
+				v.x().value())))).value()) { }
 
 		// Convert to a point1.
 		operator point1<Unit,Num>() const
@@ -2963,8 +2666,6 @@ namespace measures
 	vect1<Unit,decltype(Num1()-Num2())> operator -(
 		unsigned_azimuth<Unit,Num1> m1, unsigned_azimuth<Unit,Num2> m2)
 	{
-		ASSERT_IS_NUMERIC(Num1)
-		ASSERT_IS_NUMERIC(Num2)
 		auto difference = m1.value() - m2.value();
 		auto one_turn = Unit::turn_fraction();
 		if (difference * 2 < -one_turn) difference += one_turn;
@@ -2976,7 +2677,6 @@ namespace measures
     template <class Unit, typename Num>
     bool operator ==(unsigned_azimuth<Unit,Num> m1, unsigned_azimuth<Unit,Num> m2)
     {
-		ASSERT_IS_NUMERIC(Num)
         return m1.value() == m2.value();
     }
 
@@ -2984,7 +2684,6 @@ namespace measures
     template <class Unit, typename Num>
     bool operator !=(unsigned_azimuth<Unit,Num> m1, unsigned_azimuth<Unit,Num> m2)
     {
-		ASSERT_IS_NUMERIC(Num)
         return m1.value() != m2.value();
     }
 
@@ -2992,8 +2691,7 @@ namespace measures
     template <class Unit, typename Num>
     vect1<Unit,Num> angle_distance(unsigned_azimuth<Unit,Num> m1, unsigned_azimuth<Unit,Num> m2)
     {
-		ASSERT_IS_NUMERIC(Num)
-		Num value_distance(abs(m1.value() - m2.value()));
+		Num value_distance(std::abs(m1.value() - m2.value()));
 		if (value_distance * 2 > Unit::turn_fraction())
 			value_distance = Unit::turn_fraction() - value_distance;
 		return vect1<Unit,Num>(value_distance);
@@ -3003,7 +2701,6 @@ namespace measures
     template <class Unit, typename Num>
     bool is_equal(unsigned_azimuth<Unit,Num> m1, unsigned_azimuth<Unit,Num> m2, vect1<Unit,Num> tolerance)
     {
-		ASSERT_IS_NUMERIC(Num)
         return angle_distance(m1, m2) <= tolerance;
     }
 	
@@ -3012,8 +2709,6 @@ namespace measures
     unsigned_azimuth<Unit,decltype(Num1()+Num2())> operator +(
 		unsigned_azimuth<Unit,Num1> m1, vect1<Unit,Num2> m2)
     {
-		ASSERT_IS_NUMERIC(Num1)
-		ASSERT_IS_NUMERIC(Num2)
         return unsigned_azimuth<Unit,decltype(Num1()+Num2())>(
 			m1.value() + m2.value());
     }
@@ -3023,8 +2718,6 @@ namespace measures
     unsigned_azimuth<Unit,decltype(Num1()-Num2())> operator -(
 		unsigned_azimuth<Unit,Num1> m1, vect1<Unit,Num2> m2)
     {
-		ASSERT_IS_NUMERIC(Num1)
-		ASSERT_IS_NUMERIC(Num2)
         return unsigned_azimuth<Unit,decltype(Num1()-Num2())>(
 			m1.value() - m2.value());
     }
@@ -3033,7 +2726,6 @@ namespace measures
     template <class Unit, typename Num>
     Num sin(unsigned_azimuth<Unit,Num> m)
     {
-		ASSERT_IS_NUMERIC(Num)
         return std::sin(convert<radians>(m).value());
     }
 
@@ -3041,7 +2733,6 @@ namespace measures
     template <class Unit, typename Num>
     Num cos(unsigned_azimuth<Unit,Num> m)
     {
-		ASSERT_IS_NUMERIC(Num)
         return std::cos(convert<radians>(m).value());
     }
 
@@ -3049,7 +2740,6 @@ namespace measures
     template <class Unit, typename Num>
     Num tan(unsigned_azimuth<Unit,Num> m)
     {
-		ASSERT_IS_NUMERIC(Num)
         return std::tan(convert<radians>(m).value());
     }
 
@@ -3119,7 +2809,6 @@ namespace measures
     template <class Magnitude, typename Num = double>
     class dyn_vect1
     {
-	ASSERT_IS_NUMERIC(Num)
     public:
 		typedef Num numeric_type;
 
@@ -3194,7 +2883,6 @@ namespace measures
         template <typename Num2>
         dyn_vect1<Magnitude,Num> operator *=(Num2 n)
         {
-			ASSERT_IS_NUMERIC(Num2)
             x_ *= static_cast<Num>(n);
             return *this;
         }
@@ -3203,7 +2891,6 @@ namespace measures
         template <typename Num2>
         dyn_vect1<Magnitude,Num> operator /=(Num2 n)
         {
-			ASSERT_IS_NUMERIC(Num2)
             x_ /= static_cast<Num>(n);
             return *this;
         }
@@ -3217,7 +2904,6 @@ namespace measures
     template <class Magnitude, typename Num>
     bool operator ==(dyn_vect1<Magnitude,Num> m1, dyn_vect1<Magnitude,Num> m2)
     {
-		ASSERT_IS_NUMERIC(Num)
 		if (m1.unit() != m2.unit()) return false;
         return m1.value() == m2.value();
     }
@@ -3226,7 +2912,6 @@ namespace measures
     template <class Magnitude, typename Num>
     bool operator !=(dyn_vect1<Magnitude,Num> m1, dyn_vect1<Magnitude,Num> m2)
     {
-		ASSERT_IS_NUMERIC(Num)
 		if (m1.unit() != m2.unit()) return true;
         return m1.value() != m2.value();
     }
@@ -3235,7 +2920,6 @@ namespace measures
     template <class Magnitude, typename Num>
     bool operator <(dyn_vect1<Magnitude,Num> m1, dyn_vect1<Magnitude,Num> m2)
     {
-		ASSERT_IS_NUMERIC(Num)
 		if (m1.unit() == m2.unit()) return m1.value() < m2.value();
         return m1.value() < convert(m1.unit(), m2).value();
     }
@@ -3244,7 +2928,6 @@ namespace measures
     template <class Magnitude, typename Num>
     bool operator <=(dyn_vect1<Magnitude,Num> m1, dyn_vect1<Magnitude,Num> m2)
     {
-		ASSERT_IS_NUMERIC(Num)
 		if (m1.unit() == m2.unit()) return m1.value() <= m2.value();
         return m1.value() <= convert(m1.unit(), m2).value();
     }
@@ -3253,7 +2936,6 @@ namespace measures
     template <class Magnitude, typename Num>
     bool operator >(dyn_vect1<Magnitude,Num> m1, dyn_vect1<Magnitude,Num> m2)
     {
-		ASSERT_IS_NUMERIC(Num)
 		if (m1.unit() == m2.unit()) return m1.value() > m2.value();
         return m1.value() > convert(m1.unit(), m2).value();
     }
@@ -3262,7 +2944,6 @@ namespace measures
     template <class Magnitude, typename Num>
     bool operator >=(dyn_vect1<Magnitude,Num> m1, dyn_vect1<Magnitude,Num> m2)
     {
-		ASSERT_IS_NUMERIC(Num)
 		if (m1.unit() == m2.unit()) return m1.value() >= m2.value();
         return m1.value() >= convert(m1.unit(), m2).value();
     }
@@ -3272,14 +2953,11 @@ namespace measures
     bool is_equal(dyn_vect1<Magnitude,Num1> m1,
 		dyn_vect1<Magnitude,Num2> m2, dyn_vect1<Magnitude,Num3> tolerance)
     {
-		ASSERT_IS_NUMERIC(Num1)
-		ASSERT_IS_NUMERIC(Num2)
-		ASSERT_IS_NUMERIC(Num3)
 		auto val1 = (m1.unit() == tolerance.unit() ? m1 :
 			convert(tolerance.unit(), m1)).value();
 		auto val2 = (m2.unit() == tolerance.unit() ? m2 :
 			convert(tolerance.unit(), m2)).value();
-        return abs(val1 - val2) <= tolerance.value();
+        return std::abs(val1 - val2) <= tolerance.value();
     }
 
     // is_less(dyn_vect1, dyn_vect1, tolerance) -> bool
@@ -3287,9 +2965,6 @@ namespace measures
     bool is_less(dyn_vect1<Magnitude,Num1> m1, dyn_vect1<Magnitude,Num2> m2,
 		dyn_vect1<Magnitude,Num3> tolerance)
     {
-		ASSERT_IS_NUMERIC(Num1)
-		ASSERT_IS_NUMERIC(Num2)
-		ASSERT_IS_NUMERIC(Num3)
 		auto val1 = (m1.unit() == tolerance.unit() ? m1 :
 			convert(tolerance.unit(), m1)).value();
 		auto val2 = (m2.unit() == tolerance.unit() ? m2 :
@@ -3303,9 +2978,6 @@ namespace measures
     bool is_less_or_equal(dyn_vect1<Magnitude,Num1> m1,
 		dyn_vect1<Magnitude,Num2> m2, dyn_vect1<Magnitude,Num3> tolerance)
     {
-		ASSERT_IS_NUMERIC(Num1)
-		ASSERT_IS_NUMERIC(Num2)
-		ASSERT_IS_NUMERIC(Num3)
 		auto val1 = (m1.unit() == tolerance.unit() ? m1 :
 			convert(tolerance.unit(), m1)).value();
 		auto val2 = (m2.unit() == tolerance.unit() ? m2 :
@@ -3317,7 +2989,6 @@ namespace measures
     template <class Magnitude, typename Num = double>
     class dyn_point1
     {
-	ASSERT_IS_NUMERIC(Num)
     public:
 		typedef Num numeric_type;
 
@@ -3388,9 +3059,6 @@ namespace measures
 		dyn_point1<Magnitude,Num1> m1, dyn_point1<Magnitude,Num2> m2,
 		Num3 weight = 0.5f)
 	{
-		ASSERT_IS_NUMERIC(Num1)
-		ASSERT_IS_NUMERIC(Num2)
-		ASSERT_IS_NUMERIC(Num3)
 		//return p1 + (p2 - p1) * weight;
 
 		// If m1 and m2 have the same unit, use it.
@@ -3413,7 +3081,6 @@ namespace measures
 	dyn_point1<Magnitude,Num> barycentric_combination(
 		int n, dyn_point1<Magnitude,Num> p[], Num weights[])
 	{
-		ASSERT_IS_NUMERIC(Num)
 		assert(n > 0);
 
 		// If all points have the same unit, use it.
@@ -3447,9 +3114,6 @@ namespace measures
 	dyn_vect1<Magnitude,decltype(Num1()-Num2())> operator -(
 		dyn_point1<Magnitude,Num1> m1, dyn_point1<Magnitude,Num2> m2)
 	{
-		ASSERT_IS_NUMERIC(Num1)
-		ASSERT_IS_NUMERIC(Num2)
-
 		// If m1 and m2 have the same unit, use it.
 		// Otherwise use the magnitude base unit.
 		if (m1.unit() == m2.unit())
@@ -3467,7 +3131,6 @@ namespace measures
     template <class Magnitude, typename Num>
     bool operator ==(dyn_point1<Magnitude,Num> m1, dyn_point1<Magnitude,Num> m2)
     {
-		ASSERT_IS_NUMERIC(Num)
 		if (m1.unit() != m2.unit()) return false;
         return m1.value() == m2.value();
     }
@@ -3476,7 +3139,6 @@ namespace measures
     template <class Magnitude, typename Num>
     bool operator !=(dyn_point1<Magnitude,Num> m1, dyn_point1<Magnitude,Num> m2)
     {
-		ASSERT_IS_NUMERIC(Num)
 		if (m1.unit() != m2.unit()) return true;
         return m1.value() != m2.value();
     }
@@ -3485,7 +3147,6 @@ namespace measures
     template <class Magnitude, typename Num>
     bool operator <(dyn_point1<Magnitude,Num> m1, dyn_point1<Magnitude,Num> m2)
     {
-		ASSERT_IS_NUMERIC(Num)
 		if (m1.unit() == m2.unit()) return m1.value() < m2.value();
         return m1.value() < convert(m1.unit(), m2).value();
     }
@@ -3494,7 +3155,6 @@ namespace measures
     template <class Magnitude, typename Num>
     bool operator <=(dyn_point1<Magnitude,Num> m1, dyn_point1<Magnitude,Num> m2)
     {
-		ASSERT_IS_NUMERIC(Num)
 		if (m1.unit() == m2.unit()) return m1.value() <= m2.value();
         return m1.value() <= convert(m1.unit(), m2).value();
     }
@@ -3503,7 +3163,6 @@ namespace measures
     template <class Magnitude, typename Num>
     bool operator >(dyn_point1<Magnitude,Num> m1, dyn_point1<Magnitude,Num> m2)
     {
-		ASSERT_IS_NUMERIC(Num)
 		if (m1.unit() == m2.unit()) return m1.value() > m2.value();
         return m1.value() > convert(m1.unit(), m2).value();
     }
@@ -3512,7 +3171,6 @@ namespace measures
     template <class Magnitude, typename Num>
     bool operator >=(dyn_point1<Magnitude,Num> m1, dyn_point1<Magnitude,Num> m2)
     {
-		ASSERT_IS_NUMERIC(Num)
 		if (m1.unit() == m2.unit()) return m1.value() >= m2.value();
         return m1.value() >= convert(m1.unit(), m2).value();
     }
@@ -3522,14 +3180,11 @@ namespace measures
     bool is_equal(dyn_point1<Magnitude,Num1> m1,
 		dyn_point1<Magnitude,Num2> m2, dyn_vect1<Magnitude,Num3> tolerance)
     {
-		ASSERT_IS_NUMERIC(Num1)
-		ASSERT_IS_NUMERIC(Num2)
-		ASSERT_IS_NUMERIC(Num3)
 		auto val1 = (m1.unit() == tolerance.unit() ? m1 :
 			convert(tolerance.unit(), m1)).value();
 		auto val2 = (m2.unit() == tolerance.unit() ? m2 :
 			convert(tolerance.unit(), m2)).value();
-        return abs(val1 - val2) <= tolerance.value();
+        return std::abs(val1 - val2) <= tolerance.value();
     }
 
     // is_less(dyn_point1, dyn_point1, tolerance) -> bool
@@ -3537,9 +3192,6 @@ namespace measures
     bool is_less(dyn_point1<Magnitude,Num1> m1,
 		dyn_point1<Magnitude,Num2> m2, dyn_vect1<Magnitude,Num3> tolerance)
     {
-		ASSERT_IS_NUMERIC(Num1)
-		ASSERT_IS_NUMERIC(Num2)
-		ASSERT_IS_NUMERIC(Num3)
 		auto val1 = (m1.unit() == tolerance.unit() ? m1 :
 			convert(tolerance.unit(), m1)).value();
 		auto val2 = (m2.unit() == tolerance.unit() ? m2 :
@@ -3553,9 +3205,6 @@ namespace measures
     bool is_less_or_equal(dyn_point1<Magnitude,Num1> m1,
 		dyn_point1<Magnitude,Num2> m2, dyn_vect1<Magnitude,Num3> tolerance)
     {
-		ASSERT_IS_NUMERIC(Num1)
-		ASSERT_IS_NUMERIC(Num2)
-		ASSERT_IS_NUMERIC(Num3)
 		auto val1 = (m1.unit() == tolerance.unit() ? m1 :
 			convert(tolerance.unit(), m1)).value();
 		auto val2 = (m2.unit() == tolerance.unit() ? m2 :
@@ -3569,9 +3218,6 @@ namespace measures
     dyn_point1<Magnitude,decltype(Num1()+Num2())> operator +(
 		dyn_point1<Magnitude,Num1> m1, dyn_vect1<Magnitude,Num2> m2)
     {
-		ASSERT_IS_NUMERIC(Num1)
-		ASSERT_IS_NUMERIC(Num2)
-
 		// If m1 and m2 have the same unit, use it.
 		// Otherwise use the magnitude base unit.
 		if (m1.unit() == m2.unit())
@@ -3590,9 +3236,6 @@ namespace measures
     dyn_point1<Magnitude,decltype(Num1()-Num2())> operator -(
 		dyn_point1<Magnitude,Num1> m1, dyn_vect1<Magnitude,Num2> m2)
     {
-		ASSERT_IS_NUMERIC(Num1)
-		ASSERT_IS_NUMERIC(Num2)
-
 		// If m1 and m2 have the same unit, use it.
 		// Otherwise use the magnitude base unit.
 		if (m1.unit() == m2.unit())
@@ -3611,9 +3254,6 @@ namespace measures
     dyn_vect1<Magnitude,decltype(Num1()+Num2())> operator +(
 		dyn_vect1<Magnitude,Num1> m1, dyn_vect1<Magnitude,Num2> m2)
     {
-		ASSERT_IS_NUMERIC(Num1)
-		ASSERT_IS_NUMERIC(Num2)
-
 		// If m1 and m2 have the same unit, use it.
 		// Otherwise use the magnitude base unit.
 		if (m1.unit() == m2.unit())
@@ -3632,9 +3272,6 @@ namespace measures
     dyn_vect1<Magnitude,decltype(Num1()-Num2())> operator -(
 		dyn_vect1<Magnitude,Num1> m1, dyn_vect1<Magnitude,Num2> m2)
     {
-		ASSERT_IS_NUMERIC(Num1)
-		ASSERT_IS_NUMERIC(Num2)
-
 		// If m1 and m2 have the same unit, use it.
 		// Otherwise use the magnitude base unit.
 		if (m1.unit() == m2.unit())
@@ -3652,8 +3289,6 @@ namespace measures
     dyn_vect1<Magnitude,decltype(Num1()*Num2())> operator *(
 		Num1 n, dyn_vect1<Magnitude,Num2> m)
     {
-		ASSERT_IS_NUMERIC(Num1)
-		ASSERT_IS_NUMERIC(Num2)
         return dyn_vect1<Magnitude,decltype(Num1()*Num2())>(
 			m.unit(), n * m.value());
     }
@@ -3663,8 +3298,6 @@ namespace measures
     dyn_vect1<Magnitude,decltype(Num1()*Num2())> operator *(
 		dyn_vect1<Magnitude,Num1> m, Num2 n)
     {
-		ASSERT_IS_NUMERIC(Num1)
-		ASSERT_IS_NUMERIC(Num2)
         return dyn_vect1<Magnitude,decltype(Num1()*Num2())>(
 			m.unit(), m.value() * n);
     }
@@ -3674,8 +3307,6 @@ namespace measures
     dyn_vect1<Magnitude,decltype(Num1()/Num2())> operator /(
 		dyn_vect1<Magnitude,Num1> m, Num2 n)
     {
-		ASSERT_IS_NUMERIC(Num1)
-		ASSERT_IS_NUMERIC(Num2)
         return dyn_vect1<Magnitude,decltype(Num1()/Num2())>(
 			m.unit(), m.value() / n);
     }
@@ -3684,23 +3315,19 @@ namespace measures
     template <class Magnitude, typename Num1, typename Num2>
     decltype(Num1()/Num2()) operator /(dyn_vect1<Magnitude,Num1> m1, dyn_vect1<Magnitude,Num2> m2)
     {
-		ASSERT_IS_NUMERIC(Num1)
-		ASSERT_IS_NUMERIC(Num2)
         return m1.value() / m2.value();
     }
 
     template <class Magnitude, typename Num>
     Num squared_norm_value(dyn_vect1<Magnitude,Num> v)
     {
-		ASSERT_IS_NUMERIC(Num)
         return sqr(v.value());
     }
 
     template <class Magnitude, typename Num>
     dyn_vect1<Magnitude,Num> norm(dyn_vect1<Magnitude,Num> v)
     {
-		ASSERT_IS_NUMERIC(Num)
-        return dyn_vect1<Magnitude,Num>(v.unit(), abs(v.value()));
+        return dyn_vect1<Magnitude,Num>(v.unit(), std::abs(v.value()));
     }
 
     ///////////////////////// DYNAMIC 2-DIMENSIONAL POINTS AND VECTORS /////////////////////////
@@ -3708,7 +3335,6 @@ namespace measures
     template <class Magnitude, typename Num = double>
     class dyn_vect2
 	{
-	ASSERT_IS_NUMERIC(Num)
     public:
 		typedef Num numeric_type;
 
@@ -3744,7 +3370,6 @@ namespace measures
             x_(static_cast<Num>(o.x().value())),
             y_(static_cast<Num>(o.y().value()))
 		{
-			ASSERT_IS_NUMERIC(Num2)
 			assert_same_type(Magnitude(0), Unit::magnitude(0));
 		}
 		
@@ -3756,7 +3381,6 @@ namespace measures
             x_(static_cast<Num>(cos(a))),
             y_(static_cast<Num>(sin(a)))
         {
-			ASSERT_IS_NUMERIC(Num2)
             ASSERT_IS_ANGLE(Unit2)
         }
 		
@@ -3766,10 +3390,7 @@ namespace measures
 			const signed_azimuth<Unit2,Num2>& a):
 			unit_(unit),
             x_(static_cast<Num>(cos(a))),
-            y_(static_cast<Num>(sin(a)))
-		{
-			ASSERT_IS_NUMERIC(Num2)
-		}
+            y_(static_cast<Num>(sin(a))) { }
 
         // Construct a versor using a dyn_unsigned_azimuth.
         template <class Unit2, typename Num2>
@@ -3777,10 +3398,7 @@ namespace measures
 			const unsigned_azimuth<Unit2,Num2>& a):
 			unit_(unit),
             x_(static_cast<Num>(cos(a))),
-            y_(static_cast<Num>(sin(a)))
-		{
-			ASSERT_IS_NUMERIC(Num2)
-		}
+            y_(static_cast<Num>(sin(a))) { }
 
         // Convert to a vect2 of the same magnitude.
         template <class Unit>
@@ -3826,7 +3444,6 @@ namespace measures
         template <typename Num2>
         dyn_vect2<Magnitude,Num> operator *=(Num2 n)
         {
-			ASSERT_IS_NUMERIC(Num2)
             x_ *= static_cast<Num>(n);
             y_ *= static_cast<Num>(n);
             return *this;
@@ -3836,7 +3453,6 @@ namespace measures
         template <typename Num2>
         dyn_vect2<Magnitude,Num> operator /=(Num2 n)
         {
-			ASSERT_IS_NUMERIC(Num2)
             x_ /= static_cast<Num>(n);
             y_ /= static_cast<Num>(n);
             return *this;
@@ -3867,7 +3483,6 @@ namespace measures
         template <typename Num2>
         void x(const dyn_vect1<Magnitude,Num2> new_x)
 		{
-			ASSERT_IS_NUMERIC(Num2)
 			x_ = (unit_ == new_x.unit() ? new_x :
 				convert(unit_, new_x)).value();
         }
@@ -3876,7 +3491,6 @@ namespace measures
         template <typename Num2>
         void y(const dyn_vect1<Magnitude,Num2> new_y)
         {
-			ASSERT_IS_NUMERIC(Num2)
 			y_ = (unit_ == new_y.unit() ? new_y :
 				convert(unit_, new_y)).value();
         }
@@ -3892,7 +3506,6 @@ namespace measures
     template <class Magnitude, typename Num>
     bool operator ==(dyn_vect2<Magnitude,Num> m1, dyn_vect2<Magnitude,Num> m2)
     {
-		ASSERT_IS_NUMERIC(Num)
 		if (m1.unit() != m2.unit()) return false;
         return m1.x().value() == m2.x().value()
             && m1.y().value() == m2.y().value();
@@ -3902,7 +3515,6 @@ namespace measures
     template <class Magnitude, typename Num>
     bool operator !=(dyn_vect2<Magnitude,Num> m1, dyn_vect2<Magnitude,Num> m2)
     {
-		ASSERT_IS_NUMERIC(Num)
 		if (m1.unit() != m2.unit()) return true;
         return m1.x().value() != m2.x().value()
             || m1.y().value() != m2.y().value();
@@ -3913,9 +3525,6 @@ namespace measures
     bool is_equal(dyn_vect2<Magnitude,Num1> m1,
 		dyn_vect2<Magnitude,Num2> m2, dyn_vect1<Magnitude,Num3> tolerance)
     {
-		ASSERT_IS_NUMERIC(Num1)
-		ASSERT_IS_NUMERIC(Num2)
-		ASSERT_IS_NUMERIC(Num3)
 		auto mm1 = (m1.unit() == tolerance.unit() ? m1 :
 			convert(tolerance.unit(), m1));
 		auto mm2 = (m2.unit() == tolerance.unit() ? m2 :
@@ -3926,7 +3535,6 @@ namespace measures
     template <class Magnitude, typename Num = double>
     class dyn_point2
 	{
-	ASSERT_IS_NUMERIC(Num)
     public:
 		typedef Num numeric_type;
 
@@ -3962,7 +3570,6 @@ namespace measures
             x_(static_cast<Num>(o.x().value())),
             y_(static_cast<Num>(o.y().value()))
 		{
-			ASSERT_IS_NUMERIC(Num2)
 			assert_same_type(Magnitude(0), Unit::magnitude(0));
 		}
 
@@ -4019,7 +3626,6 @@ namespace measures
         template <typename Num2>
         void x(const dyn_point1<Magnitude,Num2> new_x)
 		{
-			ASSERT_IS_NUMERIC(Num2)
 			x_ = (unit_ == new_x.unit() ? new_x :
 				convert(unit_, new_x)).value();
         }
@@ -4028,7 +3634,6 @@ namespace measures
         template <typename Num2>
         void y(const dyn_point1<Magnitude,Num2> new_y)
         {
-			ASSERT_IS_NUMERIC(Num2)
 			y_ = (unit_ == new_y.unit() ? new_y :
 				convert(unit_, new_y)).value();
         }
@@ -4046,9 +3651,6 @@ namespace measures
 		dyn_point2<Magnitude,Num1> m1, dyn_point2<Magnitude,Num2> m2,
 		Num3 weight = 0.5f)
 	{
-		ASSERT_IS_NUMERIC(Num1)
-		ASSERT_IS_NUMERIC(Num2)
-		ASSERT_IS_NUMERIC(Num3)
 		//return p1 + (p2 - p1) * weight;
 
 		// If m1 and m2 have the same unit, use it.
@@ -4074,7 +3676,6 @@ namespace measures
 	dyn_point2<Magnitude,Num> barycentric_combination(
 		int n, dyn_point2<Magnitude,Num> p[], Num weights[])
 	{
-		ASSERT_IS_NUMERIC(Num)
 		assert(n > 0);
 
 		// If all points have the same unit, use it.
@@ -4111,9 +3712,6 @@ namespace measures
 	dyn_vect2<Magnitude,decltype(Num1()-Num2())> operator -(
 		dyn_point2<Magnitude,Num1> m1, dyn_point2<Magnitude,Num2> m2)
 	{
-		ASSERT_IS_NUMERIC(Num1)
-		ASSERT_IS_NUMERIC(Num2)
-		
 		// If m1 and m2 have the same unit, use it.
 		// Otherwise use the magnitude base unit.
 		if (m1.unit() == m2.unit())
@@ -4132,7 +3730,6 @@ namespace measures
     template <class Magnitude, typename Num>
     bool operator ==(dyn_point2<Magnitude,Num> m1, dyn_point2<Magnitude,Num> m2)
     {
-		ASSERT_IS_NUMERIC(Num)
 		if (m1.unit() != m2.unit()) return false;
         return m1.x().value() == m2.x().value()
             && m1.y().value() == m2.y().value();
@@ -4142,7 +3739,6 @@ namespace measures
     template <class Magnitude, typename Num>
     bool operator !=(dyn_point2<Magnitude,Num> m1, dyn_point2<Magnitude,Num> m2)
     {
-		ASSERT_IS_NUMERIC(Num)
 		if (m1.unit() != m2.unit()) return true;
         return m1.x().value() != m2.x().value()
             || m1.y().value() != m2.y().value();
@@ -4153,9 +3749,6 @@ namespace measures
     bool is_equal(dyn_point2<Magnitude,Num1> m1,
 		dyn_point2<Magnitude,Num2> m2, dyn_vect1<Magnitude,Num3> tolerance)
     {
-		ASSERT_IS_NUMERIC(Num1)
-		ASSERT_IS_NUMERIC(Num2)
-		ASSERT_IS_NUMERIC(Num3)
 		auto mm1 = (m1.unit() == tolerance.unit() ? m1 :
 			convert(tolerance.unit(), m1));
 		auto mm2 = (m2.unit() == tolerance.unit() ? m2 :
@@ -4168,9 +3761,6 @@ namespace measures
     dyn_point2<Magnitude,decltype(Num1()+Num2())> operator +(
 		dyn_point2<Magnitude,Num1> m1, dyn_vect2<Magnitude,Num2> m2)
     {
-		ASSERT_IS_NUMERIC(Num1)
-		ASSERT_IS_NUMERIC(Num2)
-
 		// If m1 and m2 have the same unit, use it.
 		// Otherwise use the magnitude base unit.
 		if (m1.unit() == m2.unit())
@@ -4192,9 +3782,6 @@ namespace measures
     dyn_point2<Magnitude,decltype(Num1()-Num2())> operator -(
 		dyn_point2<Magnitude,Num1> m1, dyn_vect2<Magnitude,Num2> m2)
     {
-		ASSERT_IS_NUMERIC(Num1)
-		ASSERT_IS_NUMERIC(Num2)
-
 		// If m1 and m2 have the same unit, use it.
 		// Otherwise use the magnitude base unit.
 		if (m1.unit() == m2.unit())
@@ -4214,9 +3801,6 @@ namespace measures
     dyn_vect2<Magnitude,decltype(Num1()+Num2())> operator +(
 		dyn_vect2<Magnitude,Num1> m1, dyn_vect2<Magnitude,Num2> m2)
     {
-		ASSERT_IS_NUMERIC(Num1)
-		ASSERT_IS_NUMERIC(Num2)
-
 		// If m1 and m2 have the same unit, use it.
 		// Otherwise use the magnitude base unit.
 		if (m1.unit() == m2.unit())
@@ -4238,9 +3822,6 @@ namespace measures
     dyn_vect2<Magnitude,decltype(Num1()-Num2())> operator -(
 		dyn_vect2<Magnitude,Num1> m1, dyn_vect2<Magnitude,Num2> m2)
     {
-		ASSERT_IS_NUMERIC(Num1)
-		ASSERT_IS_NUMERIC(Num2)
-
 		// If m1 and m2 have the same unit, use it.
 		// Otherwise use the magnitude base unit.
 		if (m1.unit() == m2.unit())
@@ -4262,9 +3843,6 @@ namespace measures
     dyn_vect2<Magnitude,decltype(Num1()*Num2())> operator *(
 		Num1 n, dyn_vect2<Magnitude,Num2> m)
     {
-		ASSERT_IS_NUMERIC(Num1)
-		ASSERT_IS_NUMERIC(Num2)
-
         return dyn_vect2<Magnitude,decltype(Num1()*Num2())>(m.unit(),
 			n * m.x().value(),
 			n * m.y().value());
@@ -4275,9 +3853,6 @@ namespace measures
     dyn_vect2<Magnitude,decltype(Num1()*Num2())> operator *(
 		dyn_vect2<Magnitude,Num1> m, Num2 n)
     {
-		ASSERT_IS_NUMERIC(Num1)
-		ASSERT_IS_NUMERIC(Num2)
-
         return dyn_vect2<Magnitude,decltype(Num1()*Num2())>(m.unit(),
 			m.x().value() * n,
 			m.y().value() * n);
@@ -4288,8 +3863,6 @@ namespace measures
     dyn_vect2<Magnitude,decltype(Num1()/Num2())> operator /(
 		dyn_vect2<Magnitude,Num1> m, Num2 n)
     {
-		ASSERT_IS_NUMERIC(Num1)
-		ASSERT_IS_NUMERIC(Num2)
         return dyn_vect2<Magnitude,decltype(Num1()/Num2())>(m.unit(),
 			m.x().value() / n,
 			m.y().value() / n);
@@ -4299,14 +3872,12 @@ namespace measures
     template <class Magnitude, typename Num>
     Num squared_norm_value(dyn_vect2<Magnitude,Num> v)
     {
-		ASSERT_IS_NUMERIC(Num)
         return sqr(v.x().value()) + sqr(v.y().value());
     }
 
     template <class Magnitude, typename Num>
     dyn_vect1<Magnitude,Num> norm(dyn_vect2<Magnitude,Num> v)
     {
-		ASSERT_IS_NUMERIC(Num)
         return dyn_vect1<Magnitude,Num>(v.unit(),
 			static_cast<Num>(sqrt(squared_norm_value(v))));
     }
@@ -4317,7 +3888,6 @@ namespace measures
     template <class Magnitude, typename Num = double>
     class dyn_vect3
 	{
-	ASSERT_IS_NUMERIC(Num)
     public:
 		typedef Num numeric_type;
 
@@ -4359,7 +3929,6 @@ namespace measures
             y_(static_cast<Num>(o.y().value())),
             z_(static_cast<Num>(o.z().value()))
 		{
-			ASSERT_IS_NUMERIC(Num2)
 			assert_same_type(Magnitude(0), Unit::magnitude(0));
 		}
 
@@ -4410,7 +3979,6 @@ namespace measures
         template <typename Num2>
         dyn_vect3<Magnitude,Num> operator *=(Num2 n)
         {
-			ASSERT_IS_NUMERIC(Num2)
             x_ *= static_cast<Num>(n);
             y_ *= static_cast<Num>(n);
             z_ *= static_cast<Num>(n);
@@ -4421,7 +3989,6 @@ namespace measures
         template <typename Num2>
         dyn_vect3<Magnitude,Num> operator /=(Num2 n)
         {
-			ASSERT_IS_NUMERIC(Num2)
             x_ /= static_cast<Num>(n);
             y_ /= static_cast<Num>(n);
             z_ /= static_cast<Num>(n);
@@ -4459,7 +4026,6 @@ namespace measures
         template <typename Num2>
         void x(const dyn_vect1<Magnitude,Num2> new_x)
 		{
-			ASSERT_IS_NUMERIC(Num2)
 			x_ = (unit_ == new_x.unit() ? new_x :
 				convert(unit_, new_x)).value();
         }
@@ -4468,7 +4034,6 @@ namespace measures
         template <typename Num2>
         void y(const dyn_vect1<Magnitude,Num2> new_y)
         {
-			ASSERT_IS_NUMERIC(Num2)
 			y_ = (unit_ == new_y.unit() ? new_y :
 				convert(unit_, new_y)).value();
         }
@@ -4477,7 +4042,6 @@ namespace measures
         template <typename Num2>
         void z(const dyn_vect1<Magnitude,Num2> new_z)
         {
-			ASSERT_IS_NUMERIC(Num2)
 			z_ = (unit_ == new_z.unit() ? new_z :
 				convert(unit_, new_z)).value();
         }
@@ -4493,7 +4057,6 @@ namespace measures
     template <class Magnitude, typename Num>
     bool operator ==(dyn_vect3<Magnitude,Num> m1, dyn_vect3<Magnitude,Num> m2)
     {
-		ASSERT_IS_NUMERIC(Num)
 		if (m1.unit() != m2.unit()) return false;
         return m1.x().value() == m2.x().value()
             && m1.y().value() == m2.y().value()
@@ -4504,7 +4067,6 @@ namespace measures
     template <class Magnitude, typename Num>
     bool operator !=(dyn_vect3<Magnitude,Num> m1, dyn_vect3<Magnitude,Num> m2)
     {
-		ASSERT_IS_NUMERIC(Num)
 		if (m1.unit() != m2.unit()) return true;
         return m1.x().value() != m2.x().value()
             || m1.y().value() != m2.y().value()
@@ -4516,9 +4078,6 @@ namespace measures
     bool is_equal(dyn_vect3<Magnitude,Num1> m1,
 		dyn_vect3<Magnitude,Num2> m2, dyn_vect1<Magnitude,Num3> tolerance)
     {
-		ASSERT_IS_NUMERIC(Num1)
-		ASSERT_IS_NUMERIC(Num2)
-		ASSERT_IS_NUMERIC(Num3)
 		auto mm1 = (m1.unit() == tolerance.unit() ? m1 :
 			convert(tolerance.unit(), m1));
 		auto mm2 = (m2.unit() == tolerance.unit() ? m2 :
@@ -4529,7 +4088,6 @@ namespace measures
     template <class Magnitude, typename Num = double>
     class dyn_point3
 	{
-	ASSERT_IS_NUMERIC(Num)
     public:
 		typedef Num numeric_type;
 
@@ -4571,7 +4129,6 @@ namespace measures
             y_(static_cast<Num>(o.y().value())),
             z_(static_cast<Num>(o.z().value()))
 		{
-			ASSERT_IS_NUMERIC(Num2)
 			assert_same_type(Magnitude(0), Unit::magnitude(0));
 		}
 		
@@ -4637,7 +4194,6 @@ namespace measures
         template <typename Num2>
         void x(const dyn_point1<Magnitude,Num2> new_x)
 		{
-			ASSERT_IS_NUMERIC(Num2)
 			x_ = (unit_ == new_x.unit() ? new_x :
 				convert(unit_, new_x)).value();
         }
@@ -4646,7 +4202,6 @@ namespace measures
         template <typename Num2>
         void y(const dyn_point1<Magnitude,Num2> new_y)
         {
-			ASSERT_IS_NUMERIC(Num2)
 			y_ = (unit_ == new_y.unit() ? new_y :
 				convert(unit_, new_y)).value();
         }
@@ -4655,7 +4210,6 @@ namespace measures
         template <typename Num2>
         void z(const dyn_point1<Magnitude,Num2> new_z)
         {
-			ASSERT_IS_NUMERIC(Num2)
 			z_ = (unit_ == new_z.unit() ? new_z :
 				convert(unit_, new_z)).value();
         }
@@ -4673,9 +4227,6 @@ namespace measures
 		dyn_point3<Magnitude,Num1> m1, dyn_point3<Magnitude,Num2> m2,
 		Num3 weight = 0.5f)
 	{
-		ASSERT_IS_NUMERIC(Num1)
-		ASSERT_IS_NUMERIC(Num2)
-		ASSERT_IS_NUMERIC(Num3)
 		//return p1 + (p2 - p1) * weight;
 
 		// If m1 and m2 have the same unit, use it.
@@ -4704,7 +4255,6 @@ namespace measures
 	dyn_point3<Magnitude,Num> barycentric_combination(
 		int n, dyn_point3<Magnitude,Num> p[], Num weights[])
 	{
-		ASSERT_IS_NUMERIC(Num)
 		assert(n > 0);
 
 		// If all points have the same unit, use it.
@@ -4745,9 +4295,6 @@ namespace measures
 	dyn_vect3<Magnitude,decltype(Num1()-Num2())> operator -(
 		dyn_point3<Magnitude,Num1> m1, dyn_point3<Magnitude,Num2> m2)
 	{
-		ASSERT_IS_NUMERIC(Num1)
-		ASSERT_IS_NUMERIC(Num2)
-
 		// If m1 and m2 have the same unit, use it.
 		// Otherwise use the magnitude base unit.
 		if (m1.unit() == m2.unit())
@@ -4769,7 +4316,6 @@ namespace measures
     template <class Magnitude, typename Num>
     bool operator ==(dyn_point3<Magnitude,Num> m1, dyn_point3<Magnitude,Num> m2)
     {
-		ASSERT_IS_NUMERIC(Num)
 		if (m1.unit() != m2.unit()) return false;
         return m1.x().value() == m2.x().value()
             && m1.y().value() == m2.y().value()
@@ -4780,7 +4326,6 @@ namespace measures
     template <class Magnitude, typename Num>
     bool operator !=(dyn_point3<Magnitude,Num> m1, dyn_point3<Magnitude,Num> m2)
     {
-		ASSERT_IS_NUMERIC(Num)
 		if (m1.unit() != m2.unit()) return true;
         return m1.x().value() != m2.x().value()
             || m1.y().value() != m2.y().value()
@@ -4792,9 +4337,6 @@ namespace measures
     bool is_equal(dyn_point3<Magnitude,Num1> m1,
 		dyn_point3<Magnitude,Num2> m2, dyn_vect1<Magnitude,Num3> tolerance)
     {
-		ASSERT_IS_NUMERIC(Num1)
-		ASSERT_IS_NUMERIC(Num2)
-		ASSERT_IS_NUMERIC(Num3)
 		auto mm1 = (m1.unit() == tolerance.unit() ? m1 :
 			convert(tolerance.unit(), m1));
 		auto mm2 = (m2.unit() == tolerance.unit() ? m2 :
@@ -4807,9 +4349,6 @@ namespace measures
     dyn_point3<Magnitude,decltype(Num1()+Num2())> operator +(
 		dyn_point3<Magnitude,Num1> m1, dyn_vect3<Magnitude,Num2> m2)
     {
-		ASSERT_IS_NUMERIC(Num1)
-		ASSERT_IS_NUMERIC(Num2)
-
 		// If m1 and m2 have the same unit, use it.
 		// Otherwise use the magnitude base unit.
 		if (m1.unit() == m2.unit())
@@ -4833,9 +4372,6 @@ namespace measures
     dyn_point3<Magnitude,decltype(Num1()-Num2())> operator -(
 		dyn_point3<Magnitude,Num1> m1, dyn_vect3<Magnitude,Num2> m2)
     {
-		ASSERT_IS_NUMERIC(Num1)
-		ASSERT_IS_NUMERIC(Num2)
-
 		// If m1 and m2 have the same unit, use it.
 		// Otherwise use the magnitude base unit.
 		if (m1.unit() == m2.unit())
@@ -4857,9 +4393,6 @@ namespace measures
     dyn_vect3<Magnitude,decltype(Num1()+Num2())> operator +(
 		dyn_vect3<Magnitude,Num1> m1, dyn_vect3<Magnitude,Num2> m2)
     {
-		ASSERT_IS_NUMERIC(Num1)
-		ASSERT_IS_NUMERIC(Num2)
-
 		// If m1 and m2 have the same unit, use it.
 		// Otherwise use the magnitude base unit.
 		if (m1.unit() == m2.unit())
@@ -4883,9 +4416,6 @@ namespace measures
     dyn_vect3<Magnitude,decltype(Num1()-Num2())> operator -(
 		dyn_vect3<Magnitude,Num1> m1, dyn_vect3<Magnitude,Num2> m2)
     {
-		ASSERT_IS_NUMERIC(Num1)
-		ASSERT_IS_NUMERIC(Num2)
-
 		// If m1 and m2 have the same unit, use it.
 		// Otherwise use the magnitude base unit.
 		if (m1.unit() == m2.unit())
@@ -4909,8 +4439,6 @@ namespace measures
     dyn_vect3<Magnitude,decltype(Num1()*Num2())> operator *(
 		Num1 n, dyn_vect3<Magnitude,Num2> m)
     {
-		ASSERT_IS_NUMERIC(Num1)
-		ASSERT_IS_NUMERIC(Num2)
         return dyn_vect3<Magnitude,decltype(Num1()*Num2())>(m.unit(),
 			n * m.x().value(),
 			n * m.y().value(),
@@ -4922,8 +4450,6 @@ namespace measures
     dyn_vect3<Magnitude,decltype(Num1()*Num2())> operator *(
 		dyn_vect3<Magnitude,Num1> m, Num2 n)
     {
-		ASSERT_IS_NUMERIC(Num1)
-		ASSERT_IS_NUMERIC(Num2)
         return dyn_vect3<Magnitude,decltype(Num1()*Num2())>(m.unit(),
 			m.x().value() * n,
 			m.y().value() * n,
@@ -4935,8 +4461,6 @@ namespace measures
     dyn_vect3<Magnitude,decltype(Num1()/Num2())> operator /(
 		dyn_vect3<Magnitude,Num1> m, Num2 n)
     {
-		ASSERT_IS_NUMERIC(Num1)
-		ASSERT_IS_NUMERIC(Num2)
         return dyn_vect3<Magnitude,decltype(Num1()/Num2())>(m.unit(),
 			m.x().value() / n,
 			m.y().value() / n,
@@ -4946,14 +4470,12 @@ namespace measures
     template <class Magnitude, typename Num>
     Num squared_norm_value(dyn_vect3<Magnitude,Num> v)
     {
-		ASSERT_IS_NUMERIC(Num)
         return sqr(v.x().value()) + sqr(v.y().value()) + sqr(v.z().value());
     }
 
     template <class Magnitude, typename Num>
     dyn_vect1<Magnitude,Num> norm(dyn_vect3<Magnitude,Num> v)
     {
-		ASSERT_IS_NUMERIC(Num)
         return dyn_vect1<Magnitude,Num>(v.unit(),
 			static_cast<Num>(sqrt(squared_norm_value(v))));
     }
@@ -4981,7 +4503,6 @@ namespace measures
     template <typename Num = double>
     class dyn_signed_azimuth
     {
-	ASSERT_IS_NUMERIC(Num)
         template <typename> class dyn_unsigned_azimuth;
     public:
 		typedef Num numeric_type;
@@ -5039,10 +4560,7 @@ namespace measures
         explicit dyn_signed_azimuth(Angle unit, const dyn_vect2<Magnitude2,Num2>& o):
             unit_(unit),
             x_(convert(unit, dyn_signed_azimuth<Num>(radians::id(),
-                static_cast<Num>(atan2(o.y().value(), o.x().value())))).value())
-		{
-			ASSERT_IS_NUMERIC(Num2)
-		}
+                static_cast<Num>(atan2(o.y().value(), o.x().value())))).value()) { }
 
         // Construct with specified unit using any vect2,
 		// possibly of a different number type.
@@ -5050,10 +4568,7 @@ namespace measures
         explicit dyn_signed_azimuth(Angle unit, const vect2<Unit,Num2>& o):
             unit_(unit),
             x_(convert(unit, dyn_signed_azimuth<Num>(radians::id(),
-                static_cast<Num>(atan2(o.y().value(), o.x().value())))).value())
-		{
-			ASSERT_IS_NUMERIC(Num2)
-		}
+                static_cast<Num>(atan2(o.y().value(), o.x().value())))).value()) { }
 
 		// Convert to a dyn_point1.
 		operator dyn_point1<Angle,Num>() const
@@ -5099,10 +4614,7 @@ namespace measures
     template <typename Num1, typename Num2>
     dyn_vect1<Angle,decltype(Num1()-Num2())> operator -(
 		dyn_signed_azimuth<Num1> m1, dyn_signed_azimuth<Num2> m2)
-    {
-		ASSERT_IS_NUMERIC(Num1)
-		ASSERT_IS_NUMERIC(Num2)
-		
+    {		
 		// If m1 and m2 have the same unit, use it.
 		// Otherwise use the angle base unit.
 		Angle unit_id = m1.unit() == m2.unit() ?
@@ -5121,7 +4633,6 @@ namespace measures
     template <typename Num>
     bool operator ==(dyn_signed_azimuth<Num> m1, dyn_signed_azimuth<Num> m2)
     {
-		ASSERT_IS_NUMERIC(Num)
 		if (m1.unit() != m2.unit()) return false;
         return m1.value() == m2.value();
     }
@@ -5130,7 +4641,6 @@ namespace measures
     template <typename Num>
     bool operator !=(dyn_signed_azimuth<Num> m1, dyn_signed_azimuth<Num> m2)
     {
-		ASSERT_IS_NUMERIC(Num)
 		if (m1.unit() != m2.unit()) return true;
         return m1.value() != m2.value();
     }
@@ -5140,13 +4650,11 @@ namespace measures
     dyn_vect1<Angle,Num> angle_distance(
 		dyn_signed_azimuth<Num> m1, dyn_signed_azimuth<Num> m2)
     {
-		ASSERT_IS_NUMERIC(Num)
-
 		// If m1 and m2 have the same unit, use it.
 		// Otherwise use the angle base unit.
 		Angle unit_id(m1.unit() == m2.unit() ?
 			m1.unit() : Angle::base_unit::id());
-		Num value_distance(abs(m1.unit() == m2.unit() ?
+		Num value_distance(std::abs(m1.unit() == m2.unit() ?
 			m1.value() - m2.value() :
 			convert(unit_id, m1).value() - convert(unit_id, m2).value()));
 		if (value_distance * 2 > unit_id.turn_fraction())
@@ -5161,9 +4669,6 @@ namespace measures
     bool is_equal(dyn_signed_azimuth<Num1> m1,
 		dyn_signed_azimuth<Num2> m2, dyn_vect1<Angle,Num3> tolerance)
     {
-		ASSERT_IS_NUMERIC(Num1)
-		ASSERT_IS_NUMERIC(Num2)
-		ASSERT_IS_NUMERIC(Num3)
         return angle_distance(m1, m2) <= tolerance;
     }
 
@@ -5172,8 +4677,6 @@ namespace measures
     dyn_signed_azimuth<decltype(Num1()+Num2())> operator +(
 		dyn_signed_azimuth<Num1> m1, dyn_vect1<Angle,Num2> m2)
     {
-		ASSERT_IS_NUMERIC(Num1)
-		ASSERT_IS_NUMERIC(Num2)
 		//TODO 
         return dyn_signed_azimuth<decltype(Num1()+Num2())>(m1.unit(),
 			m1.value() + m2.value());
@@ -5184,8 +4687,6 @@ namespace measures
     dyn_signed_azimuth<decltype(Num1()-Num2())> operator -(
 		dyn_signed_azimuth<Num1> m1, dyn_vect1<Angle,Num2> m2)
     {
-		ASSERT_IS_NUMERIC(Num1)
-		ASSERT_IS_NUMERIC(Num2)
 		//TODO 
         return dyn_signed_azimuth<decltype(Num1()-Num2())>(m1.unit(),
 			m1.value() - m2.value());
@@ -5194,7 +4695,6 @@ namespace measures
     template <typename Num = double>
     class dyn_unsigned_azimuth
     {
-	ASSERT_IS_NUMERIC(Num)
         template <typename> class dyn_signed_azimuth;
     public:
 		typedef Num numeric_type;
@@ -5252,10 +4752,7 @@ namespace measures
         explicit dyn_unsigned_azimuth(Angle unit, const dyn_vect2<Magnitude2,Num2>& o):
             unit_(unit),
             x_(convert(unit, dyn_unsigned_azimuth<Num>(radians::id(),
-                static_cast<Num>(atan2(o.y().value(), o.x().value())))).value())
-		{
-			ASSERT_IS_NUMERIC(Num2)
-		}
+                static_cast<Num>(atan2(o.y().value(), o.x().value())))).value()) { }
 
         // Construct with specified unit using any vect2,
 		// possibly of a different number type.
@@ -5263,10 +4760,7 @@ namespace measures
         explicit dyn_unsigned_azimuth(Angle unit, const vect2<Unit,Num2>& o):
             unit_(unit),
             x_(convert(unit, dyn_unsigned_azimuth<Num>(radians::id(),
-                static_cast<Num>(atan2(o.y().value(), o.x().value())))).value())
-		{
-			ASSERT_IS_NUMERIC(Num2)
-		}
+                static_cast<Num>(atan2(o.y().value(), o.x().value())))).value()) { }
 		
 		// Convert to a dyn_point1.
 		operator dyn_point1<Angle,Num>() const
@@ -5313,9 +4807,6 @@ namespace measures
     dyn_vect1<Angle,decltype(Num1()-Num2())> operator -(
 		dyn_unsigned_azimuth<Num1> m1, dyn_unsigned_azimuth<Num2> m2)
     {
-		ASSERT_IS_NUMERIC(Num1)
-		ASSERT_IS_NUMERIC(Num2)
-
 		// If m1 and m2 have the same unit, use it.
 		// Otherwise use the angle base unit.
 		Angle unit_id(m1.unit() == m2.unit() ?
@@ -5333,7 +4824,6 @@ namespace measures
     template <typename Num>
     bool operator ==(dyn_unsigned_azimuth<Num> m1, dyn_unsigned_azimuth<Num> m2)
     {
-		ASSERT_IS_NUMERIC(Num)
 		if (m1.unit() != m2.unit()) return false;
         return m1.value() == m2.value();
     }
@@ -5342,7 +4832,6 @@ namespace measures
     template <typename Num>
     bool operator !=(dyn_unsigned_azimuth<Num> m1, dyn_unsigned_azimuth<Num> m2)
     {
-		ASSERT_IS_NUMERIC(Num)
 		if (m1.unit() != m2.unit()) return true;
         return m1.value() != m2.value();
     }
@@ -5352,13 +4841,11 @@ namespace measures
     dyn_vect1<Angle,Num> angle_distance(
 		dyn_unsigned_azimuth<Num> m1, dyn_unsigned_azimuth<Num> m2)
     {
-		ASSERT_IS_NUMERIC(Num)
-
 		// If m1 and m2 have the same unit, use it.
 		// Otherwise use the angle base unit.
 		Angle unit_id(m1.unit() == m2.unit() ?
 			m1.unit() : Angle::base_unit::id());
-		Num value_distance(abs(m1.unit() == m2.unit() ?
+		Num value_distance(std::abs(m1.unit() == m2.unit() ?
 			m1.value() - m2.value() :
 			convert(unit_id, m1).value() - convert(unit_id, m2).value()));
 		if (value_distance * 2 > unit_id.turn_fraction())
@@ -5371,9 +4858,6 @@ namespace measures
     bool is_equal(dyn_unsigned_azimuth<Num1> m1,
 		dyn_unsigned_azimuth<Num2> m2, dyn_vect1<Angle,Num3> tolerance)
     {
-		ASSERT_IS_NUMERIC(Num1)
-		ASSERT_IS_NUMERIC(Num2)
-		ASSERT_IS_NUMERIC(Num3)
         return angle_distance(m1, m2) <= tolerance;
     }
 	
@@ -5382,8 +4866,6 @@ namespace measures
     dyn_unsigned_azimuth<decltype(Num1()+Num2())> operator +(
 		dyn_unsigned_azimuth<Num1> m1, dyn_vect1<Angle,Num2> m2)
     {
-		ASSERT_IS_NUMERIC(Num1)
-		ASSERT_IS_NUMERIC(Num2)
 		//TODO
         return dyn_unsigned_azimuth<decltype(Num1()+Num2())>(m1.unit(),
 			m1.value() + m2.value());
@@ -5394,8 +4876,6 @@ namespace measures
     dyn_unsigned_azimuth<decltype(Num1()-Num2())> operator -(
 		dyn_unsigned_azimuth<Num1> m1, dyn_vect1<Angle,Num2> m2)
     {
-		ASSERT_IS_NUMERIC(Num1)
-		ASSERT_IS_NUMERIC(Num2)
 		//TODO
         return dyn_unsigned_azimuth<decltype(Num1()-Num2())>(m1.unit(),
 			m1.value() - m2.value());
@@ -5406,7 +4886,6 @@ namespace measures
     template <class Magnitude, typename Num>
     dyn_vect1<Magnitude,Num> convert(Magnitude dest_unit, dyn_vect1<Magnitude,Num> m)
     {
-		ASSERT_IS_NUMERIC(Num)
         return dyn_vect1<Magnitude,Num>(dest_unit, static_cast<Num>(m.value()
             * (m.unit().ratio()
 			/ dest_unit.ratio())));
@@ -5415,7 +4894,6 @@ namespace measures
     template <class Magnitude, typename Num>
     dyn_point1<Magnitude,Num> convert(Magnitude dest_unit, dyn_point1<Magnitude,Num> m)
     {
-		ASSERT_IS_NUMERIC(Num)
         return dyn_point1<Magnitude,Num>(dest_unit, static_cast<Num>(m.value()
             * (m.unit().ratio() / dest_unit.ratio())
             + (m.unit().offset() - dest_unit.offset())
@@ -5425,7 +4903,6 @@ namespace measures
     template <class Magnitude, typename Num>
     dyn_vect2<Magnitude,Num> convert(Magnitude dest_unit, dyn_vect2<Magnitude,Num> m)
     {
-		ASSERT_IS_NUMERIC(Num)
         return dyn_vect2<Magnitude,Num>(dest_unit,
             convert<>(dest_unit, m.x()).value(),
             convert<>(dest_unit, m.y()).value());
@@ -5434,7 +4911,6 @@ namespace measures
     template <class Magnitude, typename Num>
     dyn_point2<Magnitude,Num> convert(Magnitude dest_unit, dyn_point2<Magnitude,Num> m)
     {
-		ASSERT_IS_NUMERIC(Num)
         return dyn_point2<Magnitude,Num>(dest_unit,
             convert<>(dest_unit, m.x()).value(),
             convert<>(dest_unit, m.y()).value());
@@ -5443,7 +4919,6 @@ namespace measures
     template <class Magnitude, typename Num>
     dyn_vect3<Magnitude,Num> convert(Magnitude dest_unit, dyn_vect3<Magnitude,Num> m)
     {
-		ASSERT_IS_NUMERIC(Num)
         return dyn_vect3<Magnitude,Num>(dest_unit,
             convert<>(dest_unit, m.x()).value(),
             convert<>(dest_unit, m.y()).value(),
@@ -5453,7 +4928,6 @@ namespace measures
     template <class Magnitude, typename Num>
     dyn_point3<Magnitude,Num> convert(Magnitude dest_unit, dyn_point3<Magnitude,Num> m)
     {
-		ASSERT_IS_NUMERIC(Num)
         return dyn_point3<Magnitude,Num>(dest_unit,
             convert<>(dest_unit, m.x()).value(),
             convert<>(dest_unit, m.y()).value(),
@@ -5463,7 +4937,6 @@ namespace measures
     template <typename Num>
     dyn_signed_azimuth<Num> convert(Angle dest_unit, dyn_signed_azimuth<Num> m)
     {
-		ASSERT_IS_NUMERIC(Num)
         return dyn_signed_azimuth<Num>(dest_unit, static_cast<Num>(m.value()
             * (m.unit().ratio() / dest_unit.ratio())
             + (m.unit().offset() - dest_unit.offset())
@@ -5473,7 +4946,6 @@ namespace measures
     template <typename Num>
     dyn_unsigned_azimuth<Num> convert(Angle dest_unit, dyn_unsigned_azimuth<Num> m)
     {
-		ASSERT_IS_NUMERIC(Num)
         return dyn_unsigned_azimuth<Num>(dest_unit, static_cast<Num>(m.value()
             * (m.unit().ratio() / dest_unit.ratio())
             + (m.unit().offset() - dest_unit.offset())
@@ -5487,16 +4959,12 @@ namespace measures
     template <class Magnitude, typename ToNum, typename FromNum>
     dyn_vect1<Magnitude,ToNum> cast(dyn_vect1<Magnitude,FromNum> m)
     {
-		ASSERT_IS_NUMERIC(ToNum);
-		ASSERT_IS_NUMERIC(FromNum);
         return dyn_vect1<Magnitude,ToNum>(m.unit(), static_cast<ToNum>(m.value()));
     }
 
     template <class Magnitude, typename ToNum, typename FromNum>
     dyn_point1<Magnitude,ToNum> cast(dyn_point1<Magnitude,FromNum> m)
     {
-		ASSERT_IS_NUMERIC(ToNum);
-		ASSERT_IS_NUMERIC(FromNum);
         return dyn_point1<Magnitude,ToNum>(m.unit(), static_cast<ToNum>(m.value()));
     }
 
@@ -5504,8 +4972,6 @@ namespace measures
     template <class Magnitude, typename ToNum, typename FromNum>
     dyn_vect2<Magnitude,ToNum> cast(dyn_vect2<Magnitude,FromNum> m)
     {
-		ASSERT_IS_NUMERIC(ToNum);
-		ASSERT_IS_NUMERIC(FromNum);
         return dyn_vect2<Magnitude,ToNum>(m.unit(),
             cast<Magnitude,ToNum,FromNum>(m.x()),
             cast<Magnitude,ToNum,FromNum>(m.y()));
@@ -5514,8 +4980,6 @@ namespace measures
     template <class Magnitude, typename ToNum, typename FromNum>
     dyn_point2<Magnitude,ToNum> cast(dyn_point2<Magnitude,FromNum> m)
     {
-		ASSERT_IS_NUMERIC(ToNum);
-		ASSERT_IS_NUMERIC(FromNum);
         return dyn_point2<Magnitude,ToNum>(m.unit(),
             cast<Magnitude,ToNum,FromNum>(m.x()),
             cast<Magnitude,ToNum,FromNum>(m.y()));
@@ -5525,8 +4989,6 @@ namespace measures
     template <class Magnitude, typename ToNum, typename FromNum>
     dyn_vect3<Magnitude,ToNum> cast(dyn_vect3<Magnitude,FromNum> m)
     {
-		ASSERT_IS_NUMERIC(ToNum);
-		ASSERT_IS_NUMERIC(FromNum);
         return dyn_vect3<Magnitude,ToNum>(m.unit(),
             cast<Magnitude,ToNum,FromNum>(m.x()),
             cast<Magnitude,ToNum,FromNum>(m.y()),
@@ -5536,8 +4998,6 @@ namespace measures
     template <class Magnitude, typename ToNum, typename FromNum>
     dyn_point3<Magnitude,ToNum> cast(dyn_point3<Magnitude,FromNum> m)
     {
-		ASSERT_IS_NUMERIC(ToNum);
-		ASSERT_IS_NUMERIC(FromNum);
         return dyn_point3<Magnitude,ToNum>(m.unit(),
             cast<Magnitude,ToNum,FromNum>(m.x()),
             cast<Magnitude,ToNum,FromNum>(m.y()),
@@ -5548,16 +5008,12 @@ namespace measures
     template <typename ToNum, typename FromNum>
     dyn_signed_azimuth<ToNum> cast(dyn_signed_azimuth<FromNum> m)
     {
-		ASSERT_IS_NUMERIC(ToNum);
-		ASSERT_IS_NUMERIC(FromNum);
         return dyn_signed_azimuth<ToNum>(m.unit(), static_cast<ToNum>(m.value()));
     }
 
     template <typename ToNum, typename FromNum>
     dyn_unsigned_azimuth<ToNum> cast(dyn_unsigned_azimuth<FromNum> m)
     {
-		ASSERT_IS_NUMERIC(ToNum);
-		ASSERT_IS_NUMERIC(FromNum);
         return dyn_unsigned_azimuth<ToNum>(m.unit(), static_cast<ToNum>(m.value()));
     }
 }

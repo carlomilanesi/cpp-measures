@@ -352,5 +352,5 @@ namespace measures
 		o = dyn_unsigned_azimuth<Num>(o.unit(), v);
 		return is;
 	}
-};
+}
 #endif

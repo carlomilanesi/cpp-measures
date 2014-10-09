@@ -19,26 +19,27 @@ rem TODO program using several source files
 cl /nologo /EHsc /Fo..\gen\ /Fe..\gen\st_test_gen.exe st_test_gen.cpp
 ..\gen\st_test_gen.exe >..\gen\st_test_generated.cpp
 
+goto skip_vcpp_test
 echo.
 echo ==== Visual C++ static test ====
 set REDIRECTION_COMMAND="2>NUL >NUL"
 set COMPILER_VERSION_COMMAND=cl
-set COMPILER_BASE_ERRORS_COMMAND=cl /nologo /EHsc /Za /Zs /Fo..\gen\
-set COMPILER_BASE_WARNINGS_COMMAND=cl /nologo /EHsc /Za /Zs /W4 /WX /Fo..\gen\
+set COMPILER_BASE_ERRORS_COMMAND=cl /nologo /Za /Zs /Fo..\gen\
+set COMPILER_BASE_WARNINGS_COMMAND=cl /nologo /Za /Zs /W4 /WX /Fo..\gen\
 ..\gen\static_tester /t..\gen\ st_test_generated.cpp
 if errorlevel 1 goto test_errors
 del ..\gen\_* 2>NUL >NUL
+:skip_vcpp_test
 
 echo.
 echo ==== GCC static test ====
-set CYGWIN=nodosfilewarning
 set REDIRECTION_COMMAND="2>NUL >NUL"
 set COMPILER_VERSION_COMMAND=g++ --version
 rem SET COMPILER_BASE_ERRORS_COMMAND=g++ -std=c++11 -fsyntax-only -Wfatal-errors -pedantic
 set COMPILER_BASE_ERRORS_COMMAND=g++ -std=c++11 -Wfatal-errors -pedantic
 rem SET COMPILER_BASE_WARNINGS_COMMAND=g++ -std=c++11 -fsyntax-only -Wfatal-errors -pedantic -Werror
 set COMPILER_BASE_WARNINGS_COMMAND=g++ -std=c++11 -Wfatal-errors -pedantic -Werror
-..\gen\static_tester /t..\gen\ st_test_generated.cpp
+..\gen\static_tester /t../gen/ st_test_generated.cpp
 if errorlevel 1 goto test_errors
 del ..\gen\_* 2>NUL >NUL
 

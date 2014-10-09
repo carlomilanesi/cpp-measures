@@ -7,7 +7,7 @@ using namespace std;
 #include "measures_io.hpp"
 using namespace measures;
 
-DEFINE_MAGNITUDE(Length, metres, " m")
+DEFINE_MAGNITUDE(Space, metres, " m")
 DEFINE_ANGLE_UNIT(degrees, "°", 360, 0)
 DEFINE_ANGLE_UNIT(turns, " rev", 1, 0)
 #define AZIMUTH_TOLERANCE 0.00002f
@@ -1740,1689 +1740,10 @@ TYPED_TEST(measureTest, unsigned_azimuth)
 	}	
 }
 
-//// DYN
-
-TYPED_TEST(measureTest, dyn_vect1)
-{
-	auto epsilon = numeric_limits<TypeParam>::is_integer ?
-		1 : numeric_limits<TypeParam>::epsilon();
-	auto tolerance = dyn_vect1<Length,TypeParam>(metres::id(), epsilon * 2);
-	auto zero = dyn_vect1<Length,TypeParam>(metres::id(), 0);
-	
-	// Try several numeric values.
-	for (int i = 0; i < test_values<TypeParam>::count; ++i)
-	{
-		TypeParam val1 = test_values<TypeParam>::v[i];
-		TypeParam val2 = static_cast<TypeParam>(2.19);
-		TypeParam val3 = 3;
-		auto m1 = dyn_vect1<Length,TypeParam>(metres::id(), val1);
-		auto m2 = dyn_vect1<Length,TypeParam>(metres::id(), val2);
-
-		// Construction and "value".
-		EXPECT_EQ(val1, m1.value());
-		EXPECT_EQ(val2, m2.value());
-
-		// Operator +=.
-		// All test-values except the largest one,
-		// as it would cause overflow by incrementing.
-		if (i < test_values<TypeParam>::count - 1)
-		{
-			m1 = dyn_vect1<Length,TypeParam>(metres::id(), val1);
-			auto m3 = m1 += m2;
-			EXPECT_EQ(val1 + val2, m1.value());
-			EXPECT_EQ(val2, m2.value());
-			EXPECT_EQ(val1 + val2, m3.value());
-		}
-
-		// Operator -=.
-		// All test-values except the lowest one,
-		// as it would cause overflow by decrementing.
-		if (0 < i)
-		{
-			m1 = dyn_vect1<Length,TypeParam>(metres::id(), val1);
-			auto m3 = m1 -= m2;
-			EXPECT_EQ(val1 - val2, m1.value());
-			EXPECT_EQ(val2, m2.value());
-			EXPECT_EQ(val1 - val2, m3.value());
-		}
-
-		// Operator *=.
-		// All test-values except the lowest and the largest ones,
-		// as they would cause overflow by multiplying.
-		if (0 < i && i < test_values<TypeParam>::count - 1)
-		{
-			m1 = dyn_vect1<Length,TypeParam>(metres::id(), val1);
-			auto m3 = m1 *= val2;
-			EXPECT_EQ(val1 * val2, m1.value());
-			EXPECT_EQ(val1 * val2, m3.value());
-			auto m4 = m1 *= val3;
-			EXPECT_EQ(val1 * val2 * val3, m1.value());
-			EXPECT_EQ(val1 * val2 * val3, m4.value());
-		}
-		
-		// Operator /=.
-		// All test-values.
-		if (val2 != 0)
-		{
-			m1 = dyn_vect1<Length,TypeParam>(metres::id(), val1);
-			auto m3 = m1 /= val2;
-			EXPECT_EQ(val1 / val2, m1.value());
-			EXPECT_EQ(val1 / val2, m3.value());
-			if (val3 != 0)
-			{
-				auto m4 = m1 /= val3;
-				EXPECT_EQ(val1 / val2 / val3, m1.value());
-				EXPECT_EQ(val1 / val2 / val3, m4.value());
-			}
-		}
-
-		// Relational operators.
-		
-		// Comparing equal measures.
-		m1 = dyn_vect1<Length,TypeParam>(metres::id(), val1);
-		m2 = m1;
-		EXPECT_TRUE(m1 == m2);
-		EXPECT_FALSE(m1 != m2);
-		EXPECT_FALSE(m1 < m2);
-		EXPECT_TRUE(m1 <= m2);
-		EXPECT_FALSE(m1 > m2);
-		EXPECT_TRUE(m1 >= m2);
-		EXPECT_TRUE(is_equal(m1, m2, zero));
-		EXPECT_FALSE(is_less(m1, m2, zero));
-		EXPECT_TRUE(is_less_or_equal(m1, m2, zero));
-
-		// Comparing equal measures with a tolerance.
-		// Avoid extreme test-values with a non-zero tolerance,
-		// as they would cause overflow by incrementing or decrementing.
-		if (0 < i && i < test_values<TypeParam>::count - 1)
-		{
-			EXPECT_TRUE(is_equal(m1, m2, tolerance));
-			EXPECT_FALSE(is_less(m1, m2, tolerance));
-			EXPECT_TRUE(is_less_or_equal(m1, m2, tolerance));
-		}
-
-		// Comparing a measure with its half, if it is large,
-		// with its double if it is small.
-		if (m1.value() < -1 || m1.value() > 1) m2 /= 2;
-		else m1 *= 2;
-
-		// Consider separately positive and negative cases.
-		// Ignore zero case, as its half is the same as itself.
-		if (m2.value() > 0)
-		{
-			EXPECT_FALSE(m1 == m2);
-			EXPECT_TRUE(m1 != m2);
-			EXPECT_FALSE(m1 < m2);
-			EXPECT_FALSE(m1 <= m2);
-			EXPECT_TRUE(m1 > m2);
-			EXPECT_TRUE(m1 >= m2);
-			EXPECT_FALSE(is_equal(m1, m2, zero));
-			EXPECT_FALSE(is_less(m1, m2, zero));
-			EXPECT_FALSE(is_less_or_equal(m1, m2, zero));
-		}
-		else if (m2.value() < 0)
-		{
-			EXPECT_FALSE(m1 == m2);
-			EXPECT_TRUE(m1 != m2);
-			EXPECT_TRUE(m1 < m2);
-			EXPECT_TRUE(m1 <= m2);
-			EXPECT_FALSE(m1 > m2);
-			EXPECT_FALSE(m1 >= m2);
-			EXPECT_FALSE(is_equal(m1, m2, zero));
-			EXPECT_TRUE(is_less(m1, m2, zero));
-			EXPECT_TRUE(is_less_or_equal(m1, m2, zero));
-		}
-	}
-	
-	// Comparing 1 with a bit more than 1.
-	auto m3 = dyn_vect1<Length,TypeParam>(metres::id(), 1);
-	auto m4 = dyn_vect1<Length,TypeParam>(metres::id(), 1 + epsilon);
-	EXPECT_FALSE(m3 == m4);
-	EXPECT_TRUE(m3 != m4);
-	EXPECT_TRUE(m3 < m4);
-	EXPECT_TRUE(m3 <= m4);
-	EXPECT_FALSE(m3 > m4);
-	EXPECT_FALSE(m3 >= m4);
-	EXPECT_TRUE(is_equal(m3, m4, tolerance));
-	EXPECT_FALSE(is_less(m3, m4, tolerance));
-	EXPECT_TRUE(is_less_or_equal(m3, m4, tolerance));
-
-	// Comparing -1 with a bit less than -1.
-	auto m5 = dyn_vect1<Length,TypeParam>(metres::id(), -1);
-	auto m6 = dyn_vect1<Length,TypeParam>(metres::id(), -1 - epsilon);
-	EXPECT_FALSE(m5 == m6);
-	EXPECT_TRUE(m5 != m6);
-	EXPECT_FALSE(m5 < m6);
-	EXPECT_FALSE(m5 <= m6);
-	EXPECT_TRUE(m5 > m6);
-	EXPECT_TRUE(m5 >= m6);
-	EXPECT_TRUE(is_equal(m5, m6, tolerance));
-	EXPECT_FALSE(is_less(m5, m6, tolerance));
-	EXPECT_TRUE(is_less_or_equal(m5, m6, tolerance));
-
-	// Compare non-extreme numbers, far from zero,
-	// with a small tolerance or with a large tolerance.
-	auto m7 = dyn_vect1<Length,TypeParam>(metres::id(), 45);
-	auto m8 = dyn_vect1<Length,TypeParam>(metres::id(), 48);
-	auto tol1 = dyn_vect1<Length,TypeParam>(metres::id(), 2);
-	auto tol2 = dyn_vect1<Length,TypeParam>(metres::id(), 4);
-	EXPECT_FALSE(is_equal(m7, m8, tol1));
-	EXPECT_FALSE(is_equal(m8, m7, tol1));
-	EXPECT_TRUE(is_equal(m7, m8, tol2));
-	EXPECT_TRUE(is_equal(m8, m7, tol2));
-
-	EXPECT_TRUE(is_less(m7, m8, tol1));
-	EXPECT_FALSE(is_less(m8, m7, tol1));
-	EXPECT_FALSE(is_less(m7, m8, tol2));
-	EXPECT_FALSE(is_less(m8, m7, tol2));
-
-	EXPECT_TRUE(is_less_or_equal(m7, m8, tol1));
-	EXPECT_FALSE(is_less_or_equal(m8, m7, tol1));
-	EXPECT_TRUE(is_less_or_equal(m7, m8, tol2));
-	EXPECT_TRUE(is_less_or_equal(m8, m7, tol2));
-}
-
-TYPED_TEST(measureTest, dyn_point1)
-{
-	auto epsilon = numeric_limits<TypeParam>::is_integer ?
-		1 : numeric_limits<TypeParam>::epsilon();
-	auto tolerance = dyn_vect1<Length,TypeParam>(metres::id(), epsilon * 2);
-	auto zero = dyn_vect1<Length,TypeParam>(metres::id(), 0);
-	
-	// Try several numeric values.
-	for (int i = 0; i < test_values<TypeParam>::count; ++i)
-	{
-		TypeParam val1 = test_values<TypeParam>::v[i];
-		TypeParam val2 = static_cast<TypeParam>(2.19);
-		TypeParam val3 = 3;
-		auto m1 = dyn_point1<Length,TypeParam>(metres::id(), val1);
-		auto m2 = dyn_vect1<Length,TypeParam>(metres::id(), val2);
-
-		// Construction and "value".
-		EXPECT_EQ(val1, m1.value());
-		EXPECT_EQ(val2, m2.value());
-
-		// Operator +=.
-		// All test-values except the largest one,
-		// as it would cause overflow by incrementing.
-		if (i < test_values<TypeParam>::count - 1)
-		{
-			m1 = dyn_point1<Length,TypeParam>(metres::id(), val1);
-			auto m3 = m1 += m2;
-			EXPECT_EQ(val1 + val2, m1.value());
-			EXPECT_EQ(val1 + val2, m3.value());
-		}
-
-		// Operator -=.
-		// All test-values except the lowest one,
-		// as it would cause overflow by decrementing.
-		if (0 < i)
-		{
-			m1 = dyn_point1<Length,TypeParam>(metres::id(), val1);
-			auto m3 = m1 -= m2;
-			EXPECT_EQ(val1 - val2, m1.value());
-			EXPECT_EQ(val1 - val2, m3.value());
-		}
-
-		// Relational operators.
-		
-		// Comparing equal measures.
-		m1 = dyn_point1<Length,TypeParam>(metres::id(), val1);
-		auto m3 = m1;
-		EXPECT_TRUE(m1 == m3);
-		EXPECT_FALSE(m1 != m3);
-		EXPECT_FALSE(m1 < m3);
-		EXPECT_TRUE(m1 <= m3);
-		EXPECT_FALSE(m1 > m3);
-		EXPECT_TRUE(m1 >= m3);
-		EXPECT_TRUE(is_equal(m1, m3, zero));
-		EXPECT_FALSE(is_less(m1, m3, zero));
-		EXPECT_TRUE(is_less_or_equal(m1, m3, zero));
-
-		// Comparing equal measures with a tolerance.
-		// Avoid extreme test-values with a non-zero tolerance,
-		// as they would cause overflow by incrementing or decrementing.
-		if (0 < i && i < test_values<TypeParam>::count - 1)
-		{
-			EXPECT_TRUE(is_equal(m1, m3, tolerance));
-			EXPECT_FALSE(is_less(m1, m3, tolerance));
-			EXPECT_TRUE(is_less_or_equal(m1, m3, tolerance));
-		}
-
-		// Comparing a measure with its half.
-		m3 = dyn_point1<Length,TypeParam>(metres::id(), val1 / 2);
-		
-		// Consider separately positive and negative cases.
-		// Ignore zero case, as its half is the same as itself.
-		if (m1.value() > 0)
-		{
-			EXPECT_FALSE(m1 == m3);
-			EXPECT_TRUE(m1 != m3);
-			EXPECT_FALSE(m1 < m3);
-			EXPECT_FALSE(m1 <= m3);
-			EXPECT_TRUE(m1 > m3);
-			EXPECT_TRUE(m1 >= m3);
-			EXPECT_FALSE(is_equal(m1, m3, zero));
-			EXPECT_FALSE(is_less(m1, m3, zero));
-			EXPECT_FALSE(is_less_or_equal(m1, m3, zero));
-		}
-		else if (m1.value() > 0)
-		{
-			EXPECT_FALSE(m1 == m3);
-			EXPECT_TRUE(m1 != m3);
-			EXPECT_TRUE(m1 < m3);
-			EXPECT_TRUE(m1 <= m3);
-			EXPECT_FALSE(m1 > m3);
-			EXPECT_FALSE(m1 >= m3);
-			EXPECT_FALSE(is_equal(m1, m3, zero));
-			EXPECT_FALSE(is_less(m1, m3, zero));
-			EXPECT_FALSE(is_less_or_equal(m1, m3, zero));
-		}
-	}
-	
-	// Comparing 1 with a bit more than 1.
-	auto m3 = dyn_point1<Length,TypeParam>(metres::id(), 1);
-	auto m4 = dyn_point1<Length,TypeParam>(metres::id(), 1 + epsilon);
-	EXPECT_FALSE(m3 == m4);
-	EXPECT_TRUE(m3 != m4);
-	EXPECT_TRUE(m3 < m4);
-	EXPECT_TRUE(m3 <= m4);
-	EXPECT_FALSE(m3 > m4);
-	EXPECT_FALSE(m3 >= m4);
-	EXPECT_TRUE(is_equal(m3, m4, tolerance));
-	EXPECT_FALSE(is_less(m3, m4, tolerance));
-	EXPECT_TRUE(is_less_or_equal(m3, m4, tolerance));
-
-	// Comparing -1 with a bit less than -1.
-	auto m5 = dyn_point1<Length,TypeParam>(metres::id(), -1);
-	auto m6 = dyn_point1<Length,TypeParam>(metres::id(), -1 - epsilon);
-	EXPECT_FALSE(m5 == m6);
-	EXPECT_TRUE(m5 != m6);
-	EXPECT_FALSE(m5 < m6);
-	EXPECT_FALSE(m5 <= m6);
-	EXPECT_TRUE(m5 > m6);
-	EXPECT_TRUE(m5 >= m6);
-	EXPECT_TRUE(is_equal(m5, m6, tolerance));
-	EXPECT_FALSE(is_less(m5, m6, tolerance));
-	EXPECT_TRUE(is_less_or_equal(m5, m6, tolerance));
-
-	// Compare non-extreme numbers, far from zero,
-	// with a small tolerance or with a large tolerance.
-	auto m7 = dyn_point1<Length,TypeParam>(metres::id(), 45);
-	auto m8 = dyn_point1<Length,TypeParam>(metres::id(), 48);
-	auto tol1 = dyn_vect1<Length,TypeParam>(metres::id(), 2);
-	auto tol2 = dyn_vect1<Length,TypeParam>(metres::id(), 4);
-	EXPECT_FALSE(is_equal(m7, m8, tol1));
-	EXPECT_FALSE(is_equal(m8, m7, tol1));
-	EXPECT_TRUE(is_equal(m7, m8, tol2));
-	EXPECT_TRUE(is_equal(m8, m7, tol2));
-
-	EXPECT_TRUE(is_less(m7, m8, tol1));
-	EXPECT_FALSE(is_less(m8, m7, tol1));
-	EXPECT_FALSE(is_less(m7, m8, tol2));
-	EXPECT_FALSE(is_less(m8, m7, tol2));
-
-	EXPECT_TRUE(is_less_or_equal(m7, m8, tol1));
-	EXPECT_FALSE(is_less_or_equal(m8, m7, tol1));
-	EXPECT_TRUE(is_less_or_equal(m7, m8, tol2));
-	EXPECT_TRUE(is_less_or_equal(m8, m7, tol2));
-}
-
-TYPED_TEST(measureTest, dyn_vectpoint1)
-{
-
-	// Midpoint.
-	// Try all pairs of numeric values except extremes.
-	for (int i1 = 1; i1 < test_values<TypeParam>::count - 1; ++i1)
-	{
-		TypeParam val1 = test_values<TypeParam>::v[i1];
-		auto m1 = dyn_point1<Length,TypeParam>(metres::id(), val1);
-		for (int i2 = 1; i2 < test_values<TypeParam>::count - 1; ++i2)
-		{
-			TypeParam val2 = test_values<TypeParam>::v[i2];
-			auto m2 = dyn_point1<Length,TypeParam>(metres::id(), val2);
-			EXPECT_FLOAT_EQ((val1 + val2) * 0.5f, midpoint(m1, m2, 0.5f).value());
-			EXPECT_FLOAT_EQ(val1, midpoint(m1, m2, 0).value());
-			EXPECT_FLOAT_EQ(val2, midpoint(m1, m2, 1).value());
-			EXPECT_FLOAT_EQ(val1 * (1 - 0.23f) + val2 * 0.23f, midpoint(m1, m2, 0.23f).value());
-		}
-	}
-
-	// Barycentric combination.
-	// Try all pairs of numeric values except extremes,
-	// and add some other points.
-	for (int i1 = 1; i1 < test_values<TypeParam>::count - 1; ++i1)
-	{
-		TypeParam val1 = test_values<TypeParam>::v[i1];
-		auto m1 = dyn_point1<Length,TypeParam>(metres::id(), val1);
-		for (int i2 = 1; i2 < test_values<TypeParam>::count - 1; ++i2)
-		{
-			TypeParam val2 = test_values<TypeParam>::v[i2];
-			auto m2 = dyn_point1<Length,TypeParam>(metres::id(), val2);
-			TypeParam val3 = 3;
-			auto m3 = dyn_point1<Length,TypeParam>(metres::id(), val3);
-			TypeParam val4 = 4;
-			auto m4 = dyn_point1<Length,TypeParam>(metres::id(), val4);
-			dyn_point1<Length,TypeParam> point1array[] = { m1, m2, m3, m4 };
-			TypeParam weights[] = { 2, 3, 7, 4 };
-			EXPECT_FLOAT_EQ(val1 * weights[0],
-				barycentric_combination(1, point1array, weights).value());
-			EXPECT_FLOAT_EQ(val1 * weights[0] + val2 * weights[1],
-				barycentric_combination(2, point1array, weights).value());
-			EXPECT_FLOAT_EQ(val1 * weights[0] + val2 * weights[1]
-				+ val3 * weights[2],
-				barycentric_combination(3, point1array, weights).value());
-			EXPECT_FLOAT_EQ(val1 * weights[0] + val2 * weights[1]
-				+ val3 * weights[2] + val4 * weights[3],
-				barycentric_combination(4, point1array, weights).value());
-		}
-	}
-	
-	// Try all pairs of numeric values except extremes.
-	TypeParam sqroot_of_max = static_cast<TypeParam>(sqrt(test_values<TypeParam>
-		::v[test_values<TypeParam>::count - 1]));
-	for (int i1 = 1; i1 < test_values<TypeParam>::count - 1; ++i1)
-	{
-		TypeParam val1 = test_values<TypeParam>::v[i1];
-		auto v1 = dyn_vect1<Length,TypeParam>(metres::id(), val1);
-		auto p1 = dyn_point1<Length,TypeParam>(metres::id(), val1);
-		for (int i2 = 1; i2 < test_values<TypeParam>::count - 1; ++i2)
-		{
-			TypeParam val2 = test_values<TypeParam>::v[i2];
-			auto v2 = dyn_vect1<Length,TypeParam>(metres::id(), val2);
-			auto p2 = dyn_point1<Length,TypeParam>(metres::id(), val2);
-
-			// dyn_point1 - dyn_point1 -> dyn_vect1
-			EXPECT_EQ(val1 - val2, (p1 - p2).value());
-
-			// dyn_point1 + dyn_vect1 -> dyn_point1
-			EXPECT_EQ(val1 + val2, (p1 + v2).value());
-
-			// dyn_point1 - dyn_vect1 -> dyn_point1
-			EXPECT_EQ(val1 - val2, (p1 - v2).value());
-
-			// dyn_vect1 + dyn_vect1 -> dyn_vect1
-			EXPECT_EQ(val1 + val2, (v1 + v2).value());
-
-			// dyn_vect1 - dyn_vect1 -> dyn_vect1
-			EXPECT_EQ(val1 - val2, (v1 - v2).value());
-			
-			if (abs(val1) < sqroot_of_max && abs(val2) < sqroot_of_max)
-			{
-				// N * dyn_vect1 -> dyn_vect1
-				EXPECT_EQ(val1 * val2, (val1 * v2).value());
-
-				// dyn_vect1 * N -> dyn_vect1
-				EXPECT_EQ(val1 * val2, (v1 * val2).value());
-			}
-			
-			// dyn_vect1 / N -> dyn_vect1
-			if (val2 != 0) EXPECT_EQ(val1 / val2, (v1 / val2).value());
-
-			// dyn_vect1 / dyn_vect1 -> N
-			if (val2 != 0) EXPECT_EQ(val1 / val2, v1 / v2);
-		}
-	}
-	
-	for (int i = 2; i < test_values<TypeParam>::count - 2; ++i)
-	{
-		TypeParam val1 = test_values<TypeParam>::v[i];
-		auto m1 = dyn_vect1<Length,TypeParam>(metres::id(), val1);
-		if (abs(val1) < sqroot_of_max)
-		{
-			EXPECT_EQ(val1 * val1, squared_norm_value(m1));
-		}
-		EXPECT_EQ(abs(val1), norm(m1).value());
-	}
-}
-
-//////////////////////////////////////////////////////////////////////
-TYPED_TEST(measureTest, dyn_vect2)
-{
-	auto epsilon = numeric_limits<TypeParam>::is_integer ?
-		1 : numeric_limits<TypeParam>::epsilon();
-	auto tolerance = dyn_vect1<Length,TypeParam>(metres::id(), epsilon * 2);
-	auto zero = dyn_vect1<Length,TypeParam>(metres::id(), 0);
-	
-	// Try several numeric values.
-	for (int i = 0; i < test_values<TypeParam>::count; ++i)
-	{
-		TypeParam val1x = test_values<TypeParam>::v[i];
-
-		// Try several numeric values.
-		for (int j = 0; j < test_values<TypeParam>::count; ++j)
-		{
-			TypeParam val1y = test_values<TypeParam>::v[j];
-			TypeParam val2 = static_cast<TypeParam>(2.19);
-			TypeParam val2x = static_cast<TypeParam>(2.27);
-			TypeParam val2y = static_cast<TypeParam>(2.13);
-			TypeParam val3 = 3;
-			auto m1 = dyn_vect2<Length,TypeParam>(metres::id(), val1x, val1y);
-			auto m2 = dyn_vect2<Length,TypeParam>(metres::id(), val2x, val2y);
-
-			// Construction and "value".
-			EXPECT_EQ(val1x, m1.x().value());
-			EXPECT_EQ(val1y, m1.y().value());
-			EXPECT_EQ(val2x, m2.x().value());
-			EXPECT_EQ(val2y, m2.y().value());
-
-			// Operator +=.
-			// All test-values except the largest one,
-			// as it would cause overflow by incrementing.
-			if (i < test_values<TypeParam>::count - 1
-				&& j < test_values<TypeParam>::count - 1)
-			{
-				m1 = dyn_vect2<Length,TypeParam>(metres::id(), val1x, val1y);
-				auto m3 = m1 += m2;
-				EXPECT_EQ(val1x + val2x, m1.x().value());
-				EXPECT_EQ(val1y + val2y, m1.y().value());
-				EXPECT_EQ(val2x, m2.x().value());
-				EXPECT_EQ(val2y, m2.y().value());
-				EXPECT_EQ(val1x + val2x, m3.x().value());
-				EXPECT_EQ(val1y + val2y, m3.y().value());
-			}
-
-			// Operator -=.
-			// All test-values except the lowest one,
-			// as it would cause overflow by decrementing.
-			if (0 < i && 0 < j)
-			{
-				m1 = dyn_vect2<Length,TypeParam>(metres::id(), val1x, val1y);
-				auto m3 = m1 -= m2;
-				EXPECT_EQ(val1x - val2x, m1.x().value());
-				EXPECT_EQ(val1y - val2y, m1.y().value());
-				EXPECT_EQ(val2x, m2.x().value());
-				EXPECT_EQ(val2y, m2.y().value());
-				EXPECT_EQ(val1x - val2x, m3.x().value());
-				EXPECT_EQ(val1y - val2y, m3.y().value());
-			}
-
-			// Operator *=.
-			// All test-values except the lowest and the largest ones,
-			// as they would cause overflow by multiplying.
-			if (0 < i && i < test_values<TypeParam>::count - 1
-				&& 0 < j && j < test_values<TypeParam>::count - 1)
-			{
-				m1 = dyn_vect2<Length,TypeParam>(metres::id(), val1x, val1y);
-				auto m3 = m1 *= val2;
-				EXPECT_EQ(val1x * val2, m1.x().value());
-				EXPECT_EQ(val1y * val2, m1.y().value());
-				EXPECT_EQ(val1x * val2, m3.x().value());
-				EXPECT_EQ(val1y * val2, m3.y().value());
-				auto m4 = m1 *= val3;
-				EXPECT_EQ(val1x * val2 * val3, m1.x().value());
-				EXPECT_EQ(val1y * val2 * val3, m1.y().value());
-				EXPECT_EQ(val1x * val2 * val3, m4.x().value());
-				EXPECT_EQ(val1y * val2 * val3, m4.y().value());
-			}
-			
-			// Operator /=.
-			// All test-values.
-			if (val2 != 0)
-			{
-				m1 = dyn_vect2<Length,TypeParam>(metres::id(), val1x, val1y);
-				auto m3 = m1 /= val2;
-				EXPECT_EQ(val1x / val2, m1.x().value());
-				EXPECT_EQ(val1y / val2, m1.y().value());
-				EXPECT_EQ(val1x / val2, m3.x().value());
-				EXPECT_EQ(val1y / val2, m3.y().value());
-				if (val3 != 0)
-				{
-					auto m4 = m1 /= val3;
-					EXPECT_EQ(val1x / val2 / val3, m1.x().value());
-					EXPECT_EQ(val1y / val2 / val3, m1.y().value());
-					EXPECT_EQ(val1x / val2 / val3, m4.x().value());
-					EXPECT_EQ(val1y / val2 / val3, m4.y().value());
-				}
-			}
-
-			// Relational operators.
-
-			// Comparing equal measures.
-			m1 = dyn_vect2<Length,TypeParam>(metres::id(), val1x, val1y);
-			m2 = m1;
-			EXPECT_TRUE(m1 == m2);
-			EXPECT_FALSE(m1 != m2);
-
-			// All test-values except the two lowest and the two largest ones,
-			// as they would cause overflow by squaring.
-			if (2 <= i && i < test_values<TypeParam>::count - 2
-				&& 2 <= j && j < test_values<TypeParam>::count - 2)
-			{
-				EXPECT_TRUE(is_equal(m1, m2, zero));
-				EXPECT_TRUE(is_equal(m1, m2, tolerance));
-
-				// Comparing a measure with its half, if it is large,
-				// with its double if it is small.
-				if (abs(m2.x().value()) >= MIN_THRESHOLD)
-				{
-					if (squared_norm_value(m2) > 1) m2 /= 2;
-					else m1 *= 2;
-					EXPECT_FALSE(m1 == m2);
-					EXPECT_TRUE(m1 != m2);
-					EXPECT_FALSE(is_equal(m1, m2, zero));
-				}
-			}
-		}
-	}
-
-	// Comparing 1 with a bit more than 1.
-	auto m3 = dyn_vect2<Length,TypeParam>(metres::id(), 1, 1);
-	auto m4 = dyn_vect2<Length,TypeParam>(metres::id(), 1 + epsilon, 1 + epsilon);
-	EXPECT_FALSE(m3 == m4);
-	EXPECT_TRUE(m3 != m4);
-	EXPECT_TRUE(is_equal(m3, m4, tolerance));
-
-	// Comparing -1 with a bit less than -1.
-	auto m5 = dyn_vect2<Length,TypeParam>(metres::id(), -1, -1);
-	auto m6 = dyn_vect2<Length,TypeParam>(metres::id(), -1 - epsilon, -1 - epsilon);
-	EXPECT_FALSE(m5 == m6);
-	EXPECT_TRUE(m5 != m6);
-	EXPECT_TRUE(is_equal(m5, m6, tolerance));
-
-	// Compare non-extreme numbers, far from zero,
-	// with a small tolerance or with a large tolerance.
-	auto m7 = dyn_vect2<Length,TypeParam>(metres::id(), 4, 4);
-	auto m8 = dyn_vect2<Length,TypeParam>(metres::id(), 8, 8);
-	auto tol1 = dyn_vect1<Length,TypeParam>(metres::id(), 5);
-	auto tol2 = dyn_vect1<Length,TypeParam>(metres::id(), 6);
-	EXPECT_FALSE(is_equal(m7, m8, tol1));
-	EXPECT_FALSE(is_equal(m8, m7, tol1));
-	EXPECT_TRUE(is_equal(m7, m8, tol2));
-	EXPECT_TRUE(is_equal(m8, m7, tol2));
-}
-
-TYPED_TEST(measureTest, dyn_point2)
-{
-	auto epsilon = numeric_limits<TypeParam>::is_integer ?
-		1 : numeric_limits<TypeParam>::epsilon();
-	auto tolerance = dyn_vect1<Length,TypeParam>(metres::id(), epsilon * 2);
-	auto zero = dyn_vect1<Length,TypeParam>(metres::id(), 0);
-	
-	// Try several numeric values.
-	for (int i = 0; i < test_values<TypeParam>::count; ++i)
-	{
-		TypeParam val1x = test_values<TypeParam>::v[i];
-
-		// Try several numeric values.
-		for (int j = 0; j < test_values<TypeParam>::count; ++j)
-		{
-			TypeParam val1y = test_values<TypeParam>::v[j];
-			TypeParam val2 = static_cast<TypeParam>(2.19);
-			TypeParam val2x = static_cast<TypeParam>(2.27);
-			TypeParam val2y = static_cast<TypeParam>(2.13);
-			TypeParam val3 = 3;
-			auto m1 = dyn_point2<Length,TypeParam>(metres::id(), val1x, val1y);
-			auto m2 = dyn_vect2<Length,TypeParam>(metres::id(), val2x, val2y);
-
-			// Construction and "value".
-			EXPECT_EQ(val1x, m1.x().value());
-			EXPECT_EQ(val1y, m1.y().value());
-			EXPECT_EQ(val2x, m2.x().value());
-			EXPECT_EQ(val2y, m2.y().value());
-
-			// Operator +=.
-			// All test-values except the largest one,
-			// as it would cause overflow by incrementing.
-			if (i < test_values<TypeParam>::count - 1
-				&& j < test_values<TypeParam>::count - 1)
-			{
-				m1 = dyn_point2<Length,TypeParam>(metres::id(), val1x, val1y);
-				auto m3 = m1 += m2;
-				EXPECT_EQ(val1x + val2x, m1.x().value());
-				EXPECT_EQ(val1y + val2y, m1.y().value());
-				EXPECT_EQ(val2x, m2.x().value());
-				EXPECT_EQ(val2y, m2.y().value());
-				EXPECT_EQ(val1x + val2x, m3.x().value());
-				EXPECT_EQ(val1y + val2y, m3.y().value());
-			}
-
-			// Operator -=.
-			// All test-values except the lowest one,
-			// as it would cause overflow by decrementing.
-			if (0 < i && 0 < j)
-			{
-				m1 = dyn_point2<Length,TypeParam>(metres::id(), val1x, val1y);
-				auto m3 = m1 -= m2;
-				EXPECT_EQ(val1x - val2x, m1.x().value());
-				EXPECT_EQ(val1y - val2y, m1.y().value());
-				EXPECT_EQ(val2x, m2.x().value());
-				EXPECT_EQ(val2y, m2.y().value());
-				EXPECT_EQ(val1x - val2x, m3.x().value());
-				EXPECT_EQ(val1y - val2y, m3.y().value());
-			}
-
-			// Relational operators.
-
-			// Comparing equal measures.
-			m1 = dyn_point2<Length,TypeParam>(metres::id(), val1x, val1y);
-			auto m3 = m1;
-			EXPECT_TRUE(m1 == m3);
-			EXPECT_FALSE(m1 != m3);
-
-			// All test-values except the two lowest and the two largest ones,
-			// as they would cause overflow by squaring.
-			if (2 <= i && i < test_values<TypeParam>::count - 2
-				&& 2 <= j && j < test_values<TypeParam>::count - 2)
-			{
-				EXPECT_TRUE(is_equal(m1, m3, zero));
-				EXPECT_TRUE(is_equal(m1, m3, tolerance));
-
-				// Comparing a measure with its half, if it is large,
-				// with its double if it is small.
-				if (abs(m3.x().value()) >= MIN_THRESHOLD)
-				{
-					if (abs(m3.x().value()) + abs(m3.y().value()) > 2)
-						m3 = dyn_point2<Length,TypeParam>(metres::id(), m3.x().value() / 2, m3.y().value() / 2);
-					else m1 = dyn_point2<Length,TypeParam>(metres::id(), m1.x().value() * 2, m1.y().value() * 2);
-					EXPECT_FALSE(m1 == m3);
-					EXPECT_TRUE(m1 != m3);					
-					EXPECT_FALSE(is_equal(m1, m3, zero));
-				}
-			}
-		}
-	}
-
-	// Comparing 1 with a bit more than 1.
-	auto m3 = dyn_point2<Length,TypeParam>(metres::id(), 1, 1);
-	auto m4 = dyn_point2<Length,TypeParam>(metres::id(), 1 + epsilon, 1 + epsilon);
-	EXPECT_FALSE(m3 == m4);
-	EXPECT_TRUE(m3 != m4);
-	EXPECT_TRUE(is_equal(m3, m4, tolerance));
-
-	// Comparing -1 with a bit less than -1.
-	auto m5 = dyn_point2<Length,TypeParam>(metres::id(), -1, -1);
-	auto m6 = dyn_point2<Length,TypeParam>(metres::id(), -1 - epsilon, -1 - epsilon);
-	EXPECT_FALSE(m5 == m6);
-	EXPECT_TRUE(m5 != m6);
-	EXPECT_TRUE(is_equal(m5, m6, tolerance));
-
-	// Compare non-extreme numbers, far from zero,
-	// with a small tolerance or with a large tolerance.
-	auto m7 = dyn_point2<Length,TypeParam>(metres::id(), 4, 4);
-	auto m8 = dyn_point2<Length,TypeParam>(metres::id(), 8, 8);
-	auto tol1 = dyn_vect1<Length,TypeParam>(metres::id(), 5);
-	auto tol2 = dyn_vect1<Length,TypeParam>(metres::id(), 6);
-	EXPECT_FALSE(is_equal(m7, m8, tol1));
-	EXPECT_FALSE(is_equal(m8, m7, tol1));
-	EXPECT_TRUE(is_equal(m7, m8, tol2));
-	EXPECT_TRUE(is_equal(m8, m7, tol2));
-}
-
-TYPED_TEST(measureTest, dyn_vectpoint2)
-{
-	// Midpoint.
-	// Try all pairs of pairs of numeric values except extremes.
-	for (int i1 = 1; i1 < test_values<TypeParam>::count - 1; ++i1)
-	{
-		TypeParam val1x = test_values<TypeParam>::v[i1];
-		for (int j1 = 1; j1 < test_values<TypeParam>::count - 1; ++j1)
-		{
-			TypeParam val1y = test_values<TypeParam>::v[j1];
-			auto m1 = dyn_point2<Length,TypeParam>(metres::id(), val1x, val1y);
-
-			for (int i2 = 1; i2 < test_values<TypeParam>::count - 1; ++i2)
-			{
-				TypeParam val2x = test_values<TypeParam>::v[i2];
-				for (int j2 = 1; j2 < test_values<TypeParam>::count - 1; ++j2)
-				{
-					TypeParam val2y = test_values<TypeParam>::v[j2];
-					auto m2 = dyn_point2<Length,TypeParam>(metres::id(), val2x, val2y);
-					
-					EXPECT_FLOAT_EQ((val1x + val2x) * 0.5f, midpoint(m1, m2, 0.5f).x().value());
-					EXPECT_FLOAT_EQ((val1y + val2y) * 0.5f, midpoint(m1, m2, 0.5f).y().value());
-					EXPECT_FLOAT_EQ(val1x, midpoint(m1, m2, 0).x().value());
-					EXPECT_FLOAT_EQ(val1y, midpoint(m1, m2, 0).y().value());
-					EXPECT_FLOAT_EQ(val2x, midpoint(m1, m2, 1).x().value());
-					EXPECT_FLOAT_EQ(val2y, midpoint(m1, m2, 1).y().value());
-					EXPECT_FLOAT_EQ(val1x * (1 - 0.23f) + val2x * 0.23f, midpoint(m1, m2, 0.23f).x().value());
-					EXPECT_FLOAT_EQ(val1y * (1 - 0.23f) + val2y * 0.23f, midpoint(m1, m2, 0.23f).y().value());
-				}
-			}
-		}
-	}
-
-	// Barycentric combination.
-	// Try all pairs of pairs of numeric values except extremes,
-	// and add some other points.
-	for (int i1 = 1; i1 < test_values<TypeParam>::count - 1; ++i1)
-	{
-		TypeParam val1x = test_values<TypeParam>::v[i1];
-		for (int j1 = 1; j1 < test_values<TypeParam>::count - 1; ++j1)
-		{
-			TypeParam val1y = test_values<TypeParam>::v[j1];
-			auto m1 = dyn_point2<Length,TypeParam>(metres::id(), val1x, val1y);
-			for (int i2 = 1; i2 < test_values<TypeParam>::count - 1; ++i2)
-			{
-				TypeParam val2x = test_values<TypeParam>::v[i2];
-				for (int j2 = 1; j2 < test_values<TypeParam>::count - 1; ++j2)
-				{
-					TypeParam val2y = test_values<TypeParam>::v[j2];
-					auto m2 = dyn_point2<Length,TypeParam>(metres::id(), val2x, val2y);
-
-					TypeParam val3x = static_cast<TypeParam>(3.1);
-					TypeParam val3y = static_cast<TypeParam>(3.2);
-					auto m3 = dyn_point2<Length,TypeParam>(metres::id(), val3x, val3y);
-					TypeParam val4x = static_cast<TypeParam>(4.3);
-					TypeParam val4y = static_cast<TypeParam>(4.4);
-					auto m4 = dyn_point2<Length,TypeParam>(metres::id(), val4x, val4y);
-					dyn_point2<Length,TypeParam> point2array[] = { m1, m2, m3, m4 };
-					TypeParam weights[] = { 2, 3, 7, 4 };
-					EXPECT_FLOAT_EQ(val1x * weights[0],
-						barycentric_combination(1, point2array, weights).x().value());
-					EXPECT_FLOAT_EQ(val1y * weights[0],
-						barycentric_combination(1, point2array, weights).y().value());
-					EXPECT_FLOAT_EQ(val1x * weights[0] + val2x * weights[1],
-						barycentric_combination(2, point2array, weights).x().value());
-					EXPECT_FLOAT_EQ(val1y * weights[0] + val2y * weights[1],
-						barycentric_combination(2, point2array, weights).y().value());
-					EXPECT_FLOAT_EQ(val1x * weights[0] + val2x * weights[1]
-						+ val3x * weights[2],
-						barycentric_combination(3, point2array, weights).x().value());
-					EXPECT_FLOAT_EQ(val1y * weights[0] + val2y * weights[1]
-						+ val3y * weights[2],
-						barycentric_combination(3, point2array, weights).y().value());
-					EXPECT_FLOAT_EQ(val1x * weights[0] + val2x * weights[1]
-						+ val3x * weights[2] + val4x * weights[3],
-						barycentric_combination(4, point2array, weights).x().value());
-					EXPECT_FLOAT_EQ(val1y * weights[0] + val2y * weights[1]
-						+ val3y * weights[2] + val4y * weights[3],
-						barycentric_combination(4, point2array, weights).y().value());
-				}
-			}
-		}
-	}
-	
-	// Try all pairs of pairs of numeric values except extremes.
-	TypeParam sqroot_of_max = static_cast<TypeParam>(sqrt(test_values<TypeParam>
-		::v[test_values<TypeParam>::count - 1]));
-	for (int i1 = 1; i1 < test_values<TypeParam>::count - 1; ++i1)
-	{
-		TypeParam val1x = test_values<TypeParam>::v[i1];
-		for (int j1 = 1; j1 < test_values<TypeParam>::count - 1; ++j1)
-		{
-			TypeParam val1y = test_values<TypeParam>::v[j1];
-			auto v1 = dyn_vect2<Length,TypeParam>(metres::id(), val1x, val1y);
-			auto p1 = dyn_point2<Length,TypeParam>(metres::id(), val1x, val1y);
-
-			for (int i2 = 1; i2 < test_values<TypeParam>::count - 1; ++i2)
-			{
-				TypeParam val2x = test_values<TypeParam>::v[i2];
-				for (int j2 = 1; j2 < test_values<TypeParam>::count - 1; ++j2)
-				{
-					TypeParam val2y = test_values<TypeParam>::v[j2];
-					auto v2 = dyn_vect2<Length,TypeParam>(metres::id(), val2x, val2y);
-					auto p2 = dyn_point2<Length,TypeParam>(metres::id(), val2x, val2y);
-
-					// dyn_point2 - dyn_point2 -> dyn_vect2
-					EXPECT_EQ(val1x - val2x, (p1 - p2).x().value());
-					EXPECT_EQ(val1y - val2y, (p1 - p2).y().value());
-
-					// dyn_point2 + dyn_vect2 -> dyn_point2
-					EXPECT_EQ(val1x + val2x, (p1 + v2).x().value());
-					EXPECT_EQ(val1y + val2y, (p1 + v2).y().value());
-
-					// dyn_point2 - dyn_vect2 -> dyn_point2
-					EXPECT_EQ(val1x - val2x, (p1 - v2).x().value());
-					EXPECT_EQ(val1y - val2y, (p1 - v2).y().value());
-
-					// dyn_vect2 + dyn_vect2 -> dyn_vect2
-					EXPECT_EQ(val1x + val2x, (v1 + v2).x().value());
-					EXPECT_EQ(val1y + val2y, (v1 + v2).y().value());
-
-					// dyn_vect2 - dyn_vect2 -> dyn_vect2
-					EXPECT_EQ(val1x - val2x, (v1 - v2).x().value());
-					EXPECT_EQ(val1y - val2y, (v1 - v2).y().value());
-					
-					if (abs(val1x) < sqroot_of_max && abs(val2x) < sqroot_of_max)
-					{
-						// N * dyn_vect2 -> dyn_vect2
-						EXPECT_EQ(val1x * val2x, (val1x * v2).x().value());
-
-						// dyn_vect2 * N -> dyn_vect2
-						EXPECT_EQ(val1x * val2x, (v1 * val2x).x().value());
-					}
-					
-					if (abs(val1y) < sqroot_of_max && abs(val2y) < sqroot_of_max)
-					{
-						// N * dyn_vect2 -> dyn_vect2
-						EXPECT_EQ(val1y * val2y, (val1y * v2).y().value());
-
-						// dyn_vect2 * N -> dyn_vect2
-						EXPECT_EQ(val1y * val2y, (v1 * val2y).y().value());
-					}
-					
-					// dyn_vect2 / N -> dyn_vect2
-					if (val2x != 0) EXPECT_EQ(val1x / val2x, (v1 / val2x).x().value());
-					if (val2y != 0) EXPECT_EQ(val1y / val2y, (v1 / val2y).y().value());
-				}
-			}
-		}
-	}
-	
-	for (int i = 2; i < test_values<TypeParam>::count - 2; ++i)
-	{
-		for (int j = 2; j < test_values<TypeParam>::count - 2; ++j)
-		{
-			TypeParam val1x = test_values<TypeParam>::v[i];
-			TypeParam val1y = test_values<TypeParam>::v[j];
-			auto m1 = dyn_vect2<Length,TypeParam>(metres::id(), val1x, val1y);
-			if (abs(val1x) < sqroot_of_max && abs(val1y) < sqroot_of_max)
-			{
-				EXPECT_FLOAT_EQ(val1x * val1x + val1y * val1y, squared_norm_value(m1));
-				EXPECT_FLOAT_EQ(static_cast<TypeParam>(
-					sqrt(val1x * val1x + val1y * val1y)), norm(m1).value());
-			}
-		}
-	}
-}
-
-TYPED_TEST(measureTest, dyn_vect3)
-{
-	auto epsilon = numeric_limits<TypeParam>::is_integer ?
-		1 : numeric_limits<TypeParam>::epsilon();
-	auto tolerance = dyn_vect1<Length,TypeParam>(metres::id(), epsilon * 2);
-	auto zero = dyn_vect1<Length,TypeParam>(metres::id(), 0);
-	
-	// Try several numeric values.
-	for (int i = 0; i < test_values<TypeParam>::count; ++i)
-	{
-		TypeParam val1x = test_values<TypeParam>::v[i];
-
-		// Try several numeric values.
-		for (int j = 0; j < test_values<TypeParam>::count; ++j)
-		{
-			TypeParam val1y = test_values<TypeParam>::v[j];
-
-			// Try several numeric values.
-			for (int k = 0; k < test_values<TypeParam>::count; ++k)
-			{
-				TypeParam val1z = test_values<TypeParam>::v[k];
-				TypeParam val2 = static_cast<TypeParam>(2.19);
-				TypeParam val2x = static_cast<TypeParam>(2.27);
-				TypeParam val2y = static_cast<TypeParam>(2.13);
-				TypeParam val2z = static_cast<TypeParam>(2.15);
-				TypeParam val3 = 3;
-				auto m1 = dyn_vect3<Length,TypeParam>(metres::id(), val1x, val1y, val1z);
-				auto m2 = dyn_vect3<Length,TypeParam>(metres::id(), val2x, val2y, val2z);
-
-				// Construction and "value".
-				EXPECT_EQ(val1x, m1.x().value());
-				EXPECT_EQ(val1y, m1.y().value());
-				EXPECT_EQ(val1z, m1.z().value());
-				EXPECT_EQ(val2x, m2.x().value());
-				EXPECT_EQ(val2y, m2.y().value());
-				EXPECT_EQ(val2z, m2.z().value());
-
-				// Operator +=.
-				// All test-values except the largest one,
-				// as it would cause overflow by incrementing.
-				if (i < test_values<TypeParam>::count - 1
-					&& j < test_values<TypeParam>::count - 1
-					&& k < test_values<TypeParam>::count - 1)
-				{
-					m1 = dyn_vect3<Length,TypeParam>(metres::id(), val1x, val1y, val1z);
-					auto m3 = m1 += m2;
-					EXPECT_EQ(val1x + val2x, m1.x().value());
-					EXPECT_EQ(val1y + val2y, m1.y().value());
-					EXPECT_EQ(val1z + val2z, m1.z().value());
-					EXPECT_EQ(val2x, m2.x().value());
-					EXPECT_EQ(val2y, m2.y().value());
-					EXPECT_EQ(val2z, m2.z().value());
-					EXPECT_EQ(val1x + val2x, m3.x().value());
-					EXPECT_EQ(val1y + val2y, m3.y().value());
-					EXPECT_EQ(val1z + val2z, m3.z().value());
-				}
-
-				// Operator -=.
-				// All test-values except the lowest one,
-				// as it would cause overflow by decrementing.
-				if (0 < i && 0 < j && 0 < k)
-				{
-					m1 = dyn_vect3<Length,TypeParam>(metres::id(), val1x, val1y, val1z);
-					auto m3 = m1 -= m2;
-					EXPECT_EQ(val1x - val2x, m1.x().value());
-					EXPECT_EQ(val1y - val2y, m1.y().value());
-					EXPECT_EQ(val1z - val2z, m1.z().value());
-					EXPECT_EQ(val2x, m2.x().value());
-					EXPECT_EQ(val2y, m2.y().value());
-					EXPECT_EQ(val2z, m2.z().value());
-					EXPECT_EQ(val1x - val2x, m3.x().value());
-					EXPECT_EQ(val1y - val2y, m3.y().value());
-					EXPECT_EQ(val1z - val2z, m3.z().value());
-				}
-
-				// Operator *=.
-				// All test-values except the lowest and the largest ones,
-				// as they would cause overflow by multiplying.
-				if (0 < i && i < test_values<TypeParam>::count - 1
-					&& 0 < j && j < test_values<TypeParam>::count - 1
-					&& 0 < k && k < test_values<TypeParam>::count - 1)
-				{
-					m1 = dyn_vect3<Length,TypeParam>(metres::id(), val1x, val1y, val1z);
-					auto m3 = m1 *= val2;
-					EXPECT_EQ(val1x * val2, m1.x().value());
-					EXPECT_EQ(val1y * val2, m1.y().value());
-					EXPECT_EQ(val1z * val2, m1.z().value());
-					EXPECT_EQ(val1x * val2, m3.x().value());
-					EXPECT_EQ(val1y * val2, m3.y().value());
-					EXPECT_EQ(val1z * val2, m3.z().value());
-					auto m4 = m1 *= val3;
-					EXPECT_EQ(val1x * val2 * val3, m1.x().value());
-					EXPECT_EQ(val1y * val2 * val3, m1.y().value());
-					EXPECT_EQ(val1z * val2 * val3, m1.z().value());
-					EXPECT_EQ(val1x * val2 * val3, m4.x().value());
-					EXPECT_EQ(val1y * val2 * val3, m4.y().value());
-					EXPECT_EQ(val1z * val2 * val3, m4.z().value());
-				}
-				
-				// Operator /=.
-				// All test-values.
-				if (val2 != 0)
-				{
-					m1 = dyn_vect3<Length,TypeParam>(metres::id(), val1x, val1y, val1z);
-					auto m3 = m1 /= val2;
-					EXPECT_EQ(val1x / val2, m1.x().value());
-					EXPECT_EQ(val1y / val2, m1.y().value());
-					EXPECT_EQ(val1z / val2, m1.z().value());
-					EXPECT_EQ(val1x / val2, m3.x().value());
-					EXPECT_EQ(val1y / val2, m3.y().value());
-					EXPECT_EQ(val1z / val2, m3.z().value());
-					if (val3 != 0)
-					{
-						auto m4 = m1 /= val3;
-						EXPECT_EQ(val1x / val2 / val3, m1.x().value());
-						EXPECT_EQ(val1y / val2 / val3, m1.y().value());
-						EXPECT_EQ(val1z / val2 / val3, m1.z().value());
-						EXPECT_EQ(val1x / val2 / val3, m4.x().value());
-						EXPECT_EQ(val1y / val2 / val3, m4.y().value());
-						EXPECT_EQ(val1z / val2 / val3, m4.z().value());
-					}
-				}
-
-				// Relational operators.
-
-				// Comparing equal measures.
-				m1 = dyn_vect3<Length,TypeParam>(metres::id(), val1x, val1y, val1z);
-				m2 = m1;
-				EXPECT_TRUE(m1 == m2);
-				EXPECT_FALSE(m1 != m2);
-
-				// All test-values except the two lowest and the two largest ones,
-				// as they would cause overflow by squaring.
-				if (2 <= i && i < test_values<TypeParam>::count - 2
-					&& 2 <= j && j < test_values<TypeParam>::count - 2
-					&& 2 <= k && k < test_values<TypeParam>::count - 2)
-				{
-					EXPECT_TRUE(is_equal(m1, m2, zero));
-					EXPECT_TRUE(is_equal(m1, m2, tolerance));
-
-					// Comparing a measure with its half, if it is large,
-					// with its double if it is small.
-					if (abs(m2.x().value()) >= MIN_THRESHOLD)
-					{
-						if (squared_norm_value(m2) > 1) m2 /= 2;
-						else m1 *= 2;
-						EXPECT_FALSE(m1 == m2);
-						EXPECT_TRUE(m1 != m2);
-						EXPECT_FALSE(is_equal(m1, m2, zero));
-					}
-				}
-			}
-		}
-	}
-
-	// Comparing 1 with a bit more than 1.
-	auto m3 = dyn_vect3<Length,TypeParam>(metres::id(), 1, 1, 1);
-	auto m4 = dyn_vect3<Length,TypeParam>(metres::id(), 1 + epsilon, 1 + epsilon, 1 + epsilon);
-	EXPECT_FALSE(m3 == m4);
-	EXPECT_TRUE(m3 != m4);
-	EXPECT_TRUE(is_equal(m3, m4, tolerance));
-
-	// Comparing -1 with a bit less than -1.
-	auto m5 = dyn_vect3<Length,TypeParam>(metres::id(), -1, -1, -1);
-	auto m6 = dyn_vect3<Length,TypeParam>(metres::id(), -1 - epsilon, -1 - epsilon, -1 - epsilon);
-	EXPECT_FALSE(m5 == m6);
-	EXPECT_TRUE(m5 != m6);
-	EXPECT_TRUE(is_equal(m5, m6, tolerance));
-
-	// Compare non-extreme numbers, far from zero,
-	// with a small tolerance or with a large tolerance.
-	auto m7 = dyn_vect3<Length,TypeParam>(metres::id(), 4, 4, 4);
-	auto m8 = dyn_vect3<Length,TypeParam>(metres::id(), 6, 6, 6);
-	auto tol1 = dyn_vect1<Length,TypeParam>(metres::id(), 3);
-	auto tol2 = dyn_vect1<Length,TypeParam>(metres::id(), 4);
-	EXPECT_FALSE(is_equal(m7, m8, tol1));
-	EXPECT_FALSE(is_equal(m8, m7, tol1));
-	EXPECT_TRUE(is_equal(m7, m8, tol2));
-	EXPECT_TRUE(is_equal(m8, m7, tol2));
-}
-
-TYPED_TEST(measureTest, dyn_point3)
-{
-	auto epsilon = numeric_limits<TypeParam>::is_integer ?
-		1 : numeric_limits<TypeParam>::epsilon();
-	auto tolerance = dyn_vect1<Length,TypeParam>(metres::id(), epsilon * 2);
-	auto zero = dyn_vect1<Length,TypeParam>(metres::id(), 0);
-	
-	// Try several numeric values.
-	for (int i = 0; i < test_values<TypeParam>::count; ++i)
-	{
-		TypeParam val1x = test_values<TypeParam>::v[i];
-
-		// Try several numeric values.
-		for (int j = 0; j < test_values<TypeParam>::count; ++j)
-		{
-			TypeParam val1y = test_values<TypeParam>::v[j];
-
-			// Try several numeric values.
-			for (int k = 0; k < test_values<TypeParam>::count; ++k)
-			{
-				TypeParam val1z = test_values<TypeParam>::v[k];
-				TypeParam val2 = static_cast<TypeParam>(2.19);
-				TypeParam val2x = static_cast<TypeParam>(2.27);
-				TypeParam val2y = static_cast<TypeParam>(2.13);
-				TypeParam val2z = static_cast<TypeParam>(2.15);
-				TypeParam val3 = 3;
-				auto m1 = dyn_point3<Length,TypeParam>(metres::id(), val1x, val1y, val1z);
-				auto m2 = dyn_vect3<Length,TypeParam>(metres::id(), val2x, val2y, val2z);
-
-				// Construction and "value".
-				EXPECT_EQ(val1x, m1.x().value());
-				EXPECT_EQ(val1y, m1.y().value());
-				EXPECT_EQ(val1z, m1.z().value());
-				EXPECT_EQ(val2x, m2.x().value());
-				EXPECT_EQ(val2y, m2.y().value());
-				EXPECT_EQ(val2z, m2.z().value());
-
-				// Operator +=.
-				// All test-values except the largest one,
-				// as it would cause overflow by incrementing.
-				if (i < test_values<TypeParam>::count - 1
-					&& j < test_values<TypeParam>::count - 1
-					&& k < test_values<TypeParam>::count - 1)
-				{
-					m1 = dyn_point3<Length,TypeParam>(metres::id(), val1x, val1y, val1z);
-					auto m3 = m1 += m2;
-					EXPECT_EQ(val1x + val2x, m1.x().value());
-					EXPECT_EQ(val1y + val2y, m1.y().value());
-					EXPECT_EQ(val1z + val2z, m1.z().value());
-					EXPECT_EQ(val2x, m2.x().value());
-					EXPECT_EQ(val2y, m2.y().value());
-					EXPECT_EQ(val2z, m2.z().value());
-					EXPECT_EQ(val1x + val2x, m3.x().value());
-					EXPECT_EQ(val1y + val2y, m3.y().value());
-					EXPECT_EQ(val1z + val2z, m3.z().value());
-				}
-
-				// Operator -=.
-				// All test-values except the lowest one,
-				// as it would cause overflow by decrementing.
-				if (0 < i && 0 < j && 0 < k)
-				{
-					m1 = dyn_point3<Length,TypeParam>(metres::id(), val1x, val1y, val1z);
-					auto m3 = m1 -= m2;
-					EXPECT_EQ(val1x - val2x, m1.x().value());
-					EXPECT_EQ(val1y - val2y, m1.y().value());
-					EXPECT_EQ(val1z - val2z, m1.z().value());
-					EXPECT_EQ(val2x, m2.x().value());
-					EXPECT_EQ(val2y, m2.y().value());
-					EXPECT_EQ(val2z, m2.z().value());
-					EXPECT_EQ(val1x - val2x, m3.x().value());
-					EXPECT_EQ(val1y - val2y, m3.y().value());
-					EXPECT_EQ(val1z - val2z, m3.z().value());
-				}
-
-				// Relational operators.
-
-				// Comparing equal measures.
-				m1 = dyn_point3<Length,TypeParam>(metres::id(), val1x, val1y, val1z);
-				auto m3 = m1;
-				EXPECT_TRUE(m1 == m3);
-				EXPECT_FALSE(m1 != m3);
-
-				// All test-values except the two lowest and the two largest ones,
-				// as they would cause overflow by squaring.
-				if (2 <= i && i < test_values<TypeParam>::count - 2
-					&& 2 <= j && j < test_values<TypeParam>::count - 2
-					&& 2 <= k && k < test_values<TypeParam>::count - 2)
-				{
-					EXPECT_TRUE(is_equal(m1, m3, zero));
-					EXPECT_TRUE(is_equal(m1, m3, tolerance));
-
-					// Comparing a measure with its half, if it is large,
-					// with its double if it is small.
-					if (abs(m3.x().value()) >= MIN_THRESHOLD)
-					{
-						if (abs(m3.x().value()) + abs(m3.y().value()) + abs(m3.z().value()) > 2)
-							m3 = dyn_point3<Length,TypeParam>(metres::id(), m3.x().value() / 2, m3.y().value() / 2, m3.z().value() / 2);
-						else m1 = dyn_point3<Length,TypeParam>(metres::id(), m1.x().value() * 2, m1.y().value() * 2, m1.z().value() * 2);
-						EXPECT_FALSE(m1 == m3);
-						EXPECT_TRUE(m1 != m3);					
-						EXPECT_FALSE(is_equal(m1, m3, zero));
-					}
-				}
-			}
-		}
-	}
-
-	// Comparing 1 with a bit more than 1.
-	auto m3 = dyn_point3<Length,TypeParam>(metres::id(), 1, 1, 1);
-	auto m4 = dyn_point3<Length,TypeParam>(metres::id(), 1 + epsilon, 1 + epsilon, 1 + epsilon);
-	EXPECT_FALSE(m3 == m4);
-	EXPECT_TRUE(m3 != m4);
-	EXPECT_TRUE(is_equal(m3, m4, tolerance));
-
-	// Comparing -1 with a bit less than -1.
-	auto m5 = dyn_point3<Length,TypeParam>(metres::id(), -1, -1, -1);
-	auto m6 = dyn_point3<Length,TypeParam>(metres::id(), -1 - epsilon, -1 - epsilon, -1 - epsilon);
-	EXPECT_FALSE(m5 == m6);
-	EXPECT_TRUE(m5 != m6);
-	EXPECT_TRUE(is_equal(m5, m6, tolerance));
-
-	// Compare non-extreme numbers, far from zero,
-	// with a small tolerance or with a large tolerance.
-	auto m7 = dyn_point3<Length,TypeParam>(metres::id(), 4, 4, 4);
-	auto m8 = dyn_point3<Length,TypeParam>(metres::id(), 6, 6, 6);
-	auto tol1 = dyn_vect1<Length,TypeParam>(metres::id(), 3);
-	auto tol2 = dyn_vect1<Length,TypeParam>(metres::id(), 4);
-	EXPECT_FALSE(is_equal(m7, m8, tol1));
-	EXPECT_FALSE(is_equal(m8, m7, tol1));
-	EXPECT_TRUE(is_equal(m7, m8, tol2));
-	EXPECT_TRUE(is_equal(m8, m7, tol2));
-}
-
-TYPED_TEST(measureTest, dyn_vectpoint3)
-{
-	// Midpoint.
-	// Try all triples of pairs of numeric values except extremes.
-	for (int i1 = 1; i1 < test_values<TypeParam>::count - 1; ++i1)
-	{
-		TypeParam val1x = test_values<TypeParam>::v[i1];
-		for (int j1 = 1; j1 < test_values<TypeParam>::count - 1; ++j1)
-		{
-			TypeParam val1y = test_values<TypeParam>::v[j1];
-			for (int k1 = 1; k1 < test_values<TypeParam>::count - 1; ++k1)
-			{
-				TypeParam val1z = test_values<TypeParam>::v[k1];
-				auto m1 = dyn_point3<Length,TypeParam>(metres::id(), val1x, val1y, val1z);
-				for (int i2 = 1; i2 < test_values<TypeParam>::count - 1; ++i2)
-				{
-					TypeParam val2x = test_values<TypeParam>::v[i2];
-					for (int j2 = 1; j2 < test_values<TypeParam>::count - 1; ++j2)
-					{
-						TypeParam val2y = test_values<TypeParam>::v[j2];
-						for (int k2 = 1; k2 < test_values<TypeParam>::count - 1; ++k2)
-						{
-							TypeParam val2z = test_values<TypeParam>::v[k2];
-							auto m2 = dyn_point3<Length,TypeParam>(metres::id(), val2x, val2y, val2z);
-							
-							EXPECT_FLOAT_EQ((val1x + val2x) * 0.5f, midpoint(m1, m2, 0.5f).x().value());
-							EXPECT_FLOAT_EQ((val1y + val2y) * 0.5f, midpoint(m1, m2, 0.5f).y().value());
-							EXPECT_FLOAT_EQ((val1z + val2z) * 0.5f, midpoint(m1, m2, 0.5f).z().value());
-							EXPECT_FLOAT_EQ(val1x, midpoint(m1, m2, 0).x().value());
-							EXPECT_FLOAT_EQ(val1y, midpoint(m1, m2, 0).y().value());
-							EXPECT_FLOAT_EQ(val1z, midpoint(m1, m2, 0).z().value());
-							EXPECT_FLOAT_EQ(val2x, midpoint(m1, m2, 1).x().value());
-							EXPECT_FLOAT_EQ(val2y, midpoint(m1, m2, 1).y().value());
-							EXPECT_FLOAT_EQ(val2z, midpoint(m1, m2, 1).z().value());
-							EXPECT_FLOAT_EQ(val1x * (1 - 0.23f) + val2x * 0.23f, midpoint(m1, m2, 0.23f).x().value());
-							EXPECT_FLOAT_EQ(val1y * (1 - 0.23f) + val2y * 0.23f, midpoint(m1, m2, 0.23f).y().value());
-							EXPECT_FLOAT_EQ(val1z * (1 - 0.23f) + val2z * 0.23f, midpoint(m1, m2, 0.23f).z().value());
-						}
-					}
-				}
-			}
-		}
-	}
-
-	// Barycentric combination.
-	// Try all triples of pairs of numeric values except extremes,
-	// and add some other points.
-	for (int i1 = 1; i1 < test_values<TypeParam>::count - 1; ++i1)
-	{
-		TypeParam val1x = test_values<TypeParam>::v[i1];
-		for (int j1 = 1; j1 < test_values<TypeParam>::count - 1; ++j1)
-		{
-			TypeParam val1y = test_values<TypeParam>::v[j1];
-			for (int k1 = 1; k1 < test_values<TypeParam>::count - 1; ++k1)
-			{
-				TypeParam val1z = test_values<TypeParam>::v[k1];
-				auto m1 = dyn_point3<Length,TypeParam>(metres::id(), val1x, val1y, val1z);
-				for (int i2 = 1; i2 < test_values<TypeParam>::count - 1; ++i2)
-				{
-					TypeParam val2x = test_values<TypeParam>::v[i2];
-					for (int j2 = 1; j2 < test_values<TypeParam>::count - 1; ++j2)
-					{
-						TypeParam val2y = test_values<TypeParam>::v[j2];
-						for (int k2 = 1; k2 < test_values<TypeParam>::count - 1; ++k2)
-						{
-							TypeParam val2z = test_values<TypeParam>::v[k2];
-							auto m2 = dyn_point3<Length,TypeParam>(metres::id(), val2x, val2y, val2z);
-
-							TypeParam val3x = static_cast<TypeParam>(3.1);
-							TypeParam val3y = static_cast<TypeParam>(3.2);
-							TypeParam val3z = static_cast<TypeParam>(3.3);
-							auto m3 = dyn_point3<Length,TypeParam>(metres::id(), val3x, val3y, val3z);
-							TypeParam val4x = static_cast<TypeParam>(4.3);
-							TypeParam val4y = static_cast<TypeParam>(4.4);
-							TypeParam val4z = static_cast<TypeParam>(4.5);
-							auto m4 = dyn_point3<Length,TypeParam>(metres::id(), val4x, val4y, val4z);
-							dyn_point3<Length,TypeParam> point3array[] = { m1, m2, m3, m4 };
-							TypeParam weights[] = { 2, 3, 7, 4 };
-							EXPECT_FLOAT_EQ(val1x * weights[0],
-								barycentric_combination(1, point3array, weights).x().value());
-							EXPECT_FLOAT_EQ(val1y * weights[0],
-								barycentric_combination(1, point3array, weights).y().value());
-							EXPECT_FLOAT_EQ(val1z * weights[0],
-								barycentric_combination(1, point3array, weights).z().value());
-							EXPECT_FLOAT_EQ(val1x * weights[0] + val2x * weights[1],
-								barycentric_combination(2, point3array, weights).x().value());
-							EXPECT_FLOAT_EQ(val1y * weights[0] + val2y * weights[1],
-								barycentric_combination(2, point3array, weights).y().value());
-							EXPECT_FLOAT_EQ(val1z * weights[0] + val2z * weights[1],
-								barycentric_combination(2, point3array, weights).z().value());
-							EXPECT_FLOAT_EQ(val1x * weights[0] + val2x * weights[1]
-								+ val3x * weights[2],
-								barycentric_combination(3, point3array, weights).x().value());
-							EXPECT_FLOAT_EQ(val1y * weights[0] + val2y * weights[1]
-								+ val3y * weights[2],
-								barycentric_combination(3, point3array, weights).y().value());
-							EXPECT_FLOAT_EQ(val1z * weights[0] + val2z * weights[1]
-								+ val3z * weights[2],
-								barycentric_combination(3, point3array, weights).z().value());
-							EXPECT_FLOAT_EQ(val1x * weights[0] + val2x * weights[1]
-								+ val3x * weights[2] + val4x * weights[3],
-								barycentric_combination(4, point3array, weights).x().value());
-							EXPECT_FLOAT_EQ(val1y * weights[0] + val2y * weights[1]
-								+ val3y * weights[2] + val4y * weights[3],
-								barycentric_combination(4, point3array, weights).y().value());
-							EXPECT_FLOAT_EQ(val1z * weights[0] + val2z * weights[1]
-								+ val3z * weights[2] + val4z * weights[3],
-								barycentric_combination(4, point3array, weights).z().value());
-						}
-					}
-				}
-			}
-		}
-	}
-
-	// Try all triples of pairs of numeric values except extremes.
-	TypeParam sqroot_of_max = static_cast<TypeParam>(sqrt(test_values<TypeParam>
-		::v[test_values<TypeParam>::count - 1]));
-	for (int i1 = 1; i1 < test_values<TypeParam>::count - 1; ++i1)
-	{
-		TypeParam val1x = test_values<TypeParam>::v[i1];
-		for (int j1 = 1; j1 < test_values<TypeParam>::count - 1; ++j1)
-		{
-			TypeParam val1y = test_values<TypeParam>::v[j1];
-			for (int k1 = 1; k1 < test_values<TypeParam>::count - 1; ++k1)
-			{
-				TypeParam val1z = test_values<TypeParam>::v[k1];
-				auto v1 = dyn_vect3<Length,TypeParam>(metres::id(), val1x, val1y, val1z);
-				auto p1 = dyn_point3<Length,TypeParam>(metres::id(), val1x, val1y, val1z);
-
-				for (int i2 = 1; i2 < test_values<TypeParam>::count - 1; ++i2)
-				{
-					TypeParam val2x = test_values<TypeParam>::v[i2];
-					for (int j2 = 1; j2 < test_values<TypeParam>::count - 1; ++j2)
-					{
-						TypeParam val2y = test_values<TypeParam>::v[j2];
-						for (int k2 = 1; k2 < test_values<TypeParam>::count - 1; ++k2)
-						{
-							TypeParam val2z = test_values<TypeParam>::v[k2];
-							auto v2 = dyn_vect3<Length,TypeParam>(metres::id(), val2x, val2y, val2z);
-							auto p2 = dyn_point3<Length,TypeParam>(metres::id(), val2x, val2y, val2z);
-
-							// dyn_point3 - dyn_point3 -> dyn_vect3
-							EXPECT_EQ(val1x - val2x, (p1 - p2).x().value());
-							EXPECT_EQ(val1y - val2y, (p1 - p2).y().value());
-							EXPECT_EQ(val1z - val2z, (p1 - p2).z().value());
-
-							// dyn_point3 + dyn_vect3 -> dyn_point3
-							EXPECT_EQ(val1x + val2x, (p1 + v2).x().value());
-							EXPECT_EQ(val1y + val2y, (p1 + v2).y().value());
-							EXPECT_EQ(val1z + val2z, (p1 + v2).z().value());
-
-							// dyn_point3 - dyn_vect3 -> dyn_point3
-							EXPECT_EQ(val1x - val2x, (p1 - v2).x().value());
-							EXPECT_EQ(val1y - val2y, (p1 - v2).y().value());
-							EXPECT_EQ(val1z - val2z, (p1 - v2).z().value());
-
-							// dyn_vect3 + dyn_vect3 -> dyn_vect3
-							EXPECT_EQ(val1x + val2x, (v1 + v2).x().value());
-							EXPECT_EQ(val1y + val2y, (v1 + v2).y().value());
-							EXPECT_EQ(val1z + val2z, (v1 + v2).z().value());
-							
-							// dyn_vect3 - dyn_vect3 -> dyn_vect3
-							EXPECT_EQ(val1x - val2x, (v1 - v2).x().value());
-							EXPECT_EQ(val1y - val2y, (v1 - v2).y().value());
-							EXPECT_EQ(val1z - val2z, (v1 - v2).z().value());
-							
-							if (abs(val1x) < sqroot_of_max && abs(val2x) < sqroot_of_max)
-							{
-								// N * dyn_vect3 -> dyn_vect3
-								EXPECT_EQ(val1x * val2x, (val1x * v2).x().value());
-
-								// dyn_vect3 * N -> dyn_vect3
-								EXPECT_EQ(val1x * val2x, (v1 * val2x).x().value());
-							}
-							
-							if (abs(val1y) < sqroot_of_max && abs(val2y) < sqroot_of_max)
-							{
-								// N * dyn_vect3 -> dyn_vect3
-								EXPECT_EQ(val1y * val2y, (val1y * v2).y().value());
-
-								// dyn_vect3 * N -> dyn_vect3
-								EXPECT_EQ(val1y * val2y, (v1 * val2y).y().value());
-							}
-							
-							if (abs(val1z) < sqroot_of_max && abs(val2z) < sqroot_of_max)
-							{
-								// N * dyn_vect3 -> dyn_vect3
-								EXPECT_EQ(val1z * val2z, (val1z * v2).z().value());
-
-								// dyn_vect3 * N -> dyn_vect3
-								EXPECT_EQ(val1z * val2z, (v1 * val2z).z().value());
-							}
-							
-							// dyn_vect3 / N -> dyn_vect3
-							if (val2x != 0) EXPECT_EQ(val1x / val2x, (v1 / val2x).x().value());
-							if (val2y != 0) EXPECT_EQ(val1y / val2y, (v1 / val2y).y().value());
-							if (val2z != 0) EXPECT_EQ(val1z / val2z, (v1 / val2z).z().value());
-						}
-					}
-				}
-			}
-		}
-	}
-	
-	for (int i = 2; i < test_values<TypeParam>::count - 2; ++i)
-	{
-		for (int j = 2; j < test_values<TypeParam>::count - 2; ++j)
-		{
-			for (int k = 2; k < test_values<TypeParam>::count - 2; ++k)
-			{
-				TypeParam val1x = test_values<TypeParam>::v[i];
-				TypeParam val1y = test_values<TypeParam>::v[j];
-				TypeParam val1z = test_values<TypeParam>::v[k];
-				auto m1 = dyn_vect3<Length,TypeParam>(metres::id(), val1x, val1y, val1z);
-				if (abs(val1x) < sqroot_of_max && abs(val1y) < sqroot_of_max && abs(val1z) < sqroot_of_max)
-				{
-					EXPECT_FLOAT_EQ(val1x * val1x + val1y * val1y + val1z * val1z, squared_norm_value(m1));
-					EXPECT_FLOAT_EQ(static_cast<TypeParam>(
-						sqrt(val1x * val1x + val1y * val1y + val1z * val1z)), norm(m1).value());
-				}
-			}
-		}
-	}
-}
-
-//// dyn_azimuths
-TYPED_TEST(measureTest, dyn_signed_azimuth)
-{
-	auto epsilon = numeric_limits<TypeParam>::is_integer ?
-		1 : numeric_limits<TypeParam>::epsilon();
-	auto tolerance = dyn_vect1<Angle,TypeParam>(degrees::id(), epsilon * 2);
-	auto zero = dyn_vect1<Angle,TypeParam>(degrees::id(), 0);
-	
-	// Try several numeric values except extremes.
-	for (int i = 1; i < test_values<TypeParam>::count - 1; ++i)
-	{
-		TypeParam val1 = test_values<TypeParam>::v[i];
-		TypeParam val2 = static_cast<TypeParam>(2.19);
-		if (abs(val1) < MAX_THRESHOLD && abs(val2) < MAX_THRESHOLD)
-		{
-			auto m1 = dyn_signed_azimuth<TypeParam>(degrees::id(), val1);
-			auto m2 = dyn_vect1<Angle,TypeParam>(degrees::id(), val2);
-
-			// Construction and "value".
-			EXPECT_NEAR(modulo(val1 + 180, 360) - 180, m1.value(), AZIMUTH_TOLERANCE);
-			EXPECT_EQ(val2, m2.value());
-
-			// Operator +=.
-			// All test-values except the largest one,
-			// as it would cause overflow by incrementing.
-			if (i < test_values<TypeParam>::count - 1)
-			{
-				m1 = dyn_signed_azimuth<TypeParam>(degrees::id(), val1);
-				auto m3 = m1 += m2;
-				EXPECT_NEAR(modulo(val1 + val2 + 180, 360) - 180, m1.value(), AZIMUTH_TOLERANCE);
-				EXPECT_NEAR(modulo(val1 + val2 + 180, 360) - 180, m3.value(), AZIMUTH_TOLERANCE);
-			}
-
-			// Operator -=.
-			// All test-values except the lowest one,
-			// as it would cause overflow by decrementing.
-			if (0 < i)
-			{
-				m1 = dyn_signed_azimuth<TypeParam>(degrees::id(), val1);
-				auto m3 = m1 -= m2;
-				EXPECT_NEAR(modulo(val1 - val2 + 180, 360) - 180, m1.value(), AZIMUTH_TOLERANCE);
-				EXPECT_NEAR(modulo(val1 - val2 + 180, 360) - 180, m3.value(), AZIMUTH_TOLERANCE);
-			}
-		}
-
-		// Relational operators.
-		
-		// Comparing equal measures.
-		auto m1 = dyn_signed_azimuth<TypeParam>(degrees::id(), val1);
-		auto m3 = m1;
-		EXPECT_TRUE(m1 == m3);
-		EXPECT_FALSE(m1 != m3);
-		EXPECT_TRUE(is_equal(m1, m3, zero));
-
-		// Comparing equal measures with a tolerance.
-		// Avoid extreme test-values with a non-zero tolerance,
-		// as they would cause overflow by incrementing or decrementing.
-		if (0 < i && i < test_values<TypeParam>::count - 1)
-		{
-			EXPECT_TRUE(is_equal(m1, m3, tolerance));
-		}
-
-		// Comparing a measure with its half, if it is large,
-		// with its double if it is small.
-		// Omit test if it is near zero or larger than a turn.
-		if (abs(val1) >= MIN_THRESHOLD && abs(val1) <= 360)
-		{
-			if (abs(val1) > 2)
-				m3 = dyn_signed_azimuth<TypeParam>(degrees::id(), val1 / 2);
-			else m1 = dyn_signed_azimuth<TypeParam>(degrees::id(), val1 * 2);
-
-			EXPECT_FALSE(m1 == m3);
-			EXPECT_TRUE(m1 != m3);
-			EXPECT_FALSE(is_equal(m1, m3, zero));
-		}
-	}
-	
-	// Comparing 1 with a bit more than 1.
-	auto m3 = dyn_signed_azimuth<TypeParam>(degrees::id(), 1);
-	auto m4 = dyn_signed_azimuth<TypeParam>(degrees::id(), 1 + epsilon);
-	EXPECT_FALSE(m3 == m4);
-	EXPECT_TRUE(m3 != m4);
-	EXPECT_TRUE(is_equal(m3, m4, tolerance));
-
-	// Comparing -1 with a bit less than -1.
-	auto m5 = dyn_signed_azimuth<TypeParam>(degrees::id(), -1);
-	auto m6 = dyn_signed_azimuth<TypeParam>(degrees::id(), -1 - epsilon);
-	EXPECT_FALSE(m5 == m6);
-	EXPECT_TRUE(m5 != m6);
-	EXPECT_TRUE(is_equal(m5, m6, tolerance));
-
-	// Compare non-extreme numbers, far from zero,
-	// with a small tolerance or with a large tolerance.
-	auto m7 = dyn_signed_azimuth<TypeParam>(degrees::id(), 45);
-	auto m8 = dyn_signed_azimuth<TypeParam>(degrees::id(), 48);
-	auto tol1 = dyn_vect1<Angle,TypeParam>(degrees::id(), 2);
-	auto tol2 = dyn_vect1<Angle,TypeParam>(degrees::id(), 4);
-	EXPECT_FALSE(is_equal(m7, m8, tol1));
-	EXPECT_FALSE(is_equal(m8, m7, tol1));
-	EXPECT_TRUE(is_equal(m7, m8, tol2));
-	EXPECT_TRUE(is_equal(m8, m7, tol2));
-	
-	// Try all pairs of numeric values except extremes.
-	for (int i1 = 1; i1 < test_values<TypeParam>::count - 1; ++i1)
-	{
-		TypeParam val1 = test_values<TypeParam>::v[i1];
-		auto v1 = dyn_vect1<Angle,TypeParam>(degrees::id(), val1);
-		auto p1 = dyn_signed_azimuth<TypeParam>(degrees::id(), val1);
-		for (int i2 = 1; i2 < test_values<TypeParam>::count - 1; ++i2)
-		{
-			TypeParam val2 = test_values<TypeParam>::v[i2];
-			if (abs(val1) < MAX_THRESHOLD && abs(val2) < MAX_THRESHOLD
-				&& abs(val1) > MIN_THRESHOLD && abs(val2) > MIN_THRESHOLD)			
-			{
-				auto v2 = dyn_vect1<Angle,TypeParam>(degrees::id(), val2);
-				auto p2 = dyn_signed_azimuth<TypeParam>(degrees::id(), val2);
-			
-				// dyn_signed_azimuth - dyn_signed_azimuth -> dyn_vect1
-				EXPECT_NEAR(modulo(val1 - val2 + 180, 360) - 180,
-					(p1 - p2).value(), AZIMUTH_TOLERANCE);
-
-				// dyn_signed_azimuth + dyn_vect1 -> dyn_signed_azimuth
-				EXPECT_NEAR(modulo(val1 + val2 + 180, 360) - 180,
-					(p1 + v2).value(), AZIMUTH_TOLERANCE);
-
-				// dyn_signed_azimuth - dyn_vect1 -> dyn_signed_azimuth
-				EXPECT_NEAR(modulo(val1 - val2 + 180, 360) - 180,
-					(p1 - v2).value(), AZIMUTH_TOLERANCE);
-			}
-		}
-	}	
-}
-///////////////
-TYPED_TEST(measureTest, dyn_unsigned_azimuth)
-{
-	auto epsilon = numeric_limits<TypeParam>::is_integer ?
-		1 : numeric_limits<TypeParam>::epsilon();
-	auto tolerance = dyn_vect1<Angle,TypeParam>(degrees::id(), epsilon * 2);
-	auto zero = dyn_vect1<Angle,TypeParam>(degrees::id(), 0);
-	
-	// Try several numeric values.
-	for (int i = 0; i < test_values<TypeParam>::count; ++i)
-	{
-		TypeParam val1 = test_values<TypeParam>::v[i];
-		TypeParam val2 = static_cast<TypeParam>(2.19);
-		if (abs(val1) < MAX_THRESHOLD && abs(val2) < MAX_THRESHOLD)
-		{
-			auto m1 = dyn_unsigned_azimuth<TypeParam>(degrees::id(), val1);
-			auto m2 = dyn_vect1<Angle,TypeParam>(degrees::id(), val2);
-
-			// Construction and "value".
-			EXPECT_NEAR(modulo(val1, 360), m1.value(), AZIMUTH_TOLERANCE);
-			EXPECT_EQ(val2, m2.value());
-
-			// Operator +=.
-			// All test-values except the largest one,
-			// as it would cause overflow by incrementing.
-			if (i < test_values<TypeParam>::count - 1)
-			{
-				m1 = dyn_unsigned_azimuth<TypeParam>(degrees::id(), val1);
-				auto m3 = m1 += m2;
-				EXPECT_NEAR(modulo(val1 + val2, 360), m1.value(), AZIMUTH_TOLERANCE);
-				EXPECT_NEAR(modulo(val1 + val2, 360), m3.value(), AZIMUTH_TOLERANCE);
-			}
-
-			// Operator -=.
-			// All test-values except the lowest one,
-			// as it would cause overflow by decrementing.
-			if (0 < i)
-			{
-				m1 = dyn_unsigned_azimuth<TypeParam>(degrees::id(), val1);
-				auto m3 = m1 -= m2;
-				EXPECT_NEAR(modulo(val1 - val2, 360), m1.value(), AZIMUTH_TOLERANCE);
-				EXPECT_NEAR(modulo(val1 - val2, 360), m3.value(), AZIMUTH_TOLERANCE);
-			}
-		}
-
-		// Relational operators.
-		
-		// Comparing equal measures.
-		auto m1 = dyn_unsigned_azimuth<TypeParam>(degrees::id(), val1);
-		auto m3 = m1;
-		EXPECT_TRUE(m1 == m3);
-		EXPECT_FALSE(m1 != m3);
-		EXPECT_TRUE(is_equal(m1, m3, zero));
-
-		// Comparing equal measures with a tolerance.
-		// Avoid extreme test-values with a non-zero tolerance,
-		// as they would cause overflow by incrementing or decrementing.
-		if (0 < i && i < test_values<TypeParam>::count - 1)
-		{
-			EXPECT_TRUE(is_equal(m1, m3, tolerance));
-		}
-
-		// Comparing a measure with its half, if it is large,
-		// with its double if it is small.
-		// Omit test if it is near zero or larger than a turn.
-		if (abs(val1) >= MIN_THRESHOLD && abs(val1) <= 360)
-		{
-			if (abs(val1) > 2)
-				m3 = dyn_unsigned_azimuth<TypeParam>(degrees::id(), val1 / 2);
-			else m1 = dyn_unsigned_azimuth<TypeParam>(degrees::id(), val1 * 2);
-
-			EXPECT_FALSE(m1 == m3);
-			EXPECT_TRUE(m1 != m3);
-			EXPECT_FALSE(is_equal(m1, m3, zero));
-		}
-	}
-	
-	// Comparing 1 with a bit more than 1.
-	auto m3 = dyn_unsigned_azimuth<TypeParam>(degrees::id(), 1);
-	auto m4 = dyn_unsigned_azimuth<TypeParam>(degrees::id(), 1 + epsilon);
-	EXPECT_FALSE(m3 == m4);
-	EXPECT_TRUE(m3 != m4);
-	EXPECT_TRUE(is_equal(m3, m4, tolerance));
-	
-	// Comparing -1 with a bit less than -1.
-	auto m5 = dyn_unsigned_azimuth<TypeParam>(degrees::id(), -1);
-	auto m6 = dyn_unsigned_azimuth<TypeParam>(degrees::id(), -1 - epsilon);
-	EXPECT_TRUE(is_equal(m5, m6, tolerance));
-	
-	// Compare non-extreme numbers, far from zero,
-	// with a small tolerance or with a large tolerance.
-	auto m7 = dyn_unsigned_azimuth<TypeParam>(degrees::id(), 45);
-	auto m8 = dyn_unsigned_azimuth<TypeParam>(degrees::id(), 48);
-	auto tol1 = dyn_vect1<Angle,TypeParam>(degrees::id(), 2);
-	auto tol2 = dyn_vect1<Angle,TypeParam>(degrees::id(), 4);
-	EXPECT_FALSE(is_equal(m7, m8, tol1));
-	EXPECT_FALSE(is_equal(m8, m7, tol1));
-	EXPECT_TRUE(is_equal(m7, m8, tol2));
-	EXPECT_TRUE(is_equal(m8, m7, tol2));
-	
-	// Try all pairs of numeric values except extremes.
-	for (int i1 = 1; i1 < test_values<TypeParam>::count - 1; ++i1)
-	{
-		TypeParam val1 = test_values<TypeParam>::v[i1];
-		auto v1 = dyn_vect1<Angle,TypeParam>(degrees::id(), val1);
-		auto p1 = dyn_unsigned_azimuth<TypeParam>(degrees::id(), val1);
-		for (int i2 = 1; i2 < test_values<TypeParam>::count - 1; ++i2)
-		{
-			TypeParam val2 = test_values<TypeParam>::v[i2];
-			if (abs(val1) < MAX_THRESHOLD && abs(val2) < MAX_THRESHOLD
-				&& abs(val1) > MIN_THRESHOLD && abs(val2) > MIN_THRESHOLD)
-			{
-				auto v2 = dyn_vect1<Angle,TypeParam>(degrees::id(), val2);
-				
-				auto p2 = dyn_unsigned_azimuth<TypeParam>(degrees::id(), val2);
-
-				// dyn_unsigned_azimuth - dyn_unsigned_azimuth -> dyn_vect1
-				EXPECT_NEAR(modulo(val1 - val2 + 180, 360) - 180,
-					(p1 - p2).value(), AZIMUTH_TOLERANCE);
-
-				// dyn_unsigned_azimuth + dyn_vect1 -> dyn_unsigned_azimuth
-				EXPECT_NEAR(modulo(val1 + val2, 360), (p1 + v2).value(), AZIMUTH_TOLERANCE);
-
-				// dyn_unsigned_azimuth - dyn_vect1 -> dyn_unsigned_azimuth
-				EXPECT_NEAR(modulo(val1 - val2, 360), (p1 - v2).value(), AZIMUTH_TOLERANCE);
-			}
-		}
-	}	
-}
 //#endif
 
-DEFINE_UNIT(km, Length, " Km", 1000, 0)
-DEFINE_UNIT(inches, Length, "\"", 0.0254, 0)
+DEFINE_UNIT(km, Space, " Km", 1000, 0)
+DEFINE_UNIT(inches, Space, "\"", 0.0254, 0)
 
 DEFINE_MAGNITUDE(Time, seconds, " s")
 DEFINE_UNIT(hours, Time, " h", 3600, 0)
@@ -3442,150 +1763,150 @@ DEFINE_UNIT(fahrenheit, Temperature, "°F", 5. / 9., 273.15 - 32. * 5. / 9.)
 
 TEST(unitTest, magnitudes)
 {
-	ASSERT_STREQ(" rad", radians::id().symbol());
+	ASSERT_STREQ(" rad", radians::id().suffix());
 	EXPECT_EQ(1, radians::id().ratio());
 	EXPECT_EQ(0, radians::id().offset());
 
-	ASSERT_STREQ(" rev", turns::id().symbol());
+	ASSERT_STREQ(" rev", turns::id().suffix());
 	EXPECT_NEAR(2 * pi, turns::id().ratio(), AZIMUTH_TOLERANCE);
 	EXPECT_EQ(0, turns::id().offset());
 
-	ASSERT_STREQ(" m", metres::id().symbol());
+	ASSERT_STREQ(" m", metres::id().suffix());
 	EXPECT_EQ(1, metres::id().ratio());
 	EXPECT_EQ(0, metres::id().offset());
 
-	ASSERT_STREQ("°", degrees::id().symbol());
+	ASSERT_STREQ("°", degrees::id().suffix());
 	EXPECT_NEAR(pi / 180, degrees::id().ratio(), AZIMUTH_TOLERANCE);
 	EXPECT_EQ(0, degrees::id().offset());
 
-	ASSERT_STREQ(" Km", km::id().symbol());
+	ASSERT_STREQ(" Km", km::id().suffix());
 	EXPECT_EQ(1000, km::id().ratio());
 	EXPECT_EQ(0, km::id().offset());
 
-	ASSERT_STREQ("\"", inches::id().symbol());
+	ASSERT_STREQ("\"", inches::id().suffix());
 	EXPECT_EQ(0.0254, inches::id().ratio());
 	EXPECT_EQ(0, inches::id().offset());
 
-	ASSERT_STREQ(" s", seconds::id().symbol());
+	ASSERT_STREQ(" s", seconds::id().suffix());
 	EXPECT_EQ(1, metres::id().ratio());
 	EXPECT_EQ(0, metres::id().offset());
 
-	ASSERT_STREQ(" h", hours::id().symbol());
+	ASSERT_STREQ(" h", hours::id().suffix());
 	EXPECT_EQ(3600, hours::id().ratio());
 	EXPECT_EQ(0, hours::id().offset());
 
-	ASSERT_STREQ(" d", days::id().symbol());
+	ASSERT_STREQ(" d", days::id().suffix());
 	EXPECT_EQ(86400, days::id().ratio());
 	EXPECT_EQ(0, days::id().offset());
 		
-	ASSERT_STREQ(" m/s", metres_per_second::id().symbol());
+	ASSERT_STREQ(" m/s", metres_per_second::id().suffix());
 	EXPECT_EQ(1, metres_per_second::id().ratio());
 	EXPECT_EQ(0, metres_per_second::id().offset());
 
-	ASSERT_STREQ(" Km/h", km_per_hour::id().symbol());
+	ASSERT_STREQ(" Km/h", km_per_hour::id().suffix());
 	EXPECT_FLOAT_EQ(1 / 3.6, km_per_hour::id().ratio());
 	EXPECT_EQ(0, km_per_hour::id().offset());
 
-	ASSERT_STREQ("\"/day", inches_per_day::id().symbol());
+	ASSERT_STREQ("\"/day", inches_per_day::id().suffix());
 	EXPECT_EQ(86400 / 0.0254, inches_per_day::id().ratio());
 	EXPECT_EQ(0, inches_per_day::id().offset());
 
-	ASSERT_STREQ(" m2", square_metres::id().symbol());
+	ASSERT_STREQ(" m2", square_metres::id().suffix());
 	EXPECT_EQ(1, square_metres::id().ratio());
 	EXPECT_EQ(0, square_metres::id().offset());
 
-	ASSERT_STREQ(" Km2", square_km::id().symbol());
+	ASSERT_STREQ(" Km2", square_km::id().suffix());
 	EXPECT_EQ(1000000, square_km::id().ratio());
 	EXPECT_EQ(0, square_km::id().offset());
 
-	ASSERT_STREQ("\"2", square_inches::id().symbol());
+	ASSERT_STREQ("\"2", square_inches::id().suffix());
 	EXPECT_EQ(0.0254 * 0.0254, square_inches::id().ratio());
 	EXPECT_EQ(0, square_inches::id().offset());
 
-	ASSERT_STREQ("°K", kelvin::id().symbol());
+	ASSERT_STREQ("°K", kelvin::id().suffix());
 	EXPECT_EQ(1, kelvin::id().ratio());
 	EXPECT_EQ(0, kelvin::id().offset());
 
-	ASSERT_STREQ("°C", celsius::id().symbol());
+	ASSERT_STREQ("°C", celsius::id().suffix());
 	EXPECT_EQ(1, celsius::id().ratio());
 	EXPECT_EQ(273.15, celsius::id().offset());
 
-	ASSERT_STREQ("°F", fahrenheit::id().symbol());
+	ASSERT_STREQ("°F", fahrenheit::id().suffix());
 	EXPECT_EQ(5. / 9., fahrenheit::id().ratio());
 	EXPECT_EQ(273.15 - 32. * 5. / 9., fahrenheit::id().offset());
 }
 
 TEST(unitTest, units)
 {
-	ASSERT_STREQ(" rad", radians::symbol());
+	ASSERT_STREQ(" rad", radians::suffix());
 	EXPECT_EQ(1, radians::ratio());
 	EXPECT_EQ(0, radians::offset());
 
-	ASSERT_STREQ(" rev", turns::symbol());
+	ASSERT_STREQ(" rev", turns::suffix());
 	EXPECT_NEAR(2 * pi, turns::ratio(), AZIMUTH_TOLERANCE);
 	EXPECT_EQ(0, turns::offset());
 
-	ASSERT_STREQ(" m", metres::symbol());
+	ASSERT_STREQ(" m", metres::suffix());
 	EXPECT_EQ(1, metres::ratio());
 	EXPECT_EQ(0, metres::offset());
 
-	ASSERT_STREQ("°", degrees::symbol());
+	ASSERT_STREQ("°", degrees::suffix());
 	EXPECT_NEAR(pi / 180, degrees::ratio(), AZIMUTH_TOLERANCE);
 	EXPECT_EQ(0, degrees::offset());
 
-	ASSERT_STREQ(" Km", km::symbol());
+	ASSERT_STREQ(" Km", km::suffix());
 	EXPECT_EQ(1000, km::ratio());
 	EXPECT_EQ(0, km::offset());
 
-	ASSERT_STREQ("\"", inches::symbol());
+	ASSERT_STREQ("\"", inches::suffix());
 	EXPECT_EQ(0.0254, inches::ratio());
 	EXPECT_EQ(0, inches::offset());
 
-	ASSERT_STREQ(" s", seconds::symbol());
+	ASSERT_STREQ(" s", seconds::suffix());
 	EXPECT_EQ(1, metres::ratio());
 	EXPECT_EQ(0, metres::offset());
 
-	ASSERT_STREQ(" h", hours::symbol());
+	ASSERT_STREQ(" h", hours::suffix());
 	EXPECT_EQ(3600, hours::ratio());
 	EXPECT_EQ(0, hours::offset());
 
-	ASSERT_STREQ(" d", days::symbol());
+	ASSERT_STREQ(" d", days::suffix());
 	EXPECT_EQ(86400, days::ratio());
 	EXPECT_EQ(0, days::offset());
 		
-	ASSERT_STREQ(" m/s", metres_per_second::symbol());
+	ASSERT_STREQ(" m/s", metres_per_second::suffix());
 	EXPECT_EQ(1, metres_per_second::ratio());
 	EXPECT_EQ(0, metres_per_second::offset());
 
-	ASSERT_STREQ(" Km/h", km_per_hour::symbol());
+	ASSERT_STREQ(" Km/h", km_per_hour::suffix());
 	EXPECT_FLOAT_EQ(1 / 3.6, km_per_hour::ratio());
 	EXPECT_EQ(0, km_per_hour::offset());
 
-	ASSERT_STREQ("\"/day", inches_per_day::symbol());
+	ASSERT_STREQ("\"/day", inches_per_day::suffix());
 	EXPECT_EQ(86400 / 0.0254, inches_per_day::ratio());
 	EXPECT_EQ(0, inches_per_day::offset());
 
-	ASSERT_STREQ(" m2", square_metres::symbol());
+	ASSERT_STREQ(" m2", square_metres::suffix());
 	EXPECT_EQ(1, square_metres::ratio());
 	EXPECT_EQ(0, square_metres::offset());
 
-	ASSERT_STREQ(" Km2", square_km::symbol());
+	ASSERT_STREQ(" Km2", square_km::suffix());
 	EXPECT_EQ(1000000, square_km::ratio());
 	EXPECT_EQ(0, square_km::offset());
 
-	ASSERT_STREQ("\"2", square_inches::symbol());
+	ASSERT_STREQ("\"2", square_inches::suffix());
 	EXPECT_EQ(0.0254 * 0.0254, square_inches::ratio());
 	EXPECT_EQ(0, square_inches::offset());
 
-	ASSERT_STREQ("°K", kelvin::symbol());
+	ASSERT_STREQ("°K", kelvin::suffix());
 	EXPECT_EQ(1, kelvin::ratio());
 	EXPECT_EQ(0, kelvin::offset());
 
-	ASSERT_STREQ("°C", celsius::symbol());
+	ASSERT_STREQ("°C", celsius::suffix());
 	EXPECT_EQ(1, celsius::ratio());
 	EXPECT_EQ(273.15, celsius::offset());
 
-	ASSERT_STREQ("°F", fahrenheit::symbol());
+	ASSERT_STREQ("°F", fahrenheit::suffix());
 	EXPECT_EQ(5. / 9., fahrenheit::ratio());
 	EXPECT_EQ(273.15 - 32. * 5. / 9., fahrenheit::offset());
 }
@@ -3688,17 +2009,17 @@ DEFINE_MAGNITUDE(Density, kg_per_cubic_metre, " Kg/m3")
 DEFINE_MAGNITUDE(Mass, kg, " Kg")
 DEFINE_MAGNITUDE(Force, newtons, " N")
 DEFINE_MAGNITUDE(Energy, joules, " J")
-DEFINE_MAGNITUDE(Unitless, nounit, " u.")
-DEFINE_UNIT(k_nounit, Unitless, " Ku.", 1000, 0)
+DEFINE_MAGNITUDE(Unitless, units, " u.")
+DEFINE_UNIT(dozens, Unitless, " doz.", 12, 0)
 DEFINE_MAGNITUDE(MagneticField, tesla, " T")
 DEFINE_MAGNITUDE(ElectricField, volts_per_metre, " V/m")
 
-DEFINE_DERIVED_MAGNITUDE_SCALAR_SCALAR(Volume, Density, Mass)
-DEFINE_DERIVED_MAGNITUDE_SQUARED_SCALAR(Length, Area)
-DEFINE_DERIVED_MAGNITUDE_SCALAR_VECTOR(Time, Speed, Length)
-DEFINE_DERIVED_MAGNITUDE_VECTOR_VECTOR(Force, Length, Energy)
-DEFINE_DERIVED_MAGNITUDE_VECTOR_VECTOR(Speed, MagneticField, ElectricField)
-DEFINE_DERIVED_MAGNITUDE_SQUARED_VECTOR(Unitless, Unitless)
+DEFINE_DERIVED_UNIT_SCALAR_SCALAR(cubic_metres, kg_per_cubic_metre, kg)
+DEFINE_DERIVED_UNIT_SQUARED_SCALAR(metres, square_metres)
+DEFINE_DERIVED_UNIT_SCALAR_VECTOR(seconds, metres_per_second, metres)
+DEFINE_DERIVED_UNIT_VECTOR_VECTOR(newtons, metres, joules)
+DEFINE_DERIVED_UNIT_VECTOR_VECTOR(metres_per_second, tesla, volts_per_metre)
+DEFINE_DERIVED_UNIT_SQUARED_VECTOR(units, units)
 
 DEFINE_DERIVED_UNIT_SQUARED_SCALAR(inches, square_inches)
 DEFINE_DERIVED_UNIT_SCALAR_VECTOR(hours, km_per_hour, km)
@@ -3770,227 +2091,20 @@ TEST(unitTest, derived_operations)
 	EXPECT_FLOAT_EQ(12.3 * 56.7 - 23.4 * 45.6, a8.z().value());
 
 	EXPECT_FLOAT_EQ(12.3 * 34.5 + 23.4 * 45.6,
-		(vect2<nounit>(12.3, 23.4) * vect2<nounit>(34.5, 45.6)).value());
+		(vect2<units>(12.3, 23.4) * vect2<units>(34.5, 45.6)).value());
 	
 	EXPECT_FLOAT_EQ(12.3 * 45.6 - 23.4 * 34.5,
-		(cross_product(vect2<nounit>(12.3, 23.4), vect2<nounit>(34.5, 45.6))).value());
+		(cross_product(vect2<units>(12.3, 23.4), vect2<units>(34.5, 45.6))).value());
 	
 	EXPECT_FLOAT_EQ(12.3 * 45.6 + 23.4 * 56.7 + 34.5 * 67.8,
-		(vect3<nounit>(12.3, 23.4, 34.5) * vect3<nounit>(45.6, 56.7, 67.8)).value());
+		(vect3<units>(12.3, 23.4, 34.5) * vect3<units>(45.6, 56.7, 67.8)).value());
 
 	auto a9 = cross_product(
-		vect3<nounit>(12.3, 23.4, 34.5),
-		vect3<nounit>(45.6, 56.7, 67.8));
+		vect3<units>(12.3, 23.4, 34.5),
+		vect3<units>(45.6, 56.7, 67.8));
 	EXPECT_FLOAT_EQ(23.4 * 67.8 - 34.5 * 56.7, a9.x().value());
 	EXPECT_FLOAT_EQ(34.5 * 45.6 - 12.3 * 67.8, a9.y().value());
 	EXPECT_FLOAT_EQ(12.3 * 56.7 - 23.4 * 45.6, a9.z().value());
-}
-
-TEST(unitTest, dyn_derived_operations_with_defined_units)
-{
-	EXPECT_FLOAT_EQ(12.3 * 23.47, (dyn_vect1<Time>(hours::id(), 12.3) * dyn_vect1<Speed>(km_per_hour::id(), 23.47)).value());
-	EXPECT_FLOAT_EQ(12.3 * 23.47, (dyn_vect1<Speed>(km_per_hour::id(), 12.3) * dyn_vect1<Time>(hours::id(), 23.47)).value());
-	EXPECT_FLOAT_EQ(12.3 / 23.47, (dyn_vect1<Length>(km::id(), 12.3) / dyn_vect1<Time>(hours::id(), 23.47)).value());
-	EXPECT_FLOAT_EQ(12.3 / 23.47, (dyn_vect1<Length>(km::id(), 12.3) / dyn_vect1<Speed>(km_per_hour::id(), 23.47)).value());
-	EXPECT_FLOAT_EQ(12.3 * 23.47, (dyn_vect1<Length>(inches::id(), 12.3) * dyn_vect1<Length>(inches::id(), 23.47)).value());
-	EXPECT_FLOAT_EQ(12.3 / 23.47, (dyn_vect1<Area>(square_inches::id(), 12.3) / dyn_vect1<Length>(inches::id(), 23.47)).value());
-	EXPECT_FLOAT_EQ(sqrt(23.47), sqroot(dyn_vect1<Area>(square_inches::id(), 23.47)).value());
-
-	auto a1 = dyn_vect1<Time>(hours::id(), 12.3) * dyn_vect2<Speed>(km_per_hour::id(), 23.47, 34.51);
-	EXPECT_FLOAT_EQ(12.3 * 23.47, a1.x().value());
-	EXPECT_FLOAT_EQ(12.3 * 34.51, a1.y().value());
-
-	auto a2 = dyn_vect2<Speed>(km_per_hour::id(), 23.47, 34.51) * dyn_vect1<Time>(hours::id(), 12.3);
-	EXPECT_FLOAT_EQ(23.47 * 12.3, a2.x().value());
-	EXPECT_FLOAT_EQ(34.51 * 12.3, a2.y().value());
-
-	auto a3 = dyn_vect2<Length>(km::id(), 23.47, 34.51) / dyn_vect1<Time>(hours::id(), 12.3);
-	EXPECT_FLOAT_EQ(23.47 / 12.3, a3.x().value());
-	EXPECT_FLOAT_EQ(34.51 / 12.3, a3.y().value());
-
-	auto a4 = dyn_vect1<Time>(hours::id(), 12.3) * dyn_vect3<Speed>(km_per_hour::id(), 23.47, 34.51, 45.19);
-	EXPECT_FLOAT_EQ(12.3 * 23.47, a4.x().value());
-	EXPECT_FLOAT_EQ(12.3 * 34.51, a4.y().value());
-	EXPECT_FLOAT_EQ(12.3 * 45.19, a4.z().value());
-
-	auto a5 = dyn_vect3<Speed>(km_per_hour::id(), 23.47, 34.51, 45.19) * dyn_vect1<Time>(hours::id(), 12.3);
-	EXPECT_FLOAT_EQ(23.47 * 12.3, a5.x().value());
-	EXPECT_FLOAT_EQ(34.51 * 12.3, a5.y().value());
-	EXPECT_FLOAT_EQ(45.19 * 12.3, a5.z().value());
-
-	auto a6 = dyn_vect3<Length>(km::id(), 23.47, 34.51, 45.19) / dyn_vect1<Time>(hours::id(), 12.3);
-	EXPECT_FLOAT_EQ(23.47 / 12.3, a6.x().value());
-	EXPECT_FLOAT_EQ(34.51 / 12.3, a6.y().value());
-	EXPECT_FLOAT_EQ(45.19 / 12.3, a6.z().value());
-
-	EXPECT_FLOAT_EQ(12.3 * 34.5 + 23.4 * 45.6,
-		(dyn_vect2<Force>(newtons::id(), 12.3, 23.4)
-		* dyn_vect2<Length>(metres::id(), 34.5, 45.6)).value());
-	EXPECT_FLOAT_EQ(12.3 * 34.5 + 23.4 * 45.6,
-		(dyn_vect2<Length>(metres::id(), 12.3, 23.4)
-		* dyn_vect2<Force>(newtons::id(), 34.5, 45.6)).value());
-
-	EXPECT_FLOAT_EQ(12.3 * 45.6 - 23.4 * 34.5,
-		cross_product(
-			dyn_vect2<Speed>(metres_per_second::id(), 12.3, 23.4),
-			dyn_vect2<MagneticField>(tesla::id(), 34.5, 45.6)).value());
-	EXPECT_FLOAT_EQ(12.3 * 45.6 - 23.4 * 34.5,
-		cross_product(
-			dyn_vect2<MagneticField>(tesla::id(), 12.3, 23.4),
-			dyn_vect2<Speed>(metres_per_second::id(), 34.5, 45.6)).value());
-	
-	EXPECT_FLOAT_EQ(12.3 * 45.6 + 23.4 * 56.7 + 34.5 * 67.8,
-		(dyn_vect3<Force>(newtons::id(), 12.3, 23.4, 34.5)
-		* dyn_vect3<Length>(metres::id(), 45.6, 56.7, 67.8)).value());
-	EXPECT_FLOAT_EQ(12.3 * 45.6 + 23.4 * 56.7 + 34.5 * 67.8,
-		(dyn_vect3<Length>(metres::id(), 12.3, 23.4, 34.5)
-		* dyn_vect3<Force>(newtons::id(), 45.6, 56.7, 67.8)).value());
-		
-	auto a7 = cross_product(
-		dyn_vect3<Speed>(metres_per_second::id(), 12.3, 23.4, 34.5),
-		dyn_vect3<MagneticField>(tesla::id(), 45.6, 56.7, 67.8));
-	EXPECT_FLOAT_EQ(23.4 * 67.8 - 34.5 * 56.7, a7.x().value());
-	EXPECT_FLOAT_EQ(34.5 * 45.6 - 12.3 * 67.8, a7.y().value());
-	EXPECT_FLOAT_EQ(12.3 * 56.7 - 23.4 * 45.6, a7.z().value());
-	
-	auto a8 = cross_product(
-		dyn_vect3<MagneticField>(tesla::id(), 12.3, 23.4, 34.5),
-		dyn_vect3<Speed>(metres_per_second::id(), 45.6, 56.7, 67.8));
-	EXPECT_FLOAT_EQ(23.4 * 67.8 - 34.5 * 56.7, a8.x().value());
-	EXPECT_FLOAT_EQ(34.5 * 45.6 - 12.3 * 67.8, a8.y().value());
-	EXPECT_FLOAT_EQ(12.3 * 56.7 - 23.4 * 45.6, a8.z().value());
-
-	EXPECT_FLOAT_EQ(12.3 * 34.5 + 23.4 * 45.6,
-		(dyn_vect2<Unitless>(nounit::id(), 12.3, 23.4)
-		* dyn_vect2<Unitless>(nounit::id(), 34.5, 45.6)).value());
-	
-	EXPECT_FLOAT_EQ(12.3 * 45.6 - 23.4 * 34.5,
-		(cross_product(dyn_vect2<Unitless>(nounit::id(), 12.3, 23.4),
-		dyn_vect2<Unitless>(nounit::id(), 34.5, 45.6))).value());
-	
-	EXPECT_FLOAT_EQ(12.3 * 45.6 + 23.4 * 56.7 + 34.5 * 67.8,
-		(dyn_vect3<Unitless>(nounit::id(), 12.3, 23.4, 34.5)
-		* dyn_vect3<Unitless>(nounit::id(), 45.6, 56.7, 67.8)).value());
-
-	auto a9 = cross_product(
-		dyn_vect3<Unitless>(nounit::id(), 12.3, 23.4, 34.5),
-		dyn_vect3<Unitless>(nounit::id(), 45.6, 56.7, 67.8));
-	EXPECT_FLOAT_EQ(23.4 * 67.8 - 34.5 * 56.7, a9.x().value());
-	EXPECT_FLOAT_EQ(34.5 * 45.6 - 12.3 * 67.8, a9.y().value());
-	EXPECT_FLOAT_EQ(12.3 * 56.7 - 23.4 * 45.6, a9.z().value());
-}
-
-TEST(unitTest, dyn_derived_operations_with_undefined_units)
-{
-	EXPECT_FLOAT_EQ(12.3 * 23.47 * 24 * 1000,
-		(dyn_vect1<Time>(days::id(), 12.3)
-		* dyn_vect1<Speed>(km_per_hour::id(), 23.47)).value());
-	EXPECT_FLOAT_EQ(12.3 * 23.47 * 24 * 1000,
-		(dyn_vect1<Speed>(km_per_hour::id(), 12.3)
-		* dyn_vect1<Time>(days::id(), 23.47)).value());
-	EXPECT_FLOAT_EQ(12.3 / 23.47 / 24 / 3.6,
-		(dyn_vect1<Length>(km::id(), 12.3)
-		/ dyn_vect1<Time>(days::id(), 23.47)).value());
-	EXPECT_FLOAT_EQ(12.3 / 23.47 / 1000 * 0.0254 * 3600,
-		(dyn_vect1<Length>(inches::id(), 12.3)
-		/ dyn_vect1<Speed>(km_per_hour::id(), 23.47)).value());
-	EXPECT_FLOAT_EQ(12.3 * 23.47 * 1000 * 0.0254,
-		(dyn_vect1<Length>(inches::id(), 12.3)
-		* dyn_vect1<Length>(km::id(), 23.47)).value());
-	EXPECT_FLOAT_EQ(12.3 / 23.47 / 0.0254 * 1000 * 1000,
-		(dyn_vect1<Area>(square_km::id(), 12.3)
-		/ dyn_vect1<Length>(inches::id(), 23.47)).value());
-	EXPECT_FLOAT_EQ(sqrt(23.47) * 1000,
-		sqroot(dyn_vect1<Area>(square_km::id(), 23.47)).value());
-
-	auto a1 = dyn_vect1<Time>(days::id(), 12.3)
-		* dyn_vect2<Speed>(km_per_hour::id(), 23.47, 34.51);
-	EXPECT_FLOAT_EQ(12.3 * 23.47 * 24 * 1000, a1.x().value());
-	EXPECT_FLOAT_EQ(12.3 * 34.51 * 24 * 1000, a1.y().value());
-
-	auto a2 = dyn_vect2<Speed>(km_per_hour::id(), 23.47, 34.51)
-		* dyn_vect1<Time>(days::id(), 12.3);
-	EXPECT_FLOAT_EQ(23.47 * 12.3 * 24 * 1000, a2.x().value());
-	EXPECT_FLOAT_EQ(34.51 * 12.3 * 24 * 1000, a2.y().value());
-
-	auto a3 = dyn_vect2<Length>(km::id(), 23.47, 34.51)
-		/ dyn_vect1<Time>(days::id(), 12.3);
-	EXPECT_FLOAT_EQ(23.47 / 12.3 / 24 / 3.6, a3.x().value());
-	EXPECT_FLOAT_EQ(34.51 / 12.3 / 24 / 3.6, a3.y().value());
-
-	auto a4 = dyn_vect1<Time>(days::id(), 12.3)
-		* dyn_vect3<Speed>(km_per_hour::id(), 23.47, 34.51, 45.19);
-	EXPECT_FLOAT_EQ(12.3 * 23.47 * 24 * 1000, a4.x().value());
-	EXPECT_FLOAT_EQ(12.3 * 34.51 * 24 * 1000, a4.y().value());
-	EXPECT_FLOAT_EQ(12.3 * 45.19 * 24 * 1000, a4.z().value());
-
-	auto a5 = dyn_vect3<Speed>(km_per_hour::id(), 23.47, 34.51, 45.19)
-		* dyn_vect1<Time>(days::id(), 12.3);
-	EXPECT_FLOAT_EQ(23.47 * 12.3 * 24 * 1000, a5.x().value());
-	EXPECT_FLOAT_EQ(34.51 * 12.3 * 24 * 1000, a5.y().value());
-	EXPECT_FLOAT_EQ(45.19 * 12.3 * 24 * 1000, a5.z().value());
-
-	auto a6 = dyn_vect3<Length>(km::id(), 23.47, 34.51, 45.19)
-		/ dyn_vect1<Time>(days::id(), 12.3);
-	EXPECT_FLOAT_EQ(23.47 / 12.3 / 24 / 3.6, a6.x().value());
-	EXPECT_FLOAT_EQ(34.51 / 12.3 / 24 / 3.6, a6.y().value());
-	EXPECT_FLOAT_EQ(45.19 / 12.3 / 24 / 3.6, a6.z().value());
-
-	EXPECT_FLOAT_EQ((12.3 * 34.5 + 23.4 * 45.6) * 0.0254,
-		(dyn_vect2<Force>(newtons::id(), 12.3, 23.4)
-		* dyn_vect2<Length>(inches::id(), 34.5, 45.6)).value());
-	EXPECT_FLOAT_EQ((12.3 * 34.5 + 23.4 * 45.6) * 0.0254,
-		(dyn_vect2<Length>(inches::id(), 12.3, 23.4)
-		* dyn_vect2<Force>(newtons::id(), 34.5, 45.6)).value());
-
-	EXPECT_FLOAT_EQ((12.3 * 45.6 - 23.4 * 34.5) / 3.6,
-		cross_product(
-			dyn_vect2<Speed>(km_per_hour::id(), 12.3, 23.4),
-			dyn_vect2<MagneticField>(tesla::id(), 34.5, 45.6)).value());
-	EXPECT_FLOAT_EQ((12.3 * 45.6 - 23.4 * 34.5) / 3.6,
-		cross_product(
-			dyn_vect2<MagneticField>(tesla::id(), 12.3, 23.4),
-			dyn_vect2<Speed>(km_per_hour::id(), 34.5, 45.6)).value());
-	
-	EXPECT_FLOAT_EQ((12.3 * 45.6 + 23.4 * 56.7 + 34.5 * 67.8) * 0.0254,
-		(dyn_vect3<Force>(newtons::id(), 12.3, 23.4, 34.5)
-		* dyn_vect3<Length>(inches::id(), 45.6, 56.7, 67.8)).value());
-	EXPECT_FLOAT_EQ((12.3 * 45.6 + 23.4 * 56.7 + 34.5 * 67.8) * 0.0254,
-		(dyn_vect3<Length>(inches::id(), 12.3, 23.4, 34.5)
-		* dyn_vect3<Force>(newtons::id(), 45.6, 56.7, 67.8)).value());
-		
-	auto a7 = cross_product(
-		dyn_vect3<Speed>(km_per_hour::id(), 12.3, 23.4, 34.5),
-		dyn_vect3<MagneticField>(tesla::id(), 45.6, 56.7, 67.8));
-	EXPECT_FLOAT_EQ((23.4 * 67.8 - 34.5 * 56.7) / 3.6, a7.x().value());
-	EXPECT_FLOAT_EQ((34.5 * 45.6 - 12.3 * 67.8) / 3.6, a7.y().value());
-	EXPECT_FLOAT_EQ((12.3 * 56.7 - 23.4 * 45.6) / 3.6, a7.z().value());
-	
-	auto a8 = cross_product(
-		dyn_vect3<MagneticField>(tesla::id(), 12.3, 23.4, 34.5),
-		dyn_vect3<Speed>(km_per_hour::id(), 45.6, 56.7, 67.8));
-	EXPECT_FLOAT_EQ((23.4 * 67.8 - 34.5 * 56.7) / 3.6, a8.x().value());
-	EXPECT_FLOAT_EQ((34.5 * 45.6 - 12.3 * 67.8) / 3.6, a8.y().value());
-	EXPECT_FLOAT_EQ((12.3 * 56.7 - 23.4 * 45.6) / 3.6, a8.z().value());
-
-	EXPECT_FLOAT_EQ((12.3 * 34.5 + 23.4 * 45.6) * 1000 * 1000,
-		(dyn_vect2<Unitless>(k_nounit::id(), 12.3, 23.4)
-		* dyn_vect2<Unitless>(k_nounit::id(), 34.5, 45.6)).value());
-	
-	EXPECT_FLOAT_EQ((12.3 * 45.6 - 23.4 * 34.5) * 1000 * 1000,
-		(cross_product(dyn_vect2<Unitless>(k_nounit::id(), 12.3, 23.4),
-		dyn_vect2<Unitless>(k_nounit::id(), 34.5, 45.6))).value());
-	
-	EXPECT_FLOAT_EQ((12.3 * 45.6 + 23.4 * 56.7 + 34.5 * 67.8) * 1000 * 1000,
-		(dyn_vect3<Unitless>(k_nounit::id(), 12.3, 23.4, 34.5)
-		* dyn_vect3<Unitless>(k_nounit::id(), 45.6, 56.7, 67.8)).value());
-	
-	auto a9 = cross_product(
-		dyn_vect3<Unitless>(k_nounit::id(), 12.3, 23.4, 34.5),
-		dyn_vect3<Unitless>(k_nounit::id(), 45.6, 56.7, 67.8));
-	EXPECT_FLOAT_EQ((23.4 * 67.8 - 34.5 * 56.7) * 1000 * 1000, a9.x().value());
-	EXPECT_FLOAT_EQ((34.5 * 45.6 - 12.3 * 67.8) * 1000 * 1000, a9.y().value());
-	EXPECT_FLOAT_EQ((12.3 * 56.7 - 23.4 * 45.6) * 1000 * 1000, a9.z().value());
 }
 
 /*
@@ -4007,10 +2121,6 @@ operazioni da testare:
 //// STATIC-UNIT 2-DIMENSIONS MEASURES
 //// STATIC-UNIT 3-DIMENSIONS MEASURES
 //// STATIC-UNIT AZIMUTHS
-//// DYNAMIC-UNIT 1-DIMENSION MEASURES
-//// DYNAMIC-UNIT 2-DIMENSIONS MEASURES
-//// DYNAMIC-UNIT 3-DIMENSIONS MEASURES
-//// DYNAMIC-UNIT AZIMUTHS
 
 */
 

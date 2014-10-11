@@ -2097,7 +2097,6 @@ void generate_program(ostream& os)
 
 		generate_az_defined_derived_units_with_same_number_type(os, signed_angle, "float");
 		generate_az_defined_derived_units_with_same_number_type(os, signed_angle, "double");
-/*
 		generate_az_undefined_derived_units(os, signed_angle);
 		generate_az_defined_derived_units_with_different_number_types(os, signed_angle, "float", "double");
 		generate_az_defined_derived_units_with_different_number_types(os, signed_angle, "double", "float");

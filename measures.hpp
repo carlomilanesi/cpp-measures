@@ -7,21 +7,25 @@
 #include <type_traits>
 
 
-///////////////////////// STATIC ASSERTS FOR MAGNITUDE /////////////////////////
-template <typename T>
-inline void assert_same_type(T, T) { }
-#define ASSERT_HAVE_SAME_MAGNITUDE(U1,U2)\
-    assert_same_type(typename U1::magnitude(0), typename U2::magnitude(0));
-#define ASSERT_IS_ANGLE(U)\
-    assert_same_type(typename U::magnitude(0), Angle(0));
-
-///////////////////////// UNIT FEATURES /////////////////////////
+//////////////////// STATIC ASSERTS FOR MAGNITUDE ////////////////////
 
 namespace measures
 {
-    template <typename Num>
-    Num sqr(Num x) { return x * x; }
-    
+    template <typename T> inline void assert_same_type(T, T) { }
+}
+#define ASSERT_HAVE_SAME_MAGNITUDE(U1,U2)\
+    assert_same_type(typename U1::magnitude(0),\
+        typename U2::magnitude(0));
+#define ASSERT_IS_ANGLE(U)\
+    assert_same_type(typename U::magnitude(0), Angle(0));
+
+
+//////////////////// UNIT FEATURES ////////////////////
+
+namespace measures
+{
+    template <typename Num> Num sqr(Num x) { return x * x; }
+
     struct unit_features
         { double ratio, offset; char const* suffix; };
     struct angle_unit_features
@@ -29,7 +33,7 @@ namespace measures
 }
 
 
-///////////////////////// MAGNITUDE AND UNIT DEFINITIONS /////////////////////////
+//////////////////// MAGNITUDE AND UNIT DEFINITIONS ////////////////////
 
 // Every unit class is never instanced.
 // It is used only as a template parameter
@@ -37,12 +41,14 @@ namespace measures
 #define DEFINE_UNIT(UnitClass,MagnitudeClass,Suffix,Ratio,Offset)\
     namespace measures\
     {\
-        static unit_features UnitClass##_features_ = { Ratio, Offset, Suffix };\
+        static unit_features UnitClass##_features_\
+            = { Ratio, Offset, Suffix };\
         class UnitClass\
         {\
         public:\
             typedef MagnitudeClass magnitude;\
-            static MagnitudeClass id() { return MagnitudeClass(&UnitClass##_features_); }\
+            static MagnitudeClass id()\
+                { return MagnitudeClass(&UnitClass##_features_); }\
             static char const* suffix() { return Suffix; }\
             static double ratio() { return Ratio; }\
             static double offset() { return Offset; }\
@@ -52,7 +58,8 @@ namespace measures
 #define DEFINE_ANGLE_UNIT(UnitClass,Suffix,TurnFraction,Offset)\
     namespace measures\
     {\
-        static angle_unit_features UnitClass##_features_ = { 2 * pi / (TurnFraction), Offset, TurnFraction, Suffix };\
+        static angle_unit_features UnitClass##_features_\
+            = { 2 * pi / (TurnFraction), Offset, TurnFraction, Suffix };\
         class UnitClass\
         {\
         public:\
@@ -87,7 +94,7 @@ namespace measures
     DEFINE_UNIT(MainUnitClass, MagnitudeClass, MainUnitSuffix, 1, 0)
 
 
-///////////////////////// PREDEFINED MAGNITUDES AND UNITS /////////////////////////
+//////////////////// PREDEFINED MAGNITUDES AND UNITS ////////////////////
 
 // The "Angle" magnitude and its "radians" unit are required.
 namespace measures
@@ -111,7 +118,7 @@ namespace measures
 DEFINE_ANGLE_UNIT(radians, " rad", 2 * pi, 0)
 
 
-///////////////////////// DERIVED UNITS /////////////////////////
+//////////////////// DERIVED UNITS ////////////////////
 
 /*
 The following different-unit operations are supported:
@@ -124,13 +131,13 @@ Vector / Scalar -> Vector // vector external product by the reciprocal
 Vector * Vector -> Scalar // vector dot product
 cross_product(Vector, Vector) -> Vector // vector cross product
 */
-    
+
 // U1 (Scalar) * U2 (Vector) == U3 (Vector)
 // with U1 != U2
 #define DEFINE_DERIVED_UNIT_SCALAR_VECTOR(U1,U2,U3)\
     DEFINE_DERIVED_UNIT_SCALAR_SCALAR(U1,U2,U3)\
     DEFINE_DERIVED_OTHER_UNIT_SCALAR_VECTOR(U1,U2,U3)
-    
+
 // U1 (Vector) * U2 (Vector) == U3 (Scalar)
 // U1 (Vector) X U2 (Vector) == U3 (Vector)
 // with U1 != U2
@@ -154,7 +161,8 @@ cross_product(Vector, Vector) -> Vector // vector cross product
         vect1<U3,decltype(Num1()*Num2())> operator *(\
             vect1<U1,Num1> m1, vect1<U2,Num2> m2)\
         {\
-            return vect1<U3,decltype(Num1()*Num2())>(m1.value() * m2.value());\
+            return vect1<U3,decltype(Num1()*Num2())>(\
+                m1.value() * m2.value());\
         }\
         \
         /* vect1 * vect1 -> vect1 */\
@@ -162,7 +170,8 @@ cross_product(Vector, Vector) -> Vector // vector cross product
         vect1<U3,decltype(Num1()*Num2())> operator *(\
             vect1<U2,Num1> m2, vect1<U1,Num2> m1)\
         {\
-            return vect1<U3,decltype(Num1()*Num2())>(m2.value() * m1.value());\
+            return vect1<U3,decltype(Num1()*Num2())>(\
+                m2.value() * m1.value());\
         }\
         \
         /* vect1 / vect1 -> vect1 */\
@@ -170,7 +179,8 @@ cross_product(Vector, Vector) -> Vector // vector cross product
         vect1<U2,decltype(Num1()/Num2())> operator /(\
             vect1<U3,Num1> m3, vect1<U1,Num2> m1)\
         {\
-            return vect1<U2,decltype(Num1()/Num2())>(m3.value() / m1.value());\
+            return vect1<U2,decltype(Num1()/Num2())>(\
+                m3.value() / m1.value());\
         }\
         \
         /* vect1 / vect1 -> vect1 */\
@@ -178,7 +188,8 @@ cross_product(Vector, Vector) -> Vector // vector cross product
         vect1<U1,decltype(Num1()/Num2())> operator /(\
             vect1<U3,Num1> m3, vect1<U2,Num2> m2)\
         {\
-            return vect1<U1,decltype(Num1()/Num2())>(m3.value() / m2.value());\
+            return vect1<U1,decltype(Num1()/Num2())>(\
+                m3.value() / m2.value());\
         }\
     }
 
@@ -432,10 +443,12 @@ cross_product(Vector, Vector) -> Vector // vector cross product
                 m1.y().value() * m2.x().value());\
         }\
     }
-    
+
 namespace measures
 {
-    ///////////////////////// STATIC-UNIT SCALAR AND 1-DIMENSIONAL VECTORS AND POINTS /////////////////////////
+
+
+    //////////////////// 1-DIMENSIONAL VECTORS AND POINTS ////////////////////
 
     template <class Unit, typename Num = double>
     class vect1
@@ -443,7 +456,7 @@ namespace measures
     public:
         typedef Unit unit;
         typedef Num numeric_type;
-    
+
         // Construct without values.
         explicit vect1() { }
 
@@ -454,11 +467,11 @@ namespace measures
         // and the same number type.
         vect1(const vect1<Unit,Num>& o):
             x_(o.value()) { }
-        
+
         // Construct using a unit and a value.
         vect1(typename Unit::magnitude unit, Num x):
             x_(static_cast<Num>(x * (unit.ratio() / Unit::ratio()))) { }
-            
+
         // Get unmutable value for the given unit.
         Num value(typename Unit::magnitude unit) const
         {
@@ -472,46 +485,28 @@ namespace measures
         Num& value() { return x_; }
 
         // +vect1 -> vect1
-        vect1<Unit,Num> operator +() const
-        {
-            return *this;
-        }
+        vect1<Unit,Num> operator +() const { return *this; }
 
         // -vect1 -> vect1
-        vect1<Unit,Num> operator -() const
-        {
-            return vect1<Unit,Num>(-x_);
-        }
+        vect1<Unit,Num> operator -() const { return vect1<Unit,Num>(-x_); }
 
         // vect1 += vect1 -> vect1
         vect1<Unit,Num> operator +=(vect1<Unit,Num> m2)
-        {
-            x_ += m2.value();
-            return *this;
-        }
+            { x_ += m2.value(); return *this; }
 
         // vect1 -= vect1 -> vect1
         vect1<Unit,Num> operator -=(vect1<Unit,Num> m2)
-        {
-            x_ -= m2.value();
-            return *this;
-        }
+            { x_ -= m2.value(); return *this; }
 
         // vect1 *= N -> vect1
         template <typename Num2>
         vect1<Unit,Num> operator *=(Num2 n)
-        {
-            x_ *= static_cast<Num>(n);
-            return *this;
-        }
+            { x_ *= static_cast<Num>(n); return *this; }
 
         // vect1 /= N -> vect1
         template <typename Num2>
         vect1<Unit,Num> operator /=(Num2 n)
-        {
-            x_ /= static_cast<Num>(n);
-            return *this;
-        }
+            { x_ /= static_cast<Num>(n); return *this; }
 
     private:
         Num x_;
@@ -520,44 +515,32 @@ namespace measures
     // vect1 == vect1 -> bool
     template <class Unit, typename Num>
     bool operator ==(vect1<Unit,Num> m1, vect1<Unit,Num> m2)
-    {
-        return m1.value() == m2.value();
-    }
+        { return m1.value() == m2.value(); }
 
     // vect1 != vect1 -> bool
     template <class Unit, typename Num>
     bool operator !=(vect1<Unit,Num> m1, vect1<Unit,Num> m2)
-    {
-        return m1.value() != m2.value();
-    }
+        { return m1.value() != m2.value(); }
 
     // vect1 < vect1 -> bool
     template <class Unit, typename Num>
     bool operator <(vect1<Unit,Num> m1, vect1<Unit,Num> m2)
-    {
-        return m1.value() < m2.value();
-    }
+        { return m1.value() < m2.value(); }
 
     // vect1 <= vect1 -> bool
     template <class Unit, typename Num>
     bool operator <=(vect1<Unit,Num> m1, vect1<Unit,Num> m2)
-    {
-        return m1.value() <= m2.value();
-    }
+        { return m1.value() <= m2.value(); }
 
     // vect1 > vect1 -> bool
     template <class Unit, typename Num>
     bool operator >(vect1<Unit,Num> m1, vect1<Unit,Num> m2)
-    {
-        return m1.value() > m2.value();
-    }
+        { return m1.value() > m2.value(); }
 
     // vect1 >= vect1 -> bool
     template <class Unit, typename Num>
     bool operator >=(vect1<Unit,Num> m1, vect1<Unit,Num> m2)
-    {
-        return m1.value() >= m2.value();
-    }
+        { return m1.value() >= m2.value(); }
 
     // is_equal(vect1, vect1, tolerance) -> bool
     template <class Unit, typename Num1, typename Num2, typename Num3>
@@ -570,7 +553,8 @@ namespace measures
 
     // is_less(vect1, vect1, tolerance) -> bool
     template <class Unit, typename Num1, typename Num2, typename Num3>
-    bool is_less(vect1<Unit,Num1> m1, vect1<Unit,Num2> m2, vect1<Unit,Num3> tolerance)
+    bool is_less(vect1<Unit,Num1> m1, vect1<Unit,Num2> m2,\
+        vect1<Unit,Num3> tolerance)
     {
         return static_cast<Num3>(m1.value())
             < static_cast<Num3>(m2.value()) - tolerance.value();
@@ -583,7 +567,7 @@ namespace measures
         return static_cast<Num3>(m1.value())
             <= static_cast<Num3>(m2.value()) + tolerance.value();
     }
-    
+
     template <class Unit, typename Num = double>
     class point1
     {
@@ -596,18 +580,17 @@ namespace measures
 
         // Construct using one number of the same number type.
         explicit point1(Num x): x_(x) { }
-        
+
         // Construct using another point1 of the same unit
         // and the same number type.
         point1(const point1<Unit,Num>& o):
             x_(o.value()) { }
 
-        //@
         // Construct using a unit and a value.
         point1(typename Unit::magnitude unit, Num x):
             x_(static_cast<Num>(x * (unit.ratio() / Unit::ratio())
                 + (unit.offset() - Unit::offset()) / Unit::ratio())) { }
-            
+
         // Get unmutable value for the given unit.
         Num value(typename Unit::magnitude unit) const
         {
@@ -623,17 +606,11 @@ namespace measures
 
         // point1 += vect1 -> point1
         point1<Unit,Num> operator +=(vect1<Unit,Num> m2)
-        {
-            x_ += m2.value();
-            return *this;
-        }
+            { x_ += m2.value(); return *this; }
 
         // point1 -= vect1 -> point1
         point1<Unit,Num> operator -=(vect1<Unit,Num> m2)
-        {
-            x_ -= m2.value();
-            return *this;
-        }
+            { x_ -= m2.value(); return *this; }
 
     private:
         Num x_;
@@ -656,12 +633,10 @@ namespace measures
     {
         Num result = 0;
         for (int i = 0; i < n; ++i)
-        {
-            result += p[i].value() * weights[i];
-        }
+            { result += p[i].value() * weights[i]; }
         return point1<Unit,Num>(result);
     }
-    
+
     // point1 - point1 -> vect1
     template <class Unit, typename Num1, typename Num2>
     vect1<Unit,decltype(Num1()-Num2())> operator -(
@@ -670,48 +645,36 @@ namespace measures
         return vect1<Unit,decltype(Num1()-Num2())>(
             m1.value() - m2.value());
     }
-    
+
     // point1 == point1 -> bool
     template <class Unit, typename Num>
     bool operator ==(point1<Unit,Num> m1, point1<Unit,Num> m2)
-    {
-        return m1.value() == m2.value();
-    }
+        { return m1.value() == m2.value(); }
 
     // point1 != point1 -> bool
     template <class Unit, typename Num>
     bool operator !=(point1<Unit,Num> m1, point1<Unit,Num> m2)
-    {
-        return m1.value() != m2.value();
-    }
+        { return m1.value() != m2.value(); }
 
     // point1 < point1 -> bool
     template <class Unit, typename Num>
     bool operator <(point1<Unit,Num> m1, point1<Unit,Num> m2)
-    {
-        return m1.value() < m2.value();
-    }
+        { return m1.value() < m2.value(); }
 
     // point1 <= point1 -> bool
     template <class Unit, typename Num>
     bool operator <=(point1<Unit,Num> m1, point1<Unit,Num> m2)
-    {
-        return m1.value() <= m2.value();
-    }
+        { return m1.value() <= m2.value(); }
 
     // point1 > point1 -> bool
     template <class Unit, typename Num>
     bool operator >(point1<Unit,Num> m1, point1<Unit,Num> m2)
-    {
-        return m1.value() > m2.value();
-    }
+        { return m1.value() > m2.value(); }
 
     // point1 >= point1 -> bool
     template <class Unit, typename Num>
     bool operator >=(point1<Unit,Num> m1, point1<Unit,Num> m2)
-    {
-        return m1.value() >= m2.value();
-    }
+        { return m1.value() >= m2.value(); }
 
     // is_equal(point1, point1, tolerance) -> bool
     template <class Unit, typename Num1, typename Num2, typename Num3>
@@ -724,7 +687,8 @@ namespace measures
 
     // is_less(point1, point1, tolerance) -> bool
     template <class Unit, typename Num1, typename Num2, typename Num3>
-    bool is_less(point1<Unit,Num1> m1, point1<Unit,Num2> m2, vect1<Unit,Num3> tolerance)
+    bool is_less(point1<Unit,Num1> m1, point1<Unit,Num2> m2,
+	    vect1<Unit,Num3> tolerance)
     {
         return static_cast<Num3>(m1.value())
             < static_cast<Num3>(m2.value()) - tolerance.value();
@@ -732,17 +696,20 @@ namespace measures
 
     // is_less_or_equal(point1, point1, tolerance) -> bool
     template <class Unit, typename Num1, typename Num2, typename Num3>
-    bool is_less_or_equal(point1<Unit,Num1> m1, point1<Unit,Num2> m2, vect1<Unit,Num3> tolerance)
+    bool is_less_or_equal(point1<Unit,Num1> m1, point1<Unit,Num2> m2,
+        vect1<Unit,Num3> tolerance)
     {
         return static_cast<Num3>(m1.value())
             <= static_cast<Num3>(m2.value()) + tolerance.value();
     }
-    
+
     // point1 + vect1 -> point1
     template <class Unit, typename Num1, typename Num2>
-    point1<Unit,decltype(Num1()+Num2())> operator +(point1<Unit,Num1> m1, vect1<Unit,Num2> m2)
+    point1<Unit,decltype(Num1()+Num2())> operator +(point1<Unit,Num1> m1,
+	    vect1<Unit,Num2> m2)
     {
-        return point1<Unit,decltype(Num1()+Num2())>(m1.value() + m2.value());
+        return point1<Unit,decltype(Num1()+Num2())>(
+		    m1.value() + m2.value());
     }
 
     // point1 - vect1 -> point1
@@ -756,7 +723,8 @@ namespace measures
 
     // vect1 + vect1 -> vect1
     template <class Unit, typename Num1, typename Num2>
-    vect1<Unit,decltype(Num1()+Num2())> operator +(vect1<Unit,Num1> m1, vect1<Unit,Num2> m2)
+    vect1<Unit,decltype(Num1()+Num2())> operator +(
+	    vect1<Unit,Num1> m1, vect1<Unit,Num2> m2)
     {
         return vect1<Unit,decltype(Num1()+Num2())>(m1.value() + m2.value());
     }
@@ -766,53 +734,43 @@ namespace measures
     vect1<Unit,decltype(Num1()-Num2())> operator -(
         vect1<Unit,Num1> m1, vect1<Unit,Num2> m2)
     {
-        return vect1<Unit,decltype(Num1()-Num2())>(
-            m1.value() - m2.value());
+        return vect1<Unit,decltype(Num1()-Num2())>(m1.value() - m2.value());
     }
 
     // N * vect1 -> vect1
     template <class Unit, typename Num1, typename Num2>
-    vect1<Unit,decltype(Num1()*Num2())> operator *(Num1 n, vect1<Unit,Num2> m)
-    {
-        return vect1<Unit,decltype(Num1()*Num2())>(n * m.value());
-    }
+    vect1<Unit,decltype(Num1()*Num2())> operator *(
+	    Num1 n, vect1<Unit,Num2> m)
+        { return vect1<Unit,decltype(Num1()*Num2())>(n * m.value()); }
 
     // vect1 * N -> vect1
     template <class Unit, typename Num1, typename Num2>
     vect1<Unit,decltype(Num1()*Num2())> operator *(vect1<Unit,Num1> m, Num2 n)
-    {
-        return vect1<Unit,decltype(Num1()*Num2())>(m.value() * n);
-    }
+        { return vect1<Unit,decltype(Num1()*Num2())>(m.value() * n); }
 
     // vect1 / N -> vect1
     template <class Unit, typename Num1, typename Num2>
     vect1<Unit,decltype(Num1()/Num2())> operator /(vect1<Unit,Num1> m, Num2 n)
-    {
-        return vect1<Unit,decltype(Num1()/Num2())>(m.value() / n);
-    }
+        { return vect1<Unit,decltype(Num1()/Num2())>(m.value() / n); }
 
     // vect1 / vect1 -> N
     template <class Unit, typename Num1, typename Num2>
-    decltype(Num1()/Num2()) operator /(vect1<Unit,Num1> m1, vect1<Unit,Num2> m2)
-    {
-        return m1.value() / m2.value();
-    }
+    decltype(Num1()/Num2()) operator /(
+	    vect1<Unit,Num1> m1, vect1<Unit,Num2> m2)
+        { return m1.value() / m2.value(); }
 
     // squared_norm_value(vect1) -> N
     template <class Unit, typename Num>
     Num squared_norm_value(vect1<Unit,Num> v)
-    {
-        return sqr(v.value());
-    }
+        { return sqr(v.value()); }
 
     // norm(vect1) -> vect1
     template <class Unit, typename Num>
     vect1<Unit,Num> norm(vect1<Unit,Num> v)
-    {
-        return vect1<Unit,Num>(std::abs(v.value()));
-    }
-    
-    ///////////////////////// STATIC-UNIT 2-DIMENSIONAL VECTORS AND POINTS /////////////////////////
+		{ return vect1<Unit,Num>(std::abs(v.value())); }
+
+
+    //////////////////// 2-DIMENSIONAL VECTORS AND POINTS ////////////////////
 
     template <class Unit, typename Num> class signed_azimuth;
 
@@ -848,9 +806,7 @@ namespace measures
         explicit vect2(const point1<Unit2,Num2>& a):
             x_(static_cast<Num>(cos(a))),
             y_(static_cast<Num>(sin(a)))
-        {
-            ASSERT_IS_ANGLE(Unit2)
-        }
+			{ ASSERT_IS_ANGLE(Unit2) }
 
         // Construct a versor using a signed_azimuth.
         template <class Unit2, typename Num2>
@@ -864,18 +820,12 @@ namespace measures
             x_(static_cast<Num>(cos(a))),
             y_(static_cast<Num>(sin(a))) { }
 
-        //@
         // +vect2 -> vect2
-        vect2<Unit,Num> operator +() const
-        {
-            return *this;
-        }
+        vect2<Unit,Num> operator +() const { return *this; }
 
         // -vect2 -> vect2
         vect2<Unit,Num> operator -() const
-        {
-            return vect2<Unit,Num>(-x_, -y_);
-        }
+			{ return vect2<Unit,Num>(-x_, -y_); }
 
         // vect2 += vect2 -> vect2
         vect2<Unit,Num> operator +=(vect2<Unit,Num> m2)
@@ -919,39 +869,36 @@ namespace measures
                 x_ * sin(a) + y_ * cos(a));
         }
 
-        vect2<Unit,Num> rotated_left()
-        {
-            return vect2<Unit,Num>(- y_, x_);
-        }
+        vect2<Unit,Num> rotated_left() const
+			{ return vect2<Unit,Num>(- y_, x_); }
 
-        vect2<Unit,Num> rotated_right()
-        {
-            return vect2<Unit,Num>(y_, - x_);
-        }
+        vect2<Unit,Num> rotated_right() const
+			{ return vect2<Unit,Num>(y_, - x_); }
 
-        //@
         // Construct using a unit and two values.
         vect2(typename Unit::magnitude unit, Num x, Num y):
             x_(static_cast<Num>(x * (unit.ratio() / Unit::ratio()))),
             y_(static_cast<Num>(y * (unit.ratio() / Unit::ratio()))) { }
-                
+
         // Get unmutable component array.
         Num const* data() const { return &x_; }
 
         // Get mutable component array.
         Num* data() { return &x_; }
-        
+
         // Get unmutable x component.
         vect1<Unit,Num> const x() const { return vect1<Unit,Num>(x_); }
 
         // Get mutable x component.
-        vect1<Unit,Num>& x() { return reinterpret_cast<vect1<Unit,Num>&>(x_); }
+        vect1<Unit,Num>& x()
+			{ return reinterpret_cast<vect1<Unit,Num>&>(x_); }
 
         // Get unmutable y component.
         vect1<Unit,Num> const y() const { return vect1<Unit,Num>(y_); }
 
         // Get mutable y component.
-        vect1<Unit,Num>& y() { return reinterpret_cast<vect1<Unit,Num>&>(y_); }
+        vect1<Unit,Num>& y()
+			{ return reinterpret_cast<vect1<Unit,Num>&>(y_); }
 
     private:
 
@@ -974,15 +921,16 @@ namespace measures
         return m1.x().value() != m2.x().value()
             || m1.y().value() != m2.y().value();
     }
-    
+
     // is_equal(vect2, vect2, tolerance) -> bool
     template <class Unit, typename Num1, typename Num2, typename Num3>
-    bool is_equal(vect2<Unit,Num1> m1, vect2<Unit,Num2> m2, vect1<Unit,Num3> tolerance)
+    bool is_equal(vect2<Unit,Num1> m1, vect2<Unit,Num2> m2,
+		vect1<Unit,Num3> tolerance)
     {
         return static_cast<Num3>(squared_norm_value(m1 - m2))
             <= squared_norm_value(tolerance);
     }
-    
+
     template <class Unit, typename Num = double>
     class point2
     {
@@ -995,7 +943,7 @@ namespace measures
 
         // Construct using two numbers of the same number type.
         explicit point2(Num x, Num y): x_(x), y_(y) { }
-        
+
         // Construct using an array of two numbers of the same number type.
         explicit point2(Num const values[]): x_(values[0]), y_(values[1]) { }
 
@@ -1025,35 +973,38 @@ namespace measures
         }
 
         template <class Unit2, typename Num2>
-        point2<Unit,Num> rotated_by(
+        point2<Unit,Num> rotated_by_around(
             vect1<Unit2,Num2> a, point2<Unit,Num> rotation_center)
         {
             return rotation_center + (*this - rotation_center).rotated_by(a);
         }
 
-        //@
         // Construct using a unit and a value.
         point2(typename Unit::magnitude unit, Num x, Num y):
-            x_(static_cast<Num>((unit.offset() - Unit::offset() + x * unit.ratio()) / Unit::ratio())),
-            y_(static_cast<Num>((unit.offset() - Unit::offset() + y * unit.ratio()) / Unit::ratio())) { }
-                
+            x_(static_cast<Num>((unit.offset() - Unit::offset()
+				+ x * unit.ratio()) / Unit::ratio())),
+            y_(static_cast<Num>((unit.offset() - Unit::offset()
+				+ y * unit.ratio()) / Unit::ratio())) { }
+
         // Get unmutable component array.
         Num const* data() const { return &x_; }
 
         // Get mutable component array.
         Num* data() { return &x_; }
-        
+
         // Get unmutable x component.
         point1<Unit,Num> const x() const { return point1<Unit,Num>(x_); }
 
         // Get mutable x component.
-        point1<Unit,Num>& x() { return reinterpret_cast<point1<Unit,Num>&>(x_); }
+        point1<Unit,Num>& x()
+			{ return reinterpret_cast<point1<Unit,Num>&>(x_); }
 
         // Get unmutable y component.
         point1<Unit,Num> const y() const { return point1<Unit,Num>(y_); }
 
         // Get mutable y component.
-        point1<Unit,Num>& y() { return reinterpret_cast<point1<Unit,Num>&>(y_); }
+        point1<Unit,Num>& y()
+			{ return reinterpret_cast<point1<Unit,Num>&>(y_); }
 
     private:
 
@@ -1121,7 +1072,7 @@ namespace measures
         return static_cast<Num3>(squared_norm_value(m1 - m2))
             <= squared_norm_value(tolerance);
     }
-    
+
     // point2 + vect2 -> point2
     template <class Unit, typename Num1, typename Num2>
     point2<Unit,decltype(Num1()+Num2())> operator +(
@@ -1144,7 +1095,8 @@ namespace measures
 
     // vect2 + vect2 -> vect2
     template <class Unit, typename Num1, typename Num2>
-    vect2<Unit,decltype(Num1()+Num2())> operator +(vect2<Unit,Num1> m1, vect2<Unit,Num2> m2)
+    vect2<Unit,decltype(Num1()+Num2())> operator +(
+		vect2<Unit,Num1> m1, vect2<Unit,Num2> m2)
     {
         return vect2<Unit,decltype(Num1()+Num2())>(
             m1.x().value() + m2.x().value(),
@@ -1163,7 +1115,8 @@ namespace measures
 
     // N * vect2 -> vect2
     template <class Unit, typename Num1, typename Num2>
-    vect2<Unit,decltype(Num1()*Num2())> operator *(Num1 n, vect2<Unit,Num2> m)
+    vect2<Unit,decltype(Num1()*Num2())> operator *(
+		Num1 n, vect2<Unit,Num2> m)
     {
         return vect2<Unit,decltype(Num1()*Num2())>(
             n * m.x().value(),
@@ -1172,7 +1125,8 @@ namespace measures
 
     // vect2 * N -> vect2
     template <class Unit, typename Num1, typename Num2>
-    vect2<Unit,decltype(Num1()*Num2())> operator *(vect2<Unit,Num1> m, Num2 n)
+    vect2<Unit,decltype(Num1()*Num2())> operator *(
+		vect2<Unit,Num1> m, Num2 n)
     {
         return vect2<Unit,decltype(Num1()*Num2())>(
             m.x().value() * n,
@@ -1181,7 +1135,8 @@ namespace measures
 
     // vect2 / N -> vect2
     template <class Unit, typename Num1, typename Num2>
-    vect2<Unit,decltype(Num1()/Num2())> operator /(vect2<Unit,Num1> m, Num2 n)
+    vect2<Unit,decltype(Num1()/Num2())> operator /(
+		vect2<Unit,Num1> m, Num2 n)
     {
         return vect2<Unit,decltype(Num1()*Num2())>(
             m.x().value() / n,
@@ -1190,9 +1145,7 @@ namespace measures
 
     template <class Unit, typename Num>
     Num squared_norm_value(vect2<Unit,Num> v)
-    {
-        return sqr(v.x().value()) + sqr(v.y().value());
-    }
+		{ return sqr(v.x().value()) + sqr(v.y().value()); }
 
     template <class Unit, typename Num>
     vect1<Unit,Num> norm(vect2<Unit,Num> v)
@@ -1201,8 +1154,8 @@ namespace measures
             static_cast<Num>(sqrt(squared_norm_value(v))));
     }
 
-    
-    ///////////////////////// STATIC 3-DIMENSIONAL POINTS AND VECTORS /////////////////////////
+
+    //////////////////// 3-DIMENSIONAL POINTS AND VECTORS ////////////////////
 
     template <class Unit, typename Num = double>
     class vect3
@@ -1222,24 +1175,19 @@ namespace measures
             x_(values[0]), y_(values[1]), z_(values[2]) { }
 
         // Construct using three vect1s of the same unit and number type.
-        explicit vect3(vect1<Unit,Num> x, vect1<Unit,Num> y, vect1<Unit,Num> z):
+        explicit vect3(vect1<Unit,Num> x, vect1<Unit,Num> y,
+			vect1<Unit,Num> z):
             x_(x.value()), y_(y.value()), z_(z.value()) { }
 
         // Construct using another vect3 of the same unit and number type.
-        vect3(const vect3<Unit,Num>& o):
-            x_(o.x_), y_(o.y_), z_(o.z_) { }
+        vect3(const vect3<Unit,Num>& o): x_(o.x_), y_(o.y_), z_(o.z_) { }
 
         // +vect3 -> vect3
-        vect3<Unit,Num> operator +() const
-        {
-            return *this;
-        }
+        vect3<Unit,Num> operator +() const { return *this; }
 
         // -vect3 -> vect3
         vect3<Unit,Num> operator -() const
-        {
-            return vect3<Unit,Num>(-x_, -y_, -z_);
-        }
+			{ return vect3<Unit,Num>(-x_, -y_, -z_); }
 
         // vect3 += vect3 -> vect3
         vect3<Unit,Num> operator +=(vect3<Unit,Num> m2)
@@ -1279,36 +1227,39 @@ namespace measures
             return *this;
         }
 
-        //@
         // Construct using a unit and a value.
         vect3(typename Unit::magnitude unit, Num x, Num y, Num z):
             x_(static_cast<Num>(x * (unit.ratio() / Unit::ratio()))),
             y_(static_cast<Num>(y * (unit.ratio() / Unit::ratio()))),
             z_(static_cast<Num>(z * (unit.ratio() / Unit::ratio()))) { }
-        
+
         // Get unmutable component array.
         Num const* data() const { return &x_; }
 
         // Get mutable component array.
         Num* data() { return &x_; }
-        
+
         // Get unmutable x component.
         vect1<Unit,Num> const x() const { return vect1<Unit,Num>(x_); }
 
         // Get mutable x component.
-        vect1<Unit,Num>& x() { return reinterpret_cast<vect1<Unit,Num>&>(x_); }
+        vect1<Unit,Num>& x()
+			{ return reinterpret_cast<vect1<Unit,Num>&>(x_); }
 
         // Get unmutable y component.
-        vect1<Unit,Num> const y() const { return vect1<Unit,Num>(y_); }
+        vect1<Unit,Num> const y() const
+			{ return vect1<Unit,Num>(y_); }
 
         // Get mutable y component.
-        vect1<Unit,Num>& y() { return reinterpret_cast<vect1<Unit,Num>&>(y_); }
+        vect1<Unit,Num>& y()
+			{ return reinterpret_cast<vect1<Unit,Num>&>(y_); }
 
         // Get unmutable z component.
         vect1<Unit,Num> const z() const { return vect1<Unit,Num>(z_); }
 
         // Get mutable z component.
-        vect1<Unit,Num>& z() { return reinterpret_cast<vect1<Unit,Num>&>(z_); }
+        vect1<Unit,Num>& z()
+			{ return reinterpret_cast<vect1<Unit,Num>&>(z_); }
 
     private:
 
@@ -1336,12 +1287,13 @@ namespace measures
 
     // is_equal(vect3, vect3, tolerance) -> bool
     template <class Unit, typename Num1, typename Num2, typename Num3>
-    bool is_equal(vect3<Unit,Num1> m1, vect3<Unit,Num2> m2, vect1<Unit,Num3> tolerance)
+    bool is_equal(vect3<Unit,Num1> m1, vect3<Unit,Num2> m2,
+		vect1<Unit,Num3> tolerance)
     {
         return static_cast<Num3>(squared_norm_value(m1 - m2))
             <= squared_norm_value(tolerance);
     }
-    
+
     template <class Unit, typename Num = double>
     class point3
     {
@@ -1360,7 +1312,8 @@ namespace measures
             x_(values[0]), y_(values[1]), z_(values[2]) { }
 
         // Construct using three point1s of the same unit and number type.
-        explicit point3(point1<Unit,Num> x, point1<Unit,Num> y, point1<Unit,Num> z):
+        explicit point3(point1<Unit,Num> x, point1<Unit,Num> y,
+			point1<Unit,Num> z):
             x_(x.value()), y_(y.value()), z_(z.value()) { }
 
         // Construct using another point3 of the same unit and number type.
@@ -1385,36 +1338,41 @@ namespace measures
             return *this;
         }
 
-        //@
         // Construct using a unit and a value.
         point3(typename Unit::magnitude unit, Num x, Num y, Num z):
-            x_(static_cast<Num>((unit.offset() - Unit::offset() + x * unit.ratio()) / Unit::ratio())),
-            y_(static_cast<Num>((unit.offset() - Unit::offset() + y * unit.ratio()) / Unit::ratio())),
-            z_(static_cast<Num>((unit.offset() - Unit::offset() + z * unit.ratio()) / Unit::ratio())) { }
-        
+            x_(static_cast<Num>((unit.offset() - Unit::offset()
+				+ x * unit.ratio()) / Unit::ratio())),
+            y_(static_cast<Num>((unit.offset() - Unit::offset()
+				+ y * unit.ratio()) / Unit::ratio())),
+            z_(static_cast<Num>((unit.offset() - Unit::offset()
+				+ z * unit.ratio()) / Unit::ratio())) { }
+
         // Get unmutable component array.
         Num const* data() const { return &x_; }
 
         // Get mutable component array.
         Num* data() { return &x_; }
-        
+
         // Get unmutable x component.
         point1<Unit,Num> const x() const { return point1<Unit,Num>(x_); }
 
         // Get mutable x component.
-        point1<Unit,Num>& x() { return reinterpret_cast<point1<Unit,Num>&>(x_); }
+        point1<Unit,Num>& x()
+			{ return reinterpret_cast<point1<Unit,Num>&>(x_); }
 
         // Get unmutable y component.
         point1<Unit,Num> const y() const { return point1<Unit,Num>(y_); }
 
         // Get mutable y component.
-        point1<Unit,Num>& y() { return reinterpret_cast<point1<Unit,Num>&>(y_); }
+        point1<Unit,Num>& y()
+			{ return reinterpret_cast<point1<Unit,Num>&>(y_); }
 
         // Get unmutable z component.
         point1<Unit,Num> const z() const { return point1<Unit,Num>(z_); }
 
         // Get mutable z component.
-        point1<Unit,Num>& z() { return reinterpret_cast<point1<Unit,Num>&>(z_); }
+        point1<Unit,Num>& z()
+			{ return reinterpret_cast<point1<Unit,Num>&>(z_); }
 
     private:
 
@@ -1461,7 +1419,7 @@ namespace measures
             m1.y().value() - m2.y().value(),
             m1.z().value() - m2.z().value());
     }
-    
+
     // point3 == point3 -> bool
     template <class Unit, typename Num>
     bool operator ==(point3<Unit,Num> m1, point3<Unit,Num> m2)
@@ -1482,15 +1440,17 @@ namespace measures
 
     // is_equal(point3, point3, tolerance) -> bool
     template <class Unit, typename Num1, typename Num2, typename Num3>
-    bool is_equal(point3<Unit,Num1> m1, point3<Unit,Num2> m2, vect1<Unit,Num3> tolerance)
+    bool is_equal(point3<Unit,Num1> m1, point3<Unit,Num2> m2,
+		vect1<Unit,Num3> tolerance)
     {
         return static_cast<Num3>(squared_norm_value(m1 - m2))
             <= squared_norm_value(tolerance);
     }
-    
+
     // point3 + vect3 -> point3
     template <class Unit, typename Num1, typename Num2>
-    point3<Unit,decltype(Num1()+Num2())> operator +(point3<Unit,Num1> m1, vect3<Unit,Num2> m2)
+    point3<Unit,decltype(Num1()+Num2())> operator +(
+		point3<Unit,Num1> m1, vect3<Unit,Num2> m2)
     {
         return point3<Unit,decltype(Num1()+Num2())>(
             m1.x().value() + m2.x().value(),
@@ -1512,7 +1472,8 @@ namespace measures
 
     // vect3 + vect3 -> vect3
     template <class Unit, typename Num1, typename Num2>
-    vect3<Unit,decltype(Num1()+Num2())> operator +(vect3<Unit,Num1> m1, vect3<Unit,Num2> m2)
+    vect3<Unit,decltype(Num1()+Num2())> operator +(
+		vect3<Unit,Num1> m1, vect3<Unit,Num2> m2)
     {
         return vect3<Unit,decltype(Num1()+Num2())>(
             m1.x().value() + m2.x().value(),
@@ -1533,7 +1494,8 @@ namespace measures
 
     // N * vect3 -> vect3
     template <class Unit, typename Num1, typename Num2>
-    vect3<Unit,decltype(Num1()*Num2())> operator *(Num1 n, vect3<Unit,Num2> m)
+    vect3<Unit,decltype(Num1()*Num2())> operator *(
+		Num1 n, vect3<Unit,Num2> m)
     {
         return vect3<Unit,decltype(Num1()*Num2())>(
             n * m.x().value(),
@@ -1543,7 +1505,8 @@ namespace measures
 
     // vect3 * N -> vect3
     template <class Unit, typename Num1, typename Num2>
-    vect3<Unit,decltype(Num1()*Num2())> operator *(vect3<Unit,Num1> m, Num2 n)
+    vect3<Unit,decltype(Num1()*Num2())> operator *(
+		vect3<Unit,Num1> m, Num2 n)
     {
         return vect3<Unit,decltype(Num1()*Num2())>(
             m.x().value() * n,
@@ -1553,7 +1516,8 @@ namespace measures
 
     // vect3 / N -> vect3
     template <class Unit, typename Num1, typename Num2>
-    vect3<Unit,decltype(Num1()/Num2())> operator /(vect3<Unit,Num1> m, Num2 n)
+    vect3<Unit,decltype(Num1()/Num2())> operator /(
+		vect3<Unit,Num1> m, Num2 n)
     {
         return vect3<Unit,decltype(Num1()*Num2())>(
             m.x().value() / n,
@@ -1575,7 +1539,7 @@ namespace measures
     }
 
 
-    ///////////////////////// STATIC CONVERSIONS /////////////////////////
+    //////////////////// UNIT CONVERSIONS ////////////////////
 
     // Scalar measures
     template <class ToUnit, class FromUnit, typename Num>
@@ -1594,7 +1558,7 @@ namespace measures
             m.value() * (FromUnit::ratio() / ToUnit::ratio())
             + (FromUnit::offset() - ToUnit::offset()) / ToUnit::ratio()));
     }
-    
+
     // Planar measures
     template <class ToUnit, class FromUnit, typename Num>
     vect2<ToUnit,Num> convert(vect2<FromUnit,Num> m)
@@ -1649,72 +1613,8 @@ namespace measures
     }
 
 
-    ///////////////////////// STATIC CASTS /////////////////////////
+    //////////////////// AZIMUTHS ////////////////////
 
-    // Scalar measures
-    template <class Unit, typename ToNum, typename FromNum>
-    vect1<Unit,ToNum> cast(vect1<Unit,FromNum> m)
-    {
-        return vect1<Unit,ToNum>(static_cast<ToNum>(m.value()));
-    }
-
-    template <class Unit, typename ToNum, typename FromNum>
-    point1<Unit,ToNum> cast(point1<Unit,FromNum> m)
-    {
-        return point1<Unit,ToNum>(static_cast<ToNum>(m.value()));
-    }
-
-    // Planar measures
-    template <class Unit, typename ToNum, typename FromNum>
-    vect2<Unit,ToNum> cast(vect2<Unit,FromNum> m)
-    {
-        return vect2<Unit,ToNum>(
-            cast<Unit,ToNum,FromNum>(m.x()),
-            cast<Unit,ToNum,FromNum>(m.y()));
-    }
-
-    template <class Unit, typename ToNum, typename FromNum>
-    point2<Unit,ToNum> cast(point2<Unit,FromNum> m)
-    {
-        return point2<Unit,ToNum>(
-            cast<Unit,ToNum,FromNum>(m.x()),
-            cast<Unit,ToNum,FromNum>(m.y()));
-    }
-
-    // Spacial measures
-    template <class Unit, typename ToNum, typename FromNum>
-    vect3<Unit,ToNum> cast(vect3<Unit,FromNum> m)
-    {
-        return vect3<Unit,ToNum>(
-            cast<Unit,ToNum,FromNum>(m.x()),
-            cast<Unit,ToNum,FromNum>(m.y()),
-            cast<Unit,ToNum,FromNum>(m.z()));
-    }
-
-    template <class Unit, typename ToNum, typename FromNum>
-    point3<Unit,ToNum> cast(point3<Unit,FromNum> m)
-    {
-        return point3<Unit,ToNum>(
-            cast<Unit,ToNum,FromNum>(m.x()),
-            cast<Unit,ToNum,FromNum>(m.y()),
-            cast<Unit,ToNum,FromNum>(m.z()));
-    }
-
-    // Azimuths
-    template <class Unit, typename ToNum, typename FromNum>
-    signed_azimuth<Unit,ToNum> cast(signed_azimuth<Unit,FromNum> m)
-    {
-        return signed_azimuth<Unit,ToNum>(static_cast<ToNum>(m.value()));
-    }
-
-    template <class Unit, typename ToNum, typename FromNum>
-    unsigned_azimuth<Unit,ToNum> cast(unsigned_azimuth<Unit,FromNum> m)
-    {
-        return unsigned_azimuth<Unit,ToNum>(static_cast<ToNum>(m.value()));
-    }
-    
-    ///////////////////////// STATIC ANGLES UTILS /////////////////////////
-    
     // Private.
     // For integral numbers use %.
     template <typename Num>
@@ -1760,9 +1660,9 @@ namespace measures
         Num x2 = fmod(x, one_turn);
         return x2 >= 0 ? x2 : x2 + one_turn;
     }
-    
-    //// STATIC TRIGONOMETRY ////
-    
+
+    //////////////////// TRIGONOMETRIC FUNCTIONS ////////////////////
+
     // sin(vect1) -> N
     template <class Unit, typename Num>
     Num sin(vect1<Unit,Num> m)
@@ -1786,7 +1686,7 @@ namespace measures
         ASSERT_IS_ANGLE(Unit)
         return std::tan(convert<radians>(m).value());
     }
-    
+
     // sin(point1) -> N
     template <class Unit, typename Num>
     Num sin(point1<Unit,Num> m)
@@ -1811,13 +1711,13 @@ namespace measures
         return std::tan(convert<radians>(m).value());
     }
 
-    
-    //// SIGNED AZIMUTH ////
-    
+
+    //////////////////// SIGNED AZIMUTH ////////////////////
+
     // Azimuth are meaningful only if their numeric_type is floating point
     // or their turn fraction is integer.
     // In other words, azimuths with a non-integer turn fraction,
-    // like radians, and integer numeric type must be forbidden.    
+    // like radians, and integer numeric type should be avoided.
     template <class Unit = Angle::base_unit, typename Num = double>
     class signed_azimuth
     {
@@ -1831,9 +1731,9 @@ namespace measures
         // Construct using one number of the same number type.
         explicit signed_azimuth(Num x): x_(normalize_(x)) { }
 
-        // Construct using another signed_azimuth of the same unit and number type.
-        signed_azimuth(const signed_azimuth<Unit,Num>& o):
-            x_(o.x_) { }
+        // Construct using another signed_azimuth of the same unit
+		// and number type.
+        signed_azimuth(const signed_azimuth<Unit,Num>& o): x_(o.x_) { }
 
         // Construct using a point1 representing an angle.
         explicit signed_azimuth(point1<Unit, Num> o):
@@ -1851,16 +1751,13 @@ namespace measures
                 v.x().value())))).value()) { }
 
         // Convert to a point1.
-        operator point1<Unit,Num>() const
-        {
-            return point1<Unit,Num>(x_);
-        }
+        operator point1<Unit,Num>() const { return point1<Unit,Num>(x_); }
 
         // Construct using a unit and a value.
         explicit signed_azimuth(typename Unit::magnitude unit, Num x):
             x_(normalize_(x * (unit.ratio() / Unit::ratio())
                 + (unit.offset() - Unit::offset()) / Unit::ratio())) { }
-            
+
         // Get unmutable value for the given unit.
         Num value(typename Unit::magnitude unit) const
         {
@@ -1868,27 +1765,25 @@ namespace measures
                 + (Unit::offset() - unit.offset()) / unit.ratio());
         }
 
-        // Get unmutable value (mutable getter not available).
+        // Get unmutable value (mutable getter is not available).
         Num value() const { return x_; }
 
         // signed_azimuth += vect1 -> signed_azimuth
         signed_azimuth<Unit,Num> operator +=(vect1<Unit,Num> m)
-        {
-            x_ = normalize_(x_ + m.value());
-            return *this;
-        }
+			{ x_ = normalize_(x_ + m.value()); return *this; }
 
         // signed_azimuth -= vect1 -> signed_azimuth
         signed_azimuth<Unit,Num> operator -=(vect1<Unit,Num> m)
-        {
-            x_ = normalize_(x_ - m.value());
-            return *this;
-        }
+            { x_ = normalize_(x_ - m.value()); return *this; }
 
     private:
+
+		// Returns the only value that in the current Unit represents `x`, and
+		// is between minus half turn included and plus half turn excluded.
         static Num normalize_(Num x)
         {
-            return normalize_signed_azimuth(x, static_cast<Num>(Unit::turn_fraction()));
+            return normalize_signed_azimuth(
+				x, static_cast<Num>(Unit::turn_fraction()));
         }
 
         Num x_;
@@ -1896,7 +1791,7 @@ namespace measures
 
     // signed_azimuth - signed_azimuth -> vect1
     // As a difference between two point angles it is meant the shortest
-    // vect angle that if added to the second point angle gets the first one.
+    // vect angle that if added to the second point angle gives the first one.
     template <class Unit, typename Num1, typename Num2>
     vect1<Unit,decltype(Num1()-Num2())> operator -(
         signed_azimuth<Unit,Num1> m1, signed_azimuth<Unit,Num2> m2)
@@ -1907,31 +1802,30 @@ namespace measures
         else if (difference * 2 >= one_turn) difference -= one_turn;
         return vect1<Unit,decltype(Num1()-Num2())>(difference);
     }
-    
+
     // signed_azimuth == signed_azimuth -> bool
     template <class Unit, typename Num>
-    bool operator ==(signed_azimuth<Unit,Num> m1, signed_azimuth<Unit,Num> m2)
-    {
-        return m1.value() == m2.value();
-    }
-    
+    bool operator ==(signed_azimuth<Unit,Num> m1,
+		signed_azimuth<Unit,Num> m2)
+		{ return m1.value() == m2.value(); }
+
     // signed_azimuth != signed_azimuth -> bool
     template <class Unit, typename Num>
-    bool operator !=(signed_azimuth<Unit,Num> m1, signed_azimuth<Unit,Num> m2)
-    {
-        return m1.value() != m2.value();
-    }
-    
+    bool operator !=(signed_azimuth<Unit,Num> m1,
+		signed_azimuth<Unit,Num> m2)
+		{ return m1.value() != m2.value(); }
+
     // angle_distance(signed_azimuth, signed_azimuth) -> vect1
     template <class Unit, typename Num>
-    vect1<Unit,Num> angle_distance(signed_azimuth<Unit,Num> m1, signed_azimuth<Unit,Num> m2)
+    vect1<Unit,Num> angle_distance(
+		signed_azimuth<Unit,Num> m1, signed_azimuth<Unit,Num> m2)
     {
         Num value_distance(std::abs(m1.value() - m2.value()));
         if (value_distance * 2 > Unit::turn_fraction())
             value_distance = Unit::turn_fraction() - value_distance;
         return vect1<Unit,Num>(value_distance);
     }
-    
+
     // is_equal(signed_azimuth, signed_azimuth, tolerance) -> bool
     template <class Unit, typename Num>
     bool is_equal(signed_azimuth<Unit,Num> m1,
@@ -1939,7 +1833,7 @@ namespace measures
     {
         return angle_distance(m1, m2) <= tolerance;
     }
-    
+
     // signed_azimuth + vect1 -> signed_azimuth
     template <class Unit, typename Num1, typename Num2>
     signed_azimuth<Unit,decltype(Num1()+Num2())> operator +(
@@ -1948,7 +1842,7 @@ namespace measures
         return signed_azimuth<Unit,decltype(Num1()+Num2())>(
             m1.value() + m2.value());
     }
-    
+
     // signed_azimuth - vect1 -> signed_azimuth
     template <class Unit, typename Num1, typename Num2>
     signed_azimuth<Unit,decltype(Num1()-Num2())> operator -(
@@ -1957,27 +1851,21 @@ namespace measures
         return signed_azimuth<Unit,decltype(Num1()-Num2())>(
             m1.value() - m2.value());
     }
-    
+
     // sin(signed_azimuth) -> N
     template <class Unit, typename Num>
     Num sin(signed_azimuth<Unit,Num> m)
-    {
-        return std::sin(convert<radians>(m).value());
-    }
+		{ return std::sin(convert<radians>(m).value()); }
 
     // cos(signed_azimuth) -> N
     template <class Unit, typename Num>
     Num cos(signed_azimuth<Unit,Num> m)
-    {
-        return std::cos(convert<radians>(m).value());
-    }
+		{ return std::cos(convert<radians>(m).value()); }
 
     // tan(signed_azimuth) -> N
     template <class Unit, typename Num>
     Num tan(signed_azimuth<Unit,Num> m)
-    {
-        return std::tan(convert<radians>(m).value());
-    }
+		{ return std::tan(convert<radians>(m).value()); }
 
     template <class Unit = Angle::base_unit, typename Num = double>
     class unsigned_azimuth
@@ -1994,8 +1882,7 @@ namespace measures
 
         // Construct using another unsigned_azimuth of the same unit
         // and the same number type.
-        unsigned_azimuth(const unsigned_azimuth<Unit,Num>& o):
-            x_(o.x_) { }
+        unsigned_azimuth(const unsigned_azimuth<Unit,Num>& o): x_(o.x_) { }
 
         // Construct using a point1 representing an angle.
         explicit unsigned_azimuth(point1<Unit, Num> o):
@@ -2013,52 +1900,47 @@ namespace measures
                 v.x().value())))).value()) { }
 
         // Convert to a point1.
-        operator point1<Unit,Num>() const
-        {
-            return point1<Unit,Num>(x_);
-        }
+        operator point1<Unit,Num>() const { return point1<Unit,Num>(x_); }
 
         // Construct using a unit and a value.
         explicit unsigned_azimuth(typename Unit::magnitude unit, Num x):
             x_(normalize_(x * (unit.ratio() / Unit::ratio())
                 + (unit.offset() - Unit::offset()) / Unit::ratio())) { }
-            
+
         // Get unmutable value for the given unit.
         Num value(typename Unit::magnitude unit) const
         {
             return static_cast<Num>(x_ * (Unit::ratio() / unit.ratio())
                 + (Unit::offset() - unit.offset()) / unit.ratio());
         }
-        
-        // Get unmutable value (mutable getter not available).
+
+        // Get unmutable value (mutable getter is not available).
         Num value() const { return x_; }
 
         // unsigned_azimuth += vect1 -> unsigned_azimuth
         unsigned_azimuth<Unit,Num> operator +=(vect1<Unit,Num> m)
-        {
-            x_ = normalize_(x_ + m.value());
-            return *this;
-        }
+			{ x_ = normalize_(x_ + m.value()); return *this; }
 
         // unsigned_azimuth -= vect1 -> unsigned_azimuth
         unsigned_azimuth<Unit,Num> operator -=(vect1<Unit,Num> m)
-        {
-            x_ = normalize_(x_ - m.value());
-            return *this;
-        }
+			{ x_ = normalize_(x_ - m.value()); return *this; }
 
     private:
+
+		// Returns the only value that in the current Unit represents `x`, and
+		// is between 0 included and plus one turn excluded.
         static Num normalize_(Num x)
         {
-            return normalize_unsigned_azimuth(x, static_cast<Num>(Unit::turn_fraction()));
+            return normalize_unsigned_azimuth(x,
+				static_cast<Num>(Unit::turn_fraction()));
         }
 
         Num x_;
     };
-    
+
     // unsigned_azimuth - unsigned_azimuth -> vect1
     // As a difference between two point angles it is meant the shortest
-    // vect angle that if added to the second point angle gets the first one.
+    // vect angle that if added to the second point angle gives the first one.
     template <class Unit, typename Num1, typename Num2>
     vect1<Unit,decltype(Num1()-Num2())> operator -(
         unsigned_azimuth<Unit,Num1> m1, unsigned_azimuth<Unit,Num2> m2)
@@ -2072,35 +1954,33 @@ namespace measures
 
     // unsigned_azimuth == unsigned_azimuth -> bool
     template <class Unit, typename Num>
-    bool operator ==(unsigned_azimuth<Unit,Num> m1, unsigned_azimuth<Unit,Num> m2)
-    {
-        return m1.value() == m2.value();
-    }
+    bool operator ==(unsigned_azimuth<Unit,Num> m1,
+		unsigned_azimuth<Unit,Num> m2)
+		{ return m1.value() == m2.value(); }
 
     // unsigned_azimuth != unsigned_azimuth -> bool
     template <class Unit, typename Num>
-    bool operator !=(unsigned_azimuth<Unit,Num> m1, unsigned_azimuth<Unit,Num> m2)
-    {
-        return m1.value() != m2.value();
-    }
+    bool operator !=(unsigned_azimuth<Unit,Num> m1,
+		unsigned_azimuth<Unit,Num> m2)
+		{ return m1.value() != m2.value(); }
 
     // angle_distance(unsigned_azimuth, unsigned_azimuth) -> vect1
     template <class Unit, typename Num>
-    vect1<Unit,Num> angle_distance(unsigned_azimuth<Unit,Num> m1, unsigned_azimuth<Unit,Num> m2)
+    vect1<Unit,Num> angle_distance(unsigned_azimuth<Unit,Num> m1,
+		unsigned_azimuth<Unit,Num> m2)
     {
         Num value_distance(std::abs(m1.value() - m2.value()));
         if (value_distance * 2 > Unit::turn_fraction())
             value_distance = Unit::turn_fraction() - value_distance;
         return vect1<Unit,Num>(value_distance);
     }
-    
+
     // is_equal(unsigned_azimuth, unsigned_azimuth, tolerance) -> bool
     template <class Unit, typename Num>
-    bool is_equal(unsigned_azimuth<Unit,Num> m1, unsigned_azimuth<Unit,Num> m2, vect1<Unit,Num> tolerance)
-    {
-        return angle_distance(m1, m2) <= tolerance;
-    }
-    
+    bool is_equal(unsigned_azimuth<Unit,Num> m1,
+		unsigned_azimuth<Unit,Num> m2, vect1<Unit,Num> tolerance)
+		{ return angle_distance(m1, m2) <= tolerance; }
+
     // unsigned_azimuth + vect1 -> unsigned_azimuth
     template <class Unit, typename Num1, typename Num2>
     unsigned_azimuth<Unit,decltype(Num1()+Num2())> operator +(
@@ -2118,41 +1998,34 @@ namespace measures
         return unsigned_azimuth<Unit,decltype(Num1()-Num2())>(
             m1.value() - m2.value());
     }
-    
+
     // sin(unsigned_azimuth) -> N
     template <class Unit, typename Num>
     Num sin(unsigned_azimuth<Unit,Num> m)
-    {
-        return std::sin(convert<radians>(m).value());
-    }
+		{ return std::sin(convert<radians>(m).value()); }
 
     // cos(unsigned_azimuth) -> N
     template <class Unit, typename Num>
     Num cos(unsigned_azimuth<Unit,Num> m)
-    {
-        return std::cos(convert<radians>(m).value());
-    }
+		{ return std::cos(convert<radians>(m).value()); }
 
     // tan(unsigned_azimuth) -> N
     template <class Unit, typename Num>
     Num tan(unsigned_azimuth<Unit,Num> m)
-    {
-        return std::tan(convert<radians>(m).value());
-    }
+		{ return std::tan(convert<radians>(m).value()); }
 
-    ///////////////////////// STATIC NUMERIC CASTS /////////////////////////
-    
+
+    //////////////////// NUMERIC CASTS ////////////////////
+	// All these functions return a measure of the same kind, unit,
+	// and value, but using the specified ToNum numeric type.
+
     template <typename ToNum, typename FromNum, class Unit>
     vect1<Unit,ToNum> cast(vect1<Unit,FromNum> m)
-    {
-        return vect1<Unit,ToNum>(static_cast<ToNum>(m.value()));
-    }
+		{ return vect1<Unit,ToNum>(static_cast<ToNum>(m.value())); }
 
     template <typename ToNum, typename FromNum, class Unit>
     point1<Unit,ToNum> cast(point1<Unit,FromNum> m)
-    {
-        return point1<Unit,ToNum>(static_cast<ToNum>(m.value()));
-    }
+		{ return point1<Unit,ToNum>(static_cast<ToNum>(m.value())); }
 
     template <typename ToNum, typename FromNum, class Unit>
     vect2<Unit,ToNum> cast(vect2<Unit,FromNum> m)
@@ -2175,7 +2048,7 @@ namespace measures
             static_cast<ToNum>(m.y().value()),
             static_cast<ToNum>(m.z().value()));
     }
-    
+
     template <typename ToNum, typename FromNum, class Unit>
     point3<Unit,ToNum> cast(point3<Unit,FromNum> m)
     {
@@ -2195,18 +2068,33 @@ namespace measures
     {
         return unsigned_azimuth<Unit,ToNum>(static_cast<ToNum>(m.value()));
     }
-    
-///////////////////////// MACROS FOR USER-DEFINED LITERALS /////////////////////////
+}
+
+
+//////////////////// MACROS FOR USER-DEFINED LITERALS ////////////////////
+// These macros create user-defined literal operators useful
+// to create user-defined literals.
+// The first macro creates a `vect1`, the second macro a `point1`.
 
 #define DEFINE_VECT_UNIT_LITERAL(Unit, Num, Operator) \
-    vect1<Unit,Num> operator "" _##Operator(long double n)\
-        { return vect1<Unit,Num>(n); }\
-    vect1<Unit,Num> operator "" _##Operator(unsigned long long n)\
-        { return vect1<Unit,Num>(n); }
+    namespace measures\
+    {\
+		/*operator for floating-point literals*/\
+		vect1<Unit,Num> operator "" _##Operator(long double n)\
+			{ return vect1<Unit,Num>(n); }\
+		/*operator for integral literals*/\
+		vect1<Unit,Num> operator "" _##Operator(unsigned long long n)\
+			{ return vect1<Unit,Num>(n); }\
+    }
+
 #define DEFINE_POINT_UNIT_LITERAL(Unit, Num, Operator) \
-    point1<Unit,Num> operator "" _##Operator(long double n)\
-        { return point1<Unit,Num>(n); }\
-    point1<Unit,Num> operator "" _##Operator(unsigned long long n)\
-        { return point1<Unit,Num>(n); }
-}
+    namespace measures\
+    {\
+		/*operator for floating-point literals*/\
+		point1<Unit,Num> operator "" _##Operator(long double n)\
+			{ return point1<Unit,Num>(n); }\
+		/*operator for integral literals*/\
+		point1<Unit,Num> operator "" _##Operator(unsigned long long n)\
+			{ return point1<Unit,Num>(n); }\
+	}
 #endif

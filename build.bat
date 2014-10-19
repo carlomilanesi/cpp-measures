@@ -8,40 +8,48 @@ mkdir ..\gen
 
 copy measures.hpp ..\gen\
 copy measures_io.hpp ..\gen\
+copy st_test1.cpp ..\gen\
+copy st_test2.cpp ..\gen\
 
 rem goto dyntest
-
-cl /nologo /EHsc /Ox /Fo..\gen\ /Fe..\gen\static_tester.exe static_tester.cpp
 
 rem TODO benchmark
 rem TODO program using several source files
 
-cl /nologo /EHsc /Fo..\gen\ /Fe..\gen\st_test_gen.exe st_test_gen.cpp
-..\gen\st_test_gen.exe >..\gen\st_test_generated.cpp
+rem cl /nologo /EHsc /Fo..\gen\ /Fe..\gen\st_test_gen.exe st_test_gen.cpp
+rem g++ -std=c++11 -Wfatal-errors -pedantic -o ../gen/st_test_gen.exe st_test_gen.cpp
+rem ..\gen\st_test_gen.exe >..\gen\st_test_generated.cpp
 
-goto skip_vcpp_test
+rem 
+rem goto skip_vcpp_test
 echo.
 echo ==== Visual C++ static test ====
+cl /nologo /EHsc /Ox /Fo..\gen\ /Fe..\gen\static_tester.exe static_tester.cpp
+
 set REDIRECTION_COMMAND="2>NUL >NUL"
 set COMPILER_VERSION_COMMAND=cl
 set COMPILER_BASE_ERRORS_COMMAND=cl /nologo /Za /Zs /Fo..\gen\
 set COMPILER_BASE_WARNINGS_COMMAND=cl /nologo /Za /Zs /W4 /WX /Fo..\gen\
-..\gen\static_tester /t..\gen\ st_test_generated.cpp
+..\gen\static_tester /t..\gen\ st_test1.cpp st_test2.cpp
 if errorlevel 1 goto test_errors
 del ..\gen\_* 2>NUL >NUL
 :skip_vcpp_test
 
+rem goto skip_gcc_test
 echo.
 echo ==== GCC static test ====
-set REDIRECTION_COMMAND="2>NUL >NUL"
+g++ -std=c++11 -Wall -W -Wfatal-errors -pedantic -o ../gen/static_tester.exe static_tester.cpp
+
+set REDIRECTION_COMMAND="2>/dev/null >/dev/null"
 set COMPILER_VERSION_COMMAND=g++ --version
 rem SET COMPILER_BASE_ERRORS_COMMAND=g++ -std=c++11 -fsyntax-only -Wfatal-errors -pedantic
-set COMPILER_BASE_ERRORS_COMMAND=g++ -std=c++11 -Wfatal-errors -pedantic
+set COMPILER_BASE_ERRORS_COMMAND=g++ -std=c++11 -Wfatal-errors -pedantic -c
 rem SET COMPILER_BASE_WARNINGS_COMMAND=g++ -std=c++11 -fsyntax-only -Wfatal-errors -pedantic -Werror
-set COMPILER_BASE_WARNINGS_COMMAND=g++ -std=c++11 -Wfatal-errors -pedantic -Werror
-..\gen\static_tester /t../gen/ st_test_generated.cpp
+set COMPILER_BASE_WARNINGS_COMMAND=g++ -std=c++11 -Wfatal-errors -pedantic -Wconversion -Wall -W -Werror -c
+..\gen\static_tester /t../gen/ st_test1.cpp st_test2.cpp
 if errorlevel 1 goto test_errors
 del ..\gen\_* 2>NUL >NUL
+:skip_gcc_test
 
 :dyntest
 echo.

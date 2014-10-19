@@ -51,12 +51,12 @@ const T test_values<T>::v[] = {
 
 TEST(measureTest, turn)
 {
-	EXPECT_FLOAT_EQ(360, degrees::turn_fraction());
-	EXPECT_FLOAT_EQ(2 * pi, radians::turn_fraction());
-	EXPECT_FLOAT_EQ(1, turns::turn_fraction());
-	EXPECT_FLOAT_EQ(360, degrees::id().turn_fraction());
-	EXPECT_FLOAT_EQ(2 * pi, radians::id().turn_fraction());
-	EXPECT_FLOAT_EQ(1, turns::id().turn_fraction());
+	EXPECT_FLOAT_EQ(360, degrees::turn_fraction<int>());
+	EXPECT_FLOAT_EQ(2 * pi, radians::turn_fraction<double>());
+	EXPECT_FLOAT_EQ(1, turns::turn_fraction<int>());
+	EXPECT_FLOAT_EQ(360, degrees::id().turn_fraction<int>());
+	EXPECT_FLOAT_EQ(2 * pi, radians::id().turn_fraction<double>());
+	EXPECT_FLOAT_EQ(1, turns::id().turn_fraction<int>());
 }
 
 //#if 0
@@ -399,7 +399,7 @@ TYPED_TEST(measureTest, vectpoint1)
 		{
 			TypeParam val2 = test_values<TypeParam>::v[i2];
 			auto m2 = point1<metres,TypeParam>(val2);
-			EXPECT_FLOAT_EQ((val1 + val2) * 0.5f, midpoint(m1, m2, 0.5f).value());
+			EXPECT_FLOAT_EQ((val1 + val2) * 0.5f, midpoint(m1, m2).value());
 			EXPECT_FLOAT_EQ(val1, midpoint(m1, m2, 0).value());
 			EXPECT_FLOAT_EQ(val2, midpoint(m1, m2, 1).value());
 			EXPECT_FLOAT_EQ(val1 * (1 - 0.23f) + val2 * 0.23f, midpoint(m1, m2, 0.23f).value());
@@ -437,7 +437,7 @@ TYPED_TEST(measureTest, vectpoint1)
 	}
 	
 	// Try all pairs of numeric values except extremes.
-	TypeParam sqroot_of_max = static_cast<TypeParam>(sqrt(test_values<TypeParam>
+	TypeParam sqrt_of_max = static_cast<TypeParam>(sqrt(test_values<TypeParam>
 		::v[test_values<TypeParam>::count - 1]));
 	for (int i1 = 1; i1 < test_values<TypeParam>::count - 1; ++i1)
 	{
@@ -465,7 +465,7 @@ TYPED_TEST(measureTest, vectpoint1)
 			// vect1 - vect1 -> vect1
 			EXPECT_EQ(val1 - val2, (v1 - v2).value());
 			
-			if (abs(val1) < sqroot_of_max && abs(val2) < sqroot_of_max)
+			if (abs(val1) < sqrt_of_max && abs(val2) < sqrt_of_max)
 			{
 				// N * vect1 -> vect1
 				EXPECT_EQ(val1 * val2, (val1 * v2).value());
@@ -486,7 +486,7 @@ TYPED_TEST(measureTest, vectpoint1)
 	{
 		TypeParam val1 = test_values<TypeParam>::v[i];
 		auto m1 = vect1<metres, TypeParam>(val1);
-		if (abs(val1) < sqroot_of_max)
+		if (abs(val1) < sqrt_of_max)
 		{
 			EXPECT_EQ(val1 * val1, squared_norm_value(m1));
 		}
@@ -787,8 +787,8 @@ TYPED_TEST(measureTest, vectpoint2)
 					TypeParam val2y = test_values<TypeParam>::v[j2];
 					auto m2 = point2<metres,TypeParam>(val2x, val2y);
 					
-					EXPECT_FLOAT_EQ((val1x + val2x) * 0.5f, midpoint(m1, m2, 0.5f).x().value());
-					EXPECT_FLOAT_EQ((val1y + val2y) * 0.5f, midpoint(m1, m2, 0.5f).y().value());
+					EXPECT_FLOAT_EQ((val1x + val2x) * 0.5f, midpoint(m1, m2).x().value());
+					EXPECT_FLOAT_EQ((val1y + val2y) * 0.5f, midpoint(m1, m2).y().value());
 					EXPECT_FLOAT_EQ(val1x, midpoint(m1, m2, 0).x().value());
 					EXPECT_FLOAT_EQ(val1y, midpoint(m1, m2, 0).y().value());
 					EXPECT_FLOAT_EQ(val2x, midpoint(m1, m2, 1).x().value());
@@ -852,7 +852,7 @@ TYPED_TEST(measureTest, vectpoint2)
 	}
 	
 	// Try all pairs of pairs of numeric values except extremes.
-	TypeParam sqroot_of_max = static_cast<TypeParam>(sqrt(test_values<TypeParam>
+	TypeParam sqrt_of_max = static_cast<TypeParam>(sqrt(test_values<TypeParam>
 		::v[test_values<TypeParam>::count - 1]));
 	for (int i1 = 1; i1 < test_values<TypeParam>::count - 1; ++i1)
 	{
@@ -892,7 +892,7 @@ TYPED_TEST(measureTest, vectpoint2)
 					EXPECT_EQ(val1x - val2x, (v1 - v2).x().value());
 					EXPECT_EQ(val1y - val2y, (v1 - v2).y().value());
 					
-					if (abs(val1x) < sqroot_of_max && abs(val2x) < sqroot_of_max)
+					if (abs(val1x) < sqrt_of_max && abs(val2x) < sqrt_of_max)
 					{
 						// N * vect2 -> vect2
 						EXPECT_EQ(val1x * val2x, (val1x * v2).x().value());
@@ -901,7 +901,7 @@ TYPED_TEST(measureTest, vectpoint2)
 						EXPECT_EQ(val1x * val2x, (v1 * val2x).x().value());
 					}
 
-					if (abs(val1y) < sqroot_of_max && abs(val2y) < sqroot_of_max)
+					if (abs(val1y) < sqrt_of_max && abs(val2y) < sqrt_of_max)
 					{
 						// N * vect2 -> vect2
 						EXPECT_EQ(val1y * val2y, (val1y * v2).y().value());
@@ -925,7 +925,7 @@ TYPED_TEST(measureTest, vectpoint2)
 			TypeParam val1x = test_values<TypeParam>::v[i];
 			TypeParam val1y = test_values<TypeParam>::v[j];
 			auto m1 = vect2<metres, TypeParam>(val1x, val1y);
-			if (abs(val1x) < sqroot_of_max && abs(val1y) < sqroot_of_max)
+			if (abs(val1x) < sqrt_of_max && abs(val1y) < sqrt_of_max)
 			{
 				EXPECT_FLOAT_EQ(val1x * val1x + val1y * val1y, squared_norm_value(m1));
 				EXPECT_FLOAT_EQ(static_cast<TypeParam>(
@@ -1366,7 +1366,7 @@ TYPED_TEST(measureTest, vectpoint3)
 	}
 
 	// Try all triples of pairs of numeric values except extremes.
-	TypeParam sqroot_of_max = static_cast<TypeParam>(sqrt(test_values<TypeParam>
+	TypeParam sqrt_of_max = static_cast<TypeParam>(sqrt(test_values<TypeParam>
 		::v[test_values<TypeParam>::count - 1]));
 	for (int i1 = 1; i1 < test_values<TypeParam>::count - 1; ++i1)
 	{
@@ -1417,7 +1417,7 @@ TYPED_TEST(measureTest, vectpoint3)
 							EXPECT_EQ(val1y - val2y, (v1 - v2).y().value());
 							EXPECT_EQ(val1z - val2z, (v1 - v2).z().value());
 
-							if (abs(val1x) < sqroot_of_max && abs(val2x) < sqroot_of_max)
+							if (abs(val1x) < sqrt_of_max && abs(val2x) < sqrt_of_max)
 							{
 								// N * vect3 -> vect3
 								EXPECT_EQ(val1x * val2x, (val1x * v2).x().value());
@@ -1426,7 +1426,7 @@ TYPED_TEST(measureTest, vectpoint3)
 								EXPECT_EQ(val1x * val2x, (v1 * val2x).x().value());
 							}
 
-							if (abs(val1y) < sqroot_of_max && abs(val2y) < sqroot_of_max)
+							if (abs(val1y) < sqrt_of_max && abs(val2y) < sqrt_of_max)
 							{
 								// N * vect3 -> vect3
 								EXPECT_EQ(val1y * val2y, (val1y * v2).y().value());
@@ -1435,7 +1435,7 @@ TYPED_TEST(measureTest, vectpoint3)
 								EXPECT_EQ(val1y * val2y, (v1 * val2y).y().value());
 							}
 
-							if (abs(val1z) < sqroot_of_max && abs(val2z) < sqroot_of_max)
+							if (abs(val1z) < sqrt_of_max && abs(val2z) < sqrt_of_max)
 							{
 								// N * vect3 -> vect3
 								EXPECT_EQ(val1z * val2z, (val1z * v2).z().value());
@@ -1465,7 +1465,7 @@ TYPED_TEST(measureTest, vectpoint3)
 				TypeParam val1y = test_values<TypeParam>::v[j];
 				TypeParam val1z = test_values<TypeParam>::v[k];
 				auto m1 = vect3<metres, TypeParam>(val1x, val1y, val1z);
-				if (abs(val1x) < sqroot_of_max && abs(val1y) < sqroot_of_max && abs(val1z) < sqroot_of_max)
+				if (abs(val1x) < sqrt_of_max && abs(val1y) < sqrt_of_max && abs(val1z) < sqrt_of_max)
 				{
 					EXPECT_FLOAT_EQ(val1x * val1x + val1y * val1y + val1z * val1z, squared_norm_value(m1));
 					EXPECT_FLOAT_EQ(static_cast<TypeParam>(
@@ -2032,7 +2032,7 @@ TEST(unitTest, derived_operations)
 	EXPECT_FLOAT_EQ(12.3 / 23.47, (vect1<km>(12.3) / vect1<km_per_hour>(23.47)).value());
 	EXPECT_FLOAT_EQ(12.3 * 23.47, (vect1<inches>(12.3) * vect1<inches>(23.47)).value());
 	EXPECT_FLOAT_EQ(12.3 / 23.47, (vect1<square_inches>(12.3) / vect1<inches>(23.47)).value());
-	EXPECT_FLOAT_EQ(sqrt(23.47), sqroot(vect1<square_inches>(23.47)).value());
+	EXPECT_FLOAT_EQ(sqrt(23.47), sqrt(vect1<square_inches>(23.47)).value());
 
 	auto a1 = vect1<hours>(12.3) * vect2<km_per_hour>(23.47, 34.51);
 	EXPECT_FLOAT_EQ(12.3 * 23.47, a1.x().value());

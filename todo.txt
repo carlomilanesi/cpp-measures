@@ -1,0 +1,27 @@
+TODO:
+- How to create a C array of measures, or a C++ vector of measures,
+  using the values contained in an Eigen Vector or and Eigen Matrix, or a C array of numbers, or a C++ vector of numbers?
+- Which operations can I do with an Eigen Vector o Matrix containing a measure?
+- Improve comments inside "measures.hpp".
+- Complete Tutorial, in particular:
+  - Describe possible conversions between kinds of measure.
+  - Add some examples of interface with Eigen.
+- Complete Motivation.
+- Complete Reference, in particular:
+  - Add many examples of custom definitions.
+- Complete tests.
+- Rewrite static_checker using LLVM.
+- Read document about open source software development.
+- When completed, add Motivation as an article of CodeProject and as an article of http://www.academia.edu/.
+- Search for units-related articles and then add announcement on C++ forums:
+     http://www.codeguru.com/cpp/
+     http://www.dreamincode.net/forums/forum/168-c-articles-and-news/
+     http://www.cplusplus.com/articles/
+     http://www.cprogramming.com/articles.html
+     http://www.informit.com/articles/index.aspx?st=60233
+     http://www.codeproject.com/KB/cpp/
+     - http://www.codeproject.com/Articles/791511/Units-of-measurement-types-in-Cplusplus-Using-comp
+- add documentation specifying how to set and run tests
+- test under linux with gcc and clang
+- test quaternions and complex numbers.
+- possibly allow mixed types in assignment operators (like vect1<inches,float>(3) += vect1<inches,double>(4))

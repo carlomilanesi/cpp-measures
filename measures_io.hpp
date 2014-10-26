@@ -6,18 +6,18 @@
 #include "measures.hpp"
 #include <iostream>
 
-// vect1			1 mm
-// point1			[1] mm
-// vect2			1 2 mm
-// point2			[1 2] mm
-// vect3			1 2 3 mm
-// point3			[1 2 3] mm
+// vect1			1 m
+// point1			[1] m
+// vect2			1 2 m
+// point2			[1 2] m
+// vect3			1 2 3 m
+// point3			[1 2 3] m
 // signed_azimuth	S1^
 // unsigned_azimuth	U1^
 
 namespace measures
 {
-	///////////////////////// STATIC UNIT SCALAR AND 1-DIMENSIONAL VECTORS AND POINTS /////////////////////////
+	/////////////////// 1-DIMENSIONAL VECTORS AND POINTS ///////////////////
 
 	template <class Unit, typename Num>
 	std::ostream& operator <<(std::ostream& os,
@@ -58,7 +58,7 @@ namespace measures
 		return is;
 	}
 
-	///////////////////////// STATIC UNIT 2-DIMENSIONAL VECTORS AND POINTS /////////////////////////
+	/////////////////// 2-DIMENSIONAL VECTORS AND POINTS ///////////////////
 
 	template <class Unit, typename Num>
 	std::ostream& operator <<(std::ostream& os, const vect2<Unit,Num>& o)
@@ -80,7 +80,8 @@ namespace measures
 	template <class Unit, typename Num>
 	std::ostream& operator <<(std::ostream& os, const point2<Unit,Num>& o)
 	{
-		os << "[" << o.x().value() << " " << o.y().value() << "]" << Unit::suffix();
+		os << "[" << o.x().value() << " " << o.y().value() << "]"
+            << Unit::suffix();
 		return os;
 	}
 
@@ -95,12 +96,13 @@ namespace measures
 		return is;
 	}
 
-	///////////////////////// STATIC UNIT 3-DIMENSIONAL VECTORS AND POINTS /////////////////////////
+	/////////////////// 3-DIMENSIONAL VECTORS AND POINTS ///////////////////
 
 	template <class Unit, typename Num>
 	std::ostream& operator <<(std::ostream& os, const vect3<Unit,Num>& o)
 	{
-		os << o.x().value() << " " << o.y().value() << " " << o.z().value() << Unit::suffix();
+		os << o.x().value() << " " << o.y().value() << " " << o.z().value()
+            << Unit::suffix();
 		return os;
 	}
 
@@ -117,7 +119,8 @@ namespace measures
 	template <class Unit, typename Num>
 	std::ostream& operator <<(std::ostream& os, const point3<Unit,Num>& o)
 	{
-		os << "[" << o.x().value() << " " << o.y().value() << " " << o.z().value() << "]" << Unit::suffix();
+		os << "[" << o.x().value() << " " << o.y().value()
+            << " " << o.z().value() << "]" << Unit::suffix();
 		return os;
 	}
 
@@ -132,7 +135,7 @@ namespace measures
 		return is;
 	}
 
-	///////////////////////// STATIC UNIT AZIMUTHS /////////////////////////
+	/////////////////// AZIMUTHS ///////////////////
 	
 	template <class Unit, typename Num>
 	std::ostream& operator <<(std::ostream& os,

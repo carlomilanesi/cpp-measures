@@ -35,36 +35,39 @@ namespace measures
 
 //////////////////// MAGNITUDE AND UNIT DEFINITIONS ////////////////////
 
-// Every unit class is never instanced.
-// It is used only as a template parameter
-// or as a collection of static member functions.
-#define DEFINE_UNIT(UnitClass,MagnitudeClass,Suffix,Ratio,Offset)\
+#define DEFINE_UNIT(UnitName,MagnitudeName,Suffix,Ratio,Offset)\
     namespace measures\
     {\
-        static unit_features UnitClass##_features_\
+        static unit_features UnitName##_features_\
             = { Ratio, Offset, Suffix };\
-        class UnitClass\
+        class UnitName\
         {\
+        private:\
+            /* prevent instatiation */\
+            UnitName();\
         public:\
-            typedef MagnitudeClass magnitude;\
-            static MagnitudeClass id()\
-                { return MagnitudeClass(&UnitClass##_features_); }\
+            typedef MagnitudeName magnitude;\
+            static MagnitudeName id()\
+                { return MagnitudeName(&UnitName##_features_); }\
             static char const* suffix() { return Suffix; }\
             static double ratio() { return Ratio; }\
             static double offset() { return Offset; }\
         };\
     }
 
-#define DEFINE_ANGLE_UNIT(UnitClass,Suffix,TurnFraction,Offset)\
+#define DEFINE_ANGLE_UNIT(UnitName,Suffix,TurnFraction,Offset)\
     namespace measures\
     {\
-        static angle_unit_features UnitClass##_features_\
+        static angle_unit_features UnitName##_features_\
             = { 2 * pi / (TurnFraction), Offset, TurnFraction, Suffix };\
-        class UnitClass\
+        class UnitName\
         {\
+        private:\
+            /* prevent instatiation */\
+            UnitName();\
         public:\
             typedef Angle magnitude;\
-            static Angle id() { return Angle(&UnitClass##_features_); }\
+            static Angle id() { return Angle(&UnitName##_features_); }\
             static char const* suffix() { return Suffix; }\
             static double ratio() { return 2 * pi / (TurnFraction); }\
             static double offset() { return Offset; }\
@@ -75,16 +78,16 @@ namespace measures
     }
 
 // Every magnitude class is used as a template parameter
-// or it may be instanced to represent a dynamic unit.
-#define DEFINE_MAGNITUDE(MagnitudeClass,MainUnitClass,MainUnitSuffix)\
+// or it may be instantiated to represent a dynamic unit.
+#define DEFINE_MAGNITUDE(MagnitudeName,BaseUnitName,BaseUnitSuffix)\
     namespace measures\
     {\
-        class MainUnitClass;\
-        class MagnitudeClass\
+        class BaseUnitName;\
+        class MagnitudeName\
         {\
         public:\
-            typedef MainUnitClass base_unit;\
-            explicit MagnitudeClass(unit_features const* features):\
+            typedef BaseUnitName base_unit;\
+            explicit MagnitudeName(unit_features const* features):\
                 features_(features) { }\
             char const* suffix() const { return features_->suffix; }\
             double ratio() const { return features_->ratio; }\
@@ -93,7 +96,7 @@ namespace measures
             unit_features const* features_;\
         };\
     }\
-    DEFINE_UNIT(MainUnitClass, MagnitudeClass, MainUnitSuffix, 1, 0)
+    DEFINE_UNIT(BaseUnitName, MagnitudeName, BaseUnitSuffix, 1, 0)
 
 
 //////////////////// PREDEFINED MAGNITUDES AND UNITS ////////////////////
@@ -464,13 +467,94 @@ cross_product(Vector, Vector) -> Vector // vector cross product
 
 namespace measures
 {
+//////////////////// PROTOTYPES ////////////////////
+
+    template <class Unit, typename Num> class vect1;
+    template <class Unit, typename Num> class point1;
+    template <class Unit, typename Num> class vect2;
+    template <class Unit, typename Num> class point2;
+    template <class Unit, typename Num> class vect3;
+    template <class Unit, typename Num> class point3;
+    template <class Unit, typename Num> class signed_azimuth;
+    template <class Unit, typename Num> class unsigned_azimuth;
+
+
+//////////////////// UNIT CONVERSIONS ////////////////////
+
+    // 1d measures
+    template <class ToUnit, class FromUnit, typename Num>
+    vect1<ToUnit,Num> convert(vect1<FromUnit,Num> m)
+    {
+        ASSERT_HAVE_SAME_MAGNITUDE(ToUnit, FromUnit)
+        return vect1<ToUnit,Num>(m.value()
+            * static_cast<Num>(FromUnit::ratio() / ToUnit::ratio()));
+    }
+
+    template <class ToUnit, class FromUnit, typename Num>
+    point1<ToUnit,Num> convert(point1<FromUnit,Num> m)
+    {
+        ASSERT_HAVE_SAME_MAGNITUDE(ToUnit, FromUnit)
+        return point1<ToUnit,Num>(m.value()
+            * static_cast<Num>(FromUnit::ratio() / ToUnit::ratio())
+            + static_cast<Num>((FromUnit::offset() - ToUnit::offset())
+            / ToUnit::ratio()));
+    }
+
+    // 2d measures
+    template <class ToUnit, class FromUnit, typename Num>
+    vect2<ToUnit,Num> convert(vect2<FromUnit,Num> m)
+    {
+        return vect2<ToUnit,Num>(
+            convert<ToUnit,FromUnit,Num>(m.x()),
+            convert<ToUnit,FromUnit,Num>(m.y()));
+    }
+
+    template <class ToUnit, class FromUnit, typename Num>
+    point2<ToUnit,Num> convert(point2<FromUnit,Num> m)
+    {
+        return point2<ToUnit,Num>(
+            convert<ToUnit,FromUnit,Num>(m.x()),
+            convert<ToUnit,FromUnit,Num>(m.y()));
+    }
+
+    // 3d measures
+    template <class ToUnit, class FromUnit, typename Num>
+    vect3<ToUnit,Num> convert(vect3<FromUnit,Num> m)
+    {
+        return vect3<ToUnit,Num>(
+            convert<ToUnit,FromUnit,Num>(m.x()),
+            convert<ToUnit,FromUnit,Num>(m.y()),
+            convert<ToUnit,FromUnit,Num>(m.z()));
+    }
+
+    template <class ToUnit, class FromUnit, typename Num>
+    point3<ToUnit,Num> convert(point3<FromUnit,Num> m)
+    {
+        return point3<ToUnit,Num>(
+            convert<ToUnit,FromUnit,Num>(m.x()),
+            convert<ToUnit,FromUnit,Num>(m.y()),
+            convert<ToUnit,FromUnit,Num>(m.z()));
+    }
+
+    // Azimuths
+    template <class ToUnit, class FromUnit, typename Num>
+    signed_azimuth<ToUnit,Num> convert(signed_azimuth<FromUnit,Num> m)
+    {
+        ASSERT_HAVE_SAME_MAGNITUDE(ToUnit, FromUnit)
+        return signed_azimuth<ToUnit,Num>(
+            convert<ToUnit>(point1<FromUnit,Num>(m.value())));
+    }
+
+    template <class ToUnit, class FromUnit, typename Num>
+    unsigned_azimuth<ToUnit,Num> convert(unsigned_azimuth<FromUnit,Num> m)
+    {
+        ASSERT_HAVE_SAME_MAGNITUDE(ToUnit, FromUnit)
+        return unsigned_azimuth<ToUnit,Num>(
+            convert<ToUnit>(point1<FromUnit,Num>(m.value())));
+    }
 
 
     //////////////////// 1-DIMENSIONAL VECTORS AND POINTS ////////////////////
-
-    template <class Unit, typename Num> class signed_azimuth;
-
-    template <class Unit, typename Num> class unsigned_azimuth;
 
     template <class Unit, typename Num = double>
     class vect1
@@ -479,18 +563,18 @@ namespace measures
         typedef Unit unit;
         typedef Num numeric_type;
 
-        // Construct without values.
+        // Constructs without values.
         explicit vect1() { }
 
-        // Construct using one number.
+        // Constructs using one number.
         template <typename Num1>
         explicit vect1(Num1 x): x_(x) { }
 
-        // Construct using another vect1 of the same unit.
+        // Constructs using another vect1 of the same unit.
         template <typename Num1>
         vect1(const vect1<Unit,Num1>& o): x_(o.value()) { }
-
-        // Construct using a unit and a value.
+        
+        // Constructs using a unit and a value.
         template <typename Num1>
         vect1(typename Unit::magnitude unit, Num1 x):
             x_(static_cast<Num>(x * (unit.ratio() / Unit::ratio()))) { }
@@ -600,28 +684,28 @@ namespace measures
         typedef Unit unit;
         typedef Num numeric_type;
 
-        // Construct without values.
+        // Constructs without values.
         explicit point1() { }
 
-        // Construct using one number of the same number type.
+        // Constructs using one number of the same number type.
         template <typename Num1>
         explicit point1(Num1 x): x_(x) { }
 
-        // Construct using another point1 of the same unit.
+        // Constructs using another point1 of the same unit.
         template <typename Num1>
         point1(const point1<Unit,Num1>& o): x_(o.value()) { }
 
-        // Construct using a unit and a value.
+        // Constructs using a unit and a value.
         template <typename Num1>
         point1(typename Unit::magnitude unit, Num1 x):
             x_(static_cast<Num>(x * (unit.ratio() / Unit::ratio())
                 + (unit.offset() - Unit::offset()) / Unit::ratio())) { }
 
-        // Construct using a signed azimuth.
+        // Constructs using a signed azimuth.
         template <typename Num1>
         explicit point1(signed_azimuth<Unit,Num1> a): x_(a.value()) { }
 
-        // Construct using an unsigned azimuth.
+        // Constructs using an unsigned azimuth.
         template <typename Num1>
         explicit point1(unsigned_azimuth<Unit,Num1> a): x_(a.value()) { }
 
@@ -822,52 +906,69 @@ namespace measures
         typedef Unit unit;
         typedef Num numeric_type;
 
-        // Construct without values.
+        // Constructs without values.
         explicit vect2() { }
 
-        // Construct using two numbers.
+        // Constructs using two numbers.
         template <typename Num2, typename Num3>
         explicit vect2(Num2 x, Num3 y): x_(x), y_(y) { }
 
-        // Construct using an array of two numbers.
+        // Constructs using an array of two numbers.
         template <typename Num2>
         explicit vect2(Num2 const values[]): x_(values[0]), y_(values[1]) { }
 
-        // Construct using two vect1s.
+        // Constructs using two vect1s.
         template <typename Num2, typename Num3>
         explicit vect2(vect1<Unit,Num2> x, vect1<Unit,Num3> y):
             x_(x.value()), y_(y.value()) { }
 
-        // Construct using another vect2 of the same unit.
+        // Constructs using another vect2 of the same unit.
         template <typename Num1>
         vect2(const vect2<Unit,Num1>& o):
             x_(o.x().value()), y_(o.y().value()) { }
-
-        // Construct a versor using a point1 representing an angle.
-        template <class Unit2, typename Num1>
-        explicit vect2(const point1<Unit2,Num1>& a):
-            x_(static_cast<Num>(cos(a))),
-            y_(static_cast<Num>(sin(a)))
-            { ASSERT_IS_ANGLE(Unit2) }
-
-        // Construct a versor using a signed_azimuth.
-        template <class Unit2, typename Num2>
-        explicit vect2(const signed_azimuth<Unit2,Num2>& a):
-            x_(static_cast<Num>(cos(a))),
-            y_(static_cast<Num>(sin(a))) { }
-
-        // Construct a versor using an unsigned_azimuth.
-        template <class Unit2, typename Num2>
-        explicit vect2(const unsigned_azimuth<Unit2,Num2>& a):
-            x_(static_cast<Num>(cos(a))),
-            y_(static_cast<Num>(sin(a))) { }
-
-        // Construct using a unit and two values.
+        
+        // Constructs using a unit and two values.
         template <typename Num2, typename Num3>
         vect2(typename Unit::magnitude unit, Num2 x, Num3 y):
             x_(static_cast<Num>(x * (unit.ratio() / Unit::ratio()))),
             y_(static_cast<Num>(y * (unit.ratio() / Unit::ratio()))) { }
 
+        // Returns a versor having the direction represented
+        // by a point angle.
+        template <class Unit1, typename Num1>
+        static vect2<Unit,Num> make_versor(point1<Unit1,Num1> a)
+        {
+            ASSERT_IS_ANGLE(Unit1)
+            Num1 a_val = convert<radians>(a).value();
+            return vect2<Unit,Num>(
+                static_cast<Num>(std::cos(a_val)),
+                static_cast<Num>(std::sin(a_val)));
+        }
+
+        // Returns a versor having the direction represented
+        // by a signed azimuth.
+        template <class Unit1, typename Num1>
+        static vect2<Unit,Num> make_versor(signed_azimuth<Unit1,Num1> a)
+        {
+            ASSERT_IS_ANGLE(Unit1)
+            Num1 a_val = convert<radians>(a).value();
+            return vect2<Unit,Num>(
+                static_cast<Num>(std::cos(a_val)),
+                static_cast<Num>(std::sin(a_val)));
+        }
+
+        // Returns a versor having the direction represented
+        // by an unsigned azimuth.
+        template <class Unit1, typename Num1>
+        static vect2<Unit,Num> make_versor(unsigned_azimuth<Unit1,Num1> a)
+        {
+            ASSERT_IS_ANGLE(Unit1)
+            Num1 a_val = convert<radians>(a).value();
+            return vect2<Unit,Num>(
+                static_cast<Num>(std::cos(a_val)),
+                static_cast<Num>(std::sin(a_val)));
+        }
+        
         // Get unmutable component array.
         Num const* data() const { return &x_; }
 
@@ -934,7 +1035,7 @@ namespace measures
         template <class Unit2, typename Num2>
         vect2<Unit,decltype(Num()*Num2())> rotated_by(vect1<Unit2,Num2> a)
         {
-            ASSERT_IS_ANGLE(Unit2);
+            ASSERT_IS_ANGLE(Unit2)
             return vect2<Unit,decltype(Num()*Num2())>(
                 x_ * cos(a) - y_ * sin(a),
                 x_ * sin(a) + y_ * cos(a));
@@ -984,28 +1085,28 @@ namespace measures
         typedef Unit unit;
         typedef Num numeric_type;
 
-        // Construct without values.
+        // Constructs without values.
         explicit point2() { }
 
-        // Construct using two numbers.
+        // Constructs using two numbers.
         template <typename Num2, typename Num3>
         explicit point2(Num2 x, Num3 y): x_(x), y_(y) { }
 
-        // Construct using an array of two numbers.
+        // Constructs using an array of two numbers.
         template <typename Num2>
         explicit point2(Num2 const values[]): x_(values[0]), y_(values[1]) { }
 
-        // Construct using two point1s of the same unit.
+        // Constructs using two point1s of the same unit.
         template <typename Num2, typename Num3>
         explicit point2(point1<Unit,Num2> x, point1<Unit,Num3> y):
             x_(x.value()), y_(y.value()) { }
 
-        // Construct using another point2 of the same unit.
+        // Constructs using another point2 of the same unit.
         template <typename Num1>
         point2(const point2<Unit,Num1>& o):
             x_(o.x().value()), y_(o.y().value()) { }
 
-        // Construct using a unit and two values.
+        // Constructs using a unit and two values.
         template <typename Num2, typename Num3>
         point2(typename Unit::magnitude unit, Num2 x, Num3 y):
             x_(static_cast<Num>((unit.offset() - Unit::offset()
@@ -1055,7 +1156,7 @@ namespace measures
         point2<Unit,decltype(Num3()+(Num()-Num3())*Num2())> rotated_by_around(
             vect1<Unit2,Num2> a, point2<Unit,Num3> fixed_point)
         {
-            ASSERT_IS_ANGLE(Unit2);
+            ASSERT_IS_ANGLE(Unit2)
             return fixed_point + (*this - fixed_point).rotated_by(a);
         }
 
@@ -1240,25 +1341,25 @@ namespace measures
         typedef Unit unit;
         typedef Num numeric_type;
 
-        // Construct without values.
+        // Constructs without values.
         explicit vect3() { }
 
-        // Construct using three numbers.
+        // Constructs using three numbers.
         template <typename Num1, typename Num2, typename Num3>
         explicit vect3(Num1 x, Num2 y, Num3 z): x_(x), y_(y), z_(z) { }
 
-        // Construct using an array of three numbers.
+        // Constructs using an array of three numbers.
         template <typename Num1>
         explicit vect3(Num1 const values[]):
             x_(values[0]), y_(values[1]), z_(values[2]) { }
 
-        // Construct using three vect1s of the same unit.
+        // Constructs using three vect1s of the same unit.
         template <typename Num1, typename Num2, typename Num3>
         explicit vect3(vect1<Unit,Num1> x, vect1<Unit,Num2> y,
             vect1<Unit,Num3> z):
             x_(x.value()), y_(y.value()), z_(z.value()) { }
 
-        // Construct using another vect3 of the same unit.
+        // Constructs using another vect3 of the same unit.
         template <typename Num1>
         vect3(const vect3<Unit,Num1>& o):
             x_(o.x().value()), y_(o.y().value()), z_(o.z().value()) { }
@@ -1310,7 +1411,7 @@ namespace measures
             return *this;
         }
 
-        // Construct using a unit and a value.
+        // Constructs using a unit and a value.
         template <typename Num1, typename Num2, typename Num3>
         vect3(typename Unit::magnitude unit, Num1 x, Num2 y, Num3 z):
             x_(static_cast<Num>(x * (unit.ratio() / Unit::ratio()))),
@@ -1385,25 +1486,25 @@ namespace measures
         typedef Unit unit;
         typedef Num numeric_type;
 
-        // Construct without values.
+        // Constructs without values.
         explicit point3() { }
 
-        // Construct using two numbers of the same number type.
+        // Constructs using two numbers of the same number type.
         template <typename Num1, typename Num2, typename Num3>
         explicit point3(Num1 x, Num2 y, Num3 z): x_(x), y_(y), z_(z) { }
 
-        // Construct using an array of two numbers of the same number type.
+        // Constructs using an array of two numbers of the same number type.
         template <typename Num1>
         explicit point3(Num1 const values[]):
             x_(values[0]), y_(values[1]), z_(values[2]) { }
 
-        // Construct using three point1s of the same unit and number type.
+        // Constructs using three point1s of the same unit and number type.
         template <typename Num1, typename Num2, typename Num3>
         explicit point3(point1<Unit,Num1> x, point1<Unit,Num2> y,
             point1<Unit,Num3> z):
             x_(x.value()), y_(y.value()), z_(z.value()) { }
 
-        // Construct using another point3 of the same unit and number type.
+        // Constructs using another point3 of the same unit and number type.
         template <typename Num1>
         point3(const point3<Unit,Num1>& o):
             x_(o.x().value()), y_(o.y().value()), z_(o.z().value()) { }
@@ -1428,7 +1529,7 @@ namespace measures
             return *this;
         }
 
-        // Construct using a unit and a value.
+        // Constructs using a unit and a value.
         template <typename Num1, typename Num2, typename Num3>
         point3(typename Unit::magnitude unit, Num1 x, Num2 y, Num3 z):
             x_(static_cast<Num>((unit.offset() - Unit::offset()
@@ -1690,80 +1791,6 @@ namespace measures
     }
 
 
-//////////////////// UNIT CONVERSIONS ////////////////////
-
-    // 1d measures
-    template <class ToUnit, class FromUnit, typename Num>
-    vect1<ToUnit,Num> convert(vect1<FromUnit,Num> m)
-    {
-        ASSERT_HAVE_SAME_MAGNITUDE(ToUnit, FromUnit)
-        return vect1<ToUnit,Num>(static_cast<Num>(
-            m.value() * (FromUnit::ratio() / ToUnit::ratio())));
-    }
-
-    template <class ToUnit, class FromUnit, typename Num>
-    point1<ToUnit,Num> convert(point1<FromUnit,Num> m)
-    {
-        ASSERT_HAVE_SAME_MAGNITUDE(ToUnit, FromUnit)
-        return point1<ToUnit,Num>(static_cast<Num>(
-            m.value() * (FromUnit::ratio() / ToUnit::ratio())
-            + (FromUnit::offset() - ToUnit::offset()) / ToUnit::ratio()));
-    }
-
-    // 2d measures
-    template <class ToUnit, class FromUnit, typename Num>
-    vect2<ToUnit,Num> convert(vect2<FromUnit,Num> m)
-    {
-        return vect2<ToUnit,Num>(
-            convert<ToUnit,FromUnit,Num>(m.x()),
-            convert<ToUnit,FromUnit,Num>(m.y()));
-    }
-
-    template <class ToUnit, class FromUnit, typename Num>
-    point2<ToUnit,Num> convert(point2<FromUnit,Num> m)
-    {
-        return point2<ToUnit,Num>(
-            convert<ToUnit,FromUnit,Num>(m.x()),
-            convert<ToUnit,FromUnit,Num>(m.y()));
-    }
-
-    // 3d measures
-    template <class ToUnit, class FromUnit, typename Num>
-    vect3<ToUnit,Num> convert(vect3<FromUnit,Num> m)
-    {
-        return vect3<ToUnit,Num>(
-            convert<ToUnit,FromUnit,Num>(m.x()),
-            convert<ToUnit,FromUnit,Num>(m.y()),
-            convert<ToUnit,FromUnit,Num>(m.z()));
-    }
-
-    template <class ToUnit, class FromUnit, typename Num>
-    point3<ToUnit,Num> convert(point3<FromUnit,Num> m)
-    {
-        return point3<ToUnit,Num>(
-            convert<ToUnit,FromUnit,Num>(m.x()),
-            convert<ToUnit,FromUnit,Num>(m.y()),
-            convert<ToUnit,FromUnit,Num>(m.z()));
-    }
-
-    // Azimuths
-    template <class ToUnit, class FromUnit, typename Num>
-    signed_azimuth<ToUnit,Num> convert(signed_azimuth<FromUnit,Num> m)
-    {
-        ASSERT_HAVE_SAME_MAGNITUDE(ToUnit, FromUnit)
-        return signed_azimuth<ToUnit,Num>(
-            convert<ToUnit>(point1<FromUnit,Num>(m.value())));
-    }
-
-    template <class ToUnit, class FromUnit, typename Num>
-    unsigned_azimuth<ToUnit,Num> convert(unsigned_azimuth<FromUnit,Num> m)
-    {
-        ASSERT_HAVE_SAME_MAGNITUDE(ToUnit, FromUnit)
-        return unsigned_azimuth<ToUnit,Num>(
-            convert<ToUnit>(point1<FromUnit,Num>(m.value())));
-    }
-
-
     //////////////////// AZIMUTHS ////////////////////
 
     // Azimuth are meaningful only if their numeric_type is floating point
@@ -1778,35 +1805,35 @@ namespace measures
         typedef Unit unit;
         typedef Num numeric_type;
 
-        // Construct without values.
+        // Constructs without values.
         explicit signed_azimuth() { }
 
-        // Construct using one number.
+        // Constructs using one number.
         template <typename Num1>
         explicit signed_azimuth(Num1 x): x_(normalize_(x)) { }
 
-        // Construct using another signed_azimuth of the same unit.
+        // Constructs using another signed_azimuth of the same unit.
         template <typename Num1>
         signed_azimuth(signed_azimuth<Unit,Num1> o): x_(o.value()) { }
 
-        // Construct using a point1 representing an angle.
+        // Constructs using a point1 representing an angle.
         template <typename Num1>
         explicit signed_azimuth(point1<Unit,Num1> o):
             x_(normalize_(o.value())) { }
 
-        // Construct using an unsigned_azimuth.
+        // Constructs using an unsigned_azimuth.
         template <typename Num1>
         explicit signed_azimuth(unsigned_azimuth<Unit, Num1> o):
             x_(normalize_(o.value())) { }
 
-        // Construct using a vect2.
+        // Constructs using a vect2.
         template <class Unit2, typename Num2>
         explicit signed_azimuth(vect2<Unit2,Num2> v):
             x_(convert<Unit>(signed_azimuth<radians,Num>(
                 static_cast<Num>(atan2(v.y().value(),
                 v.x().value())))).value()) { }
 
-        // Construct using a unit and a value.
+        // Constructs using a unit and a value.
         template <typename Num1>
         explicit signed_azimuth(typename Unit::magnitude unit, Num1 x):
             x_(normalize_(static_cast<Num>(x * (unit.ratio() / Unit::ratio())
@@ -1916,35 +1943,35 @@ namespace measures
         typedef Unit unit;
         typedef Num numeric_type;
 
-        // Construct without values.
+        // Constructs without values.
         explicit unsigned_azimuth() { }
 
-        // Construct using one number.
+        // Constructs using one number.
         template <typename Num1>
         explicit unsigned_azimuth(Num1 x): x_(normalize_(x)) { }
 
-        // Construct using another unsigned_azimuth of the same unit.
+        // Constructs using another unsigned_azimuth of the same unit.
         template <typename Num1>
         unsigned_azimuth(unsigned_azimuth<Unit,Num1> o): x_(o.value()) { }
 
-        // Construct using a point1 representing an angle.
+        // Constructs using a point1 representing an angle.
         template <typename Num1>
         explicit unsigned_azimuth(point1<Unit,Num1> o):
             x_(normalize_(o.value())) { }
 
-        // Construct using a signed_azimuth.
+        // Constructs using a signed_azimuth.
         template <typename Num1>
         explicit unsigned_azimuth(signed_azimuth<Unit,Num1> o):
             x_(normalize_(o.value())) { }
 
-        // Construct using a vect2.
+        // Constructs using a vect2.
         template <class Unit2, typename Num2>
         explicit unsigned_azimuth(vect2<Unit2,Num2> v):
             x_(convert<Unit>(unsigned_azimuth<radians,Num>(
                 static_cast<Num>(atan2(v.y().value(),
                 v.x().value())))).value()) { }
 
-        // Construct using a unit and a value.
+        // Constructs using a unit and a value.
         template <typename Num1>
         explicit unsigned_azimuth(typename Unit::magnitude unit, Num1 x):
             x_(normalize_(static_cast<Num>(x * (unit.ratio() / Unit::ratio())
@@ -2062,7 +2089,7 @@ namespace measures
     Num cos(vect1<Unit,Num> m)
     {
         ASSERT_IS_ANGLE(Unit)
-        return std::cos(convert<radians>(m).value());
+        return static_cast<Num>(std::cos(convert<radians>(m).value()));
     }
 
     // tan(vect1) -> N
@@ -2070,7 +2097,7 @@ namespace measures
     Num tan(vect1<Unit,Num> m)
     {
         ASSERT_IS_ANGLE(Unit)
-        return std::tan(convert<radians>(m).value());
+        return static_cast<Num>(std::tan(convert<radians>(m).value()));
     }
 
     // sin(point1) -> N
@@ -2078,7 +2105,7 @@ namespace measures
     Num sin(point1<Unit,Num> m)
     {
         ASSERT_IS_ANGLE(Unit)
-        return std::sin(convert<radians>(m).value());
+        return static_cast<Num>(std::sin(convert<radians>(m).value()));
     }
 
     // cos(point1) -> N
@@ -2086,7 +2113,7 @@ namespace measures
     Num cos(point1<Unit,Num> m)
     {
         ASSERT_IS_ANGLE(Unit)
-        return std::cos(convert<radians>(m).value());
+        return static_cast<Num>(std::cos(convert<radians>(m).value()));
     }
 
     // tan(point1) -> N
@@ -2094,38 +2121,38 @@ namespace measures
     Num tan(point1<Unit,Num> m)
     {
         ASSERT_IS_ANGLE(Unit)
-        return std::tan(convert<radians>(m).value());
+        return static_cast<Num>(std::tan(convert<radians>(m).value()));
     }
 
     // sin(signed_azimuth) -> N
     template <class Unit, typename Num>
     Num sin(signed_azimuth<Unit,Num> m)
-    { return std::sin(convert<radians>(m).value()); }
+    { return static_cast<Num>(std::sin(convert<radians>(m).value())); }
 
     // cos(signed_azimuth) -> N
     template <class Unit, typename Num>
     Num cos(signed_azimuth<Unit,Num> m)
-    { return std::cos(convert<radians>(m).value()); }
+    { return static_cast<Num>(std::cos(convert<radians>(m).value())); }
 
     // tan(signed_azimuth) -> N
     template <class Unit, typename Num>
     Num tan(signed_azimuth<Unit,Num> m)
-    { return std::tan(convert<radians>(m).value()); }
+    { return static_cast<Num>(std::tan(convert<radians>(m).value())); }
     
     // sin(unsigned_azimuth) -> N
     template <class Unit, typename Num>
     Num sin(unsigned_azimuth<Unit,Num> m)
-    { return std::sin(convert<radians>(m).value()); }
+    { return static_cast<Num>(std::sin(convert<radians>(m).value())); }
 
     // cos(unsigned_azimuth) -> N
     template <class Unit, typename Num>
     Num cos(unsigned_azimuth<Unit,Num> m)
-    { return std::cos(convert<radians>(m).value()); }
+    { return static_cast<Num>(std::cos(convert<radians>(m).value())); }
 
     // tan(unsigned_azimuth) -> N
     template <class Unit, typename Num>
     Num tan(unsigned_azimuth<Unit,Num> m)
-    { return std::tan(convert<radians>(m).value()); }
+    { return static_cast<Num>(std::tan(convert<radians>(m).value())); }
 
 
     //////////////////// NUMERIC CASTS ////////////////////

@@ -14,6 +14,7 @@ TODO:
 - Read document about open source software development.
 - When completed, add Motivation as an article of CodeProject and as an article of http://www.academia.edu/.
 - Search for units-related articles and then add announcement on C++ forums:
+     http://programmers.stackexchange.com/questions/197416/data-structure-for-accessing-units-of-measure
      http://www.codeguru.com/cpp/
      http://www.dreamincode.net/forums/forum/168-c-articles-and-news/
      http://www.cplusplus.com/articles/

@@ -72,10 +72,10 @@ void test_file(string dir, string filename)
     do
     {
         ++n_current_block;
-        ifstream is(dir + filename);
+        ifstream is(filename);
         if (! is)
         {
-            cout << "Impossible to read file '" << dir + filename
+            cout << "Impossible to read file '" << filename
                 << "'." << endl;
             exit(EXIT_FAILURE);
         }
@@ -237,7 +237,7 @@ int main(int argc, char *argv[])
     }
     for (auto file_name: input_files)
     {
-        cout << "Processing test file '" << tmp_dir + file_name << "'" << endl;
+        cout << "Processing test file '" << file_name << "'" << endl;
         test_file(tmp_dir, file_name);
     }
     if (input_files.size() == 1)

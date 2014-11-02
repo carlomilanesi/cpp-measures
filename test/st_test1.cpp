@@ -3,63 +3,63 @@ using namespace measures;
 using namespace std;
 
 // Define alternative angle units.
-DEFINE_ANGLE_UNIT(degrees, "^", 360, 0)
-DEFINE_ANGLE_UNIT(gradians, " gon", 400, 0)
-DEFINE_ANGLE_UNIT(turns, " rev", 1, 0)
+MEASURES_ANGLE_UNIT(degrees, "^", 360, 0)
+MEASURES_ANGLE_UNIT(gradians, " gon", 400, 0)
+MEASURES_ANGLE_UNIT(turns, " rev", 1, 0)
 	
 // Define solid angles with three units.
-DEFINE_MAGNITUDE(SolidAngle, steradians, " sr")
-DEFINE_UNIT(allrounds, SolidAngle, " all-round",\
+MEASURES_MAGNITUDE(SolidAngle, steradians, " sr")
+MEASURES_UNIT(allrounds, SolidAngle, " all-round",\
     4*3.1415926535897932384626433832795, 0)
-DEFINE_UNIT(square_degrees, SolidAngle, "^^",\
+MEASURES_UNIT(square_degrees, SolidAngle, "^^",\
     3.1415926535897932384626433832795/180*3.1415926535897932384626433832795/180, 0)
 	
 // Define unitless measures.
-DEFINE_MAGNITUDE(Amount, units, "")
+MEASURES_MAGNITUDE(Amount, units, "")
 	
 // Define space and time units and some of their derived units.
-DEFINE_MAGNITUDE(Space, metres, " m")
-DEFINE_UNIT(inches, Space, "\"", 0.0254, 0)
-DEFINE_UNIT(mm, Space, " mm", 0.001, 0)
-DEFINE_UNIT(km, Space, " Km", 1000, 0)
+MEASURES_MAGNITUDE(Space, metres, " m")
+MEASURES_UNIT(inches, Space, "\"", 0.0254, 0)
+MEASURES_UNIT(mm, Space, " mm", 0.001, 0)
+MEASURES_UNIT(km, Space, " Km", 1000, 0)
 
-DEFINE_MAGNITUDE(Time, seconds, " s")
-DEFINE_UNIT(minutes, Time, " min", 60, 0)
-DEFINE_UNIT(hours, Time, " h", 3600, 0)
+MEASURES_MAGNITUDE(Time, seconds, " s")
+MEASURES_UNIT(minutes, Time, " min", 60, 0)
+MEASURES_UNIT(hours, Time, " h", 3600, 0)
 
-DEFINE_MAGNITUDE(Speed, metres_per_second, " m/s")
-DEFINE_UNIT(km_per_hour, Speed, " Km/h", 1/3.6, 0)
+MEASURES_MAGNITUDE(Speed, metres_per_second, " m/s")
+MEASURES_UNIT(km_per_hour, Speed, " Km/h", 1/3.6, 0)
 
-DEFINE_MAGNITUDE(Acceleration, metres_per_squared_second, " m/s2")
-DEFINE_UNIT(km_per_hours_per_second, Acceleration, " Km/h/s", 1/3.6, 0)
+MEASURES_MAGNITUDE(Acceleration, metres_per_squared_second, " m/s2")
+MEASURES_UNIT(km_per_hours_per_second, Acceleration, " Km/h/s", 1/3.6, 0)
 
-DEFINE_MAGNITUDE(SquaredTime, squared_seconds, " s2")
+MEASURES_MAGNITUDE(SquaredTime, squared_seconds, " s2")
 
 // Define the combined operations among the defined units.
-DEFINE_DERIVED_UNIT_SQUARED_SCALAR(seconds, squared_seconds)
-DEFINE_DERIVED_UNIT_SCALAR_VECTOR(seconds, metres_per_second, metres)
-DEFINE_DERIVED_UNIT_SCALAR_VECTOR(seconds, metres_per_squared_second, metres_per_second)
-DEFINE_DERIVED_UNIT_SCALAR_VECTOR(squared_seconds, metres_per_squared_second, metres)
+MEASURES_DERIVED_SQ_1(seconds, squared_seconds)
+MEASURES_DERIVED_1_3(seconds, metres_per_second, metres)
+MEASURES_DERIVED_1_3(seconds, metres_per_squared_second, metres_per_second)
+MEASURES_DERIVED_1_3(squared_seconds, metres_per_squared_second, metres)
 
 // Define the units derived from time and angle units.
-DEFINE_MAGNITUDE(AngularSpeed, radians_per_second, " rad/s")
-DEFINE_UNIT(turns_per_minute, AngularSpeed, " rpm", 60 / (2 * 3.14159265358979323846), 0)
-DEFINE_MAGNITUDE(AngularAcceleration, radians_per_squared_second, " rad/s2")
+MEASURES_MAGNITUDE(AngularSpeed, radians_per_second, " rad/s")
+MEASURES_UNIT(turns_per_minute, AngularSpeed, " rpm", 60 / (2 * 3.14159265358979323846), 0)
+MEASURES_MAGNITUDE(AngularAcceleration, radians_per_squared_second, " rad/s2")
 
 // Define the combined operations among angle and derived units.
-DEFINE_DERIVED_UNIT_SCALAR_SCALAR(seconds, radians_per_second, Angle)
-DEFINE_DERIVED_UNIT_SCALAR_SCALAR(seconds, radians_per_squared_second, radians_per_second)
-DEFINE_DERIVED_UNIT_SCALAR_SCALAR(squared_seconds, radians_per_squared_second, radians)
+MEASURES_DERIVED_1_1(seconds, radians_per_second, Angle)
+MEASURES_DERIVED_1_1(seconds, radians_per_squared_second, radians_per_second)
+MEASURES_DERIVED_1_1(squared_seconds, radians_per_squared_second, radians)
 
 // Define unitless combined operations.
-DEFINE_DERIVED_UNIT_SQUARED_VECTOR(units, units)
+MEASURES_DERIVED_SQ_3(units, units)
 
 // Define vector combined operations.
-DEFINE_MAGNITUDE(Force, newtons, " N")
-DEFINE_MAGNITUDE(Energy, joules, " J")
-DEFINE_DERIVED_UNIT_VECTOR_VECTOR(newtons, metres, joules)
+MEASURES_MAGNITUDE(Force, newtons, " N")
+MEASURES_MAGNITUDE(Energy, joules, " J")
+MEASURES_DERIVED_3_3(newtons, metres, joules, newton_metres)
 	
-DEFINE_DERIVED_UNIT_SQUARED_SCALAR(radians, steradians)
+MEASURES_DERIVED_SQ_1(radians, steradians)
 	
 int main()
 {

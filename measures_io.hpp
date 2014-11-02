@@ -58,6 +58,7 @@ namespace measures
 		return is;
 	}
 
+    
 	/////////////////// 2-DIMENSIONAL VECTORS AND POINTS ///////////////////
 
 	template <class Unit, typename Num>
@@ -95,6 +96,7 @@ namespace measures
 		o = point2<Unit,Num>(v1, v2);
 		return is;
 	}
+
 
 	/////////////////// 3-DIMENSIONAL VECTORS AND POINTS ///////////////////
 

@@ -7,9 +7,9 @@ using namespace std;
 #include "measures_io.hpp"
 using namespace measures;
 
-DEFINE_MAGNITUDE(Space, metres, " m")
-DEFINE_ANGLE_UNIT(degrees, "°", 360, 0)
-DEFINE_ANGLE_UNIT(turns, " rev", 1, 0)
+MEASURES_MAGNITUDE(Space, metres, " m")
+MEASURES_ANGLE_UNIT(degrees, "°", 360, 0)
+MEASURES_ANGLE_UNIT(turns, " rev", 1, 0)
 #define AZIMUTH_TOLERANCE 0.00002f
 #define MIN_THRESHOLD 1e-14
 #define MAX_THRESHOLD 1e14
@@ -1746,24 +1746,24 @@ TYPED_TEST(measureTest, unsigned_azimuth)
 
 //#endif
 
-DEFINE_UNIT(km, Space, " Km", 1000, 0)
-DEFINE_UNIT(inches, Space, "\"", 0.0254, 0)
+MEASURES_UNIT(km, Space, " Km", 1000, 0)
+MEASURES_UNIT(inches, Space, "\"", 0.0254, 0)
 
-DEFINE_MAGNITUDE(Time, seconds, " s")
-DEFINE_UNIT(hours, Time, " h", 3600, 0)
-DEFINE_UNIT(days, Time, " d", 86400, 0)
+MEASURES_MAGNITUDE(Time, seconds, " s")
+MEASURES_UNIT(hours, Time, " h", 3600, 0)
+MEASURES_UNIT(days, Time, " d", 86400, 0)
 
-DEFINE_MAGNITUDE(Speed, metres_per_second, " m/s")
-DEFINE_UNIT(km_per_hour, Speed, " Km/h", 1 / 3.6, 0)
-DEFINE_UNIT(inches_per_day, Speed, "\"/day", 86400 / 0.0254, 0)
+MEASURES_MAGNITUDE(Speed, metres_per_second, " m/s")
+MEASURES_UNIT(km_per_hour, Speed, " Km/h", 1 / 3.6, 0)
+MEASURES_UNIT(inches_per_day, Speed, "\"/day", 86400 / 0.0254, 0)
 
-DEFINE_MAGNITUDE(Area, square_metres, " m2")
-DEFINE_UNIT(square_km, Area, " Km2", 1000000, 0)
-DEFINE_UNIT(square_inches, Area, "\"2", 0.0254 * 0.0254, 0)
+MEASURES_MAGNITUDE(Area, square_metres, " m2")
+MEASURES_UNIT(square_km, Area, " Km2", 1000000, 0)
+MEASURES_UNIT(square_inches, Area, "\"2", 0.0254 * 0.0254, 0)
 
-DEFINE_MAGNITUDE(Temperature, kelvin, "°K")
-DEFINE_UNIT(celsius, Temperature, "°C", 1, 273.15)
-DEFINE_UNIT(fahrenheit, Temperature, "°F", 5. / 9., 273.15 - 32. * 5. / 9.)
+MEASURES_MAGNITUDE(Temperature, kelvin, "°K")
+MEASURES_UNIT(celsius, Temperature, "°C", 1, 273.15)
+MEASURES_UNIT(fahrenheit, Temperature, "°F", 5. / 9., 273.15 - 32. * 5. / 9.)
 
 TEST(unitTest, magnitudes)
 {
@@ -2008,25 +2008,26 @@ TEST(unitTest, azimuth_conversions)
 	EXPECT_FLOAT_EQ(fmod(1010.3 * 360, 360.), convert<degrees>(unsigned_azimuth<turns>(1010.3)).value());
 }
 
-DEFINE_MAGNITUDE(Volume, cubic_metres, " m3")
-DEFINE_MAGNITUDE(Density, kg_per_cubic_metre, " Kg/m3")
-DEFINE_MAGNITUDE(Mass, kg, " Kg")
-DEFINE_MAGNITUDE(Force, newtons, " N")
-DEFINE_MAGNITUDE(Energy, joules, " J")
-DEFINE_MAGNITUDE(Unitless, units, " u.")
-DEFINE_UNIT(dozens, Unitless, " doz.", 12, 0)
-DEFINE_MAGNITUDE(MagneticField, tesla, " T")
-DEFINE_MAGNITUDE(ElectricField, volts_per_metre, " V/m")
+MEASURES_MAGNITUDE(Volume, cubic_metres, " m3")
+MEASURES_MAGNITUDE(Density, kg_per_cubic_metre, " Kg/m3")
+MEASURES_MAGNITUDE(Mass, kg, " Kg")
+MEASURES_MAGNITUDE(Force, newtons, " N")
+MEASURES_MAGNITUDE(Energy, joules, " J")
+MEASURES_MAGNITUDE(Torque, newton_metres, " Nm")
+MEASURES_MAGNITUDE(Unitless, units, " u.")
+MEASURES_UNIT(dozens, Unitless, " doz.", 12, 0)
+MEASURES_MAGNITUDE(MagneticField, tesla, " T")
+MEASURES_MAGNITUDE(ElectricField, volts_per_metre, " V/m")
 
-DEFINE_DERIVED_UNIT_SCALAR_SCALAR(cubic_metres, kg_per_cubic_metre, kg)
-DEFINE_DERIVED_UNIT_SQUARED_SCALAR(metres, square_metres)
-DEFINE_DERIVED_UNIT_SCALAR_VECTOR(seconds, metres_per_second, metres)
-DEFINE_DERIVED_UNIT_VECTOR_VECTOR(newtons, metres, joules)
-DEFINE_DERIVED_UNIT_VECTOR_VECTOR(metres_per_second, tesla, volts_per_metre)
-DEFINE_DERIVED_UNIT_SQUARED_VECTOR(units, units)
+MEASURES_DERIVED_1_1(cubic_metres, kg_per_cubic_metre, kg)
+MEASURES_DERIVED_SQ_1(metres, square_metres)
+MEASURES_DERIVED_1_3(seconds, metres_per_second, metres)
+MEASURES_DERIVED_3_3_ALL(newtons, metres, joules, newton_metres)
+MEASURES_DERIVED_3_3_ALL(metres_per_second, tesla, volts_per_metre, volts_per_metre)
+MEASURES_DERIVED_SQ_3_ALL(units, units, units)
 
-DEFINE_DERIVED_UNIT_SQUARED_SCALAR(inches, square_inches)
-DEFINE_DERIVED_UNIT_SCALAR_VECTOR(hours, km_per_hour, km)
+MEASURES_DERIVED_SQ_1(inches, square_inches)
+MEASURES_DERIVED_1_3_ALL(hours, km_per_hour, km)
 
 TEST(unitTest, derived_operations)
 {

@@ -19,7 +19,6 @@ namespace measures
 #define ASSERT_IS_ANGLE(U)\
     assert_same_type(typename U::magnitude(0), Angle(0));
 
-
 //////////////////// UNIT FEATURES ////////////////////
 
 namespace measures
@@ -35,7 +34,7 @@ namespace measures
 
 //////////////////// MAGNITUDE AND UNIT DEFINITIONS ////////////////////
 
-#define DEFINE_UNIT(UnitName,MagnitudeName,Suffix,Ratio,Offset)\
+#define MEASURES_UNIT(UnitName,MagnitudeName,Suffix,Ratio,Offset)\
     namespace measures\
     {\
         static unit_features UnitName##_features_\
@@ -55,7 +54,7 @@ namespace measures
         };\
     }
 
-#define DEFINE_ANGLE_UNIT(UnitName,Suffix,TurnFraction,Offset)\
+#define MEASURES_ANGLE_UNIT(UnitName,Suffix,TurnFraction,Offset)\
     namespace measures\
     {\
         static angle_unit_features UnitName##_features_\
@@ -79,7 +78,7 @@ namespace measures
 
 // Every magnitude class is used as a template parameter
 // or it may be instantiated to represent a dynamic unit.
-#define DEFINE_MAGNITUDE(MagnitudeName,BaseUnitName,BaseUnitSuffix)\
+#define MEASURES_MAGNITUDE(MagnitudeName,BaseUnitName,BaseUnitSuffix)\
     namespace measures\
     {\
         class BaseUnitName;\
@@ -96,7 +95,7 @@ namespace measures
             unit_features const* features_;\
         };\
     }\
-    DEFINE_UNIT(BaseUnitName, MagnitudeName, BaseUnitSuffix, 1, 0)
+    MEASURES_UNIT(BaseUnitName, MagnitudeName, BaseUnitSuffix, 1, 0)
 
 
 //////////////////// PREDEFINED MAGNITUDES AND UNITS ////////////////////
@@ -122,8 +121,7 @@ namespace measures
         angle_unit_features const* features_;
     };
 }
-DEFINE_ANGLE_UNIT(radians, " rad", 2 * pi, 0)
-
+MEASURES_ANGLE_UNIT(radians, " rad", 2 * pi, 0)
 
 //////////////////// DERIVED UNITS ////////////////////
 
@@ -141,26 +139,45 @@ cross_product(Vector, Vector) -> Vector // vector cross product
 
 // U1 (Scalar) * U2 (Vector) == U3 (Vector)
 // with U1 != U2
-#define DEFINE_DERIVED_UNIT_SCALAR_VECTOR(U1,U2,U3)\
-    DEFINE_DERIVED_UNIT_SCALAR_SCALAR(U1,U2,U3)\
-    DEFINE_DERIVED_OTHER_UNIT_SCALAR_VECTOR(U1,U2,U3)
+#define MEASURES_DERIVED_1_2_ALL(U1,U2,U3)\
+    MEASURES_DERIVED_1_1(U1,U2,U3)\
+    MEASURES_DERIVED_1_2(U1,U2,U3)
+
+// U1 (Scalar) * U2 (Vector) == U3 (Vector)
+// with U1 != U2
+#define MEASURES_DERIVED_1_3_ALL(U1,U2,U3)\
+    MEASURES_DERIVED_1_2_ALL(U1,U2,U3)\
+    MEASURES_DERIVED_1_3(U1,U2,U3)
 
 // U1 (Vector) * U2 (Vector) == U3 (Scalar)
-// U1 (Vector) X U2 (Vector) == U3 (Vector)
+// U1 (Vector) X U2 (Vector) == U4 (Vector)
 // with U1 != U2
-#define DEFINE_DERIVED_UNIT_VECTOR_VECTOR(U1,U2,U3)\
-    DEFINE_DERIVED_UNIT_SCALAR_SCALAR(U1,U2,U3)\
-    DEFINE_DERIVED_OTHER_UNIT_VECTOR_VECTOR(U1,U2,U3)
+#define MEASURES_DERIVED_2_2_ALL(U1,U2,U3,U4)\
+    MEASURES_DERIVED_1_1(U1,U2,U3)\
+    MEASURES_DERIVED_2_2(U1,U2,U3,U4)
+
+// U1 (Vector) * U2 (Vector) == U3 (Scalar)
+// U1 (Vector) X U2 (Vector) == U4 (Vector)
+// with U1 != U2
+#define MEASURES_DERIVED_3_3_ALL(U1,U2,U3,U4)\
+    MEASURES_DERIVED_2_2_ALL(U1,U2,U3,U4)\
+    MEASURES_DERIVED_3_3(U1,U2,U3,U4)
 
 // U1 (Vector) * U1 (Vector) == U2 (Scalar)
-// U1 (Vector) X U1 (Vector) == U2 (Vector)
-#define DEFINE_DERIVED_UNIT_SQUARED_VECTOR(U1,U2)\
-    DEFINE_DERIVED_UNIT_SQUARED_SCALAR(U1,U2)\
-    DEFINE_DERIVED_OTHER_UNIT_SQUARED_VECTOR(U1,U2)
+// U1 (Vector) X U1 (Vector) == U3 (Vector)
+#define MEASURES_DERIVED_SQ_2_ALL(U1,U2,U3)\
+    MEASURES_DERIVED_SQ_1(U1,U2)\
+    MEASURES_DERIVED_SQ_2(U1,U2,U3)
+
+// U1 (Vector) * U1 (Vector) == U2 (Scalar)
+// U1 (Vector) X U1 (Vector) == U3 (Vector)
+#define MEASURES_DERIVED_SQ_3_ALL(U1,U2,U3)\
+    MEASURES_DERIVED_SQ_2_ALL(U1,U2,U3)\
+    MEASURES_DERIVED_SQ_3(U1,U2,U3)
 
 // U1 (Scalar) * U2 (Scalar) == U3 (Scalar)
 // with U1 != U2
-#define DEFINE_DERIVED_UNIT_SCALAR_SCALAR(U1,U2,U3)\
+#define MEASURES_DERIVED_1_1(U1,U2,U3)\
     namespace measures\
     {\
         /* vect1 * vect1 -> vect1 */\
@@ -201,7 +218,7 @@ cross_product(Vector, Vector) -> Vector // vector cross product
     }
 
 // U1 (Scalar) * U1 (Scalar) == U2 (Scalar)
-#define DEFINE_DERIVED_UNIT_SQUARED_SCALAR(U1,U2)\
+#define MEASURES_DERIVED_SQ_1(U1,U2)\
     namespace measures\
     {\
         /* vect1 * vect1 -> vect1 */\
@@ -235,10 +252,9 @@ cross_product(Vector, Vector) -> Vector // vector cross product
         }\
     }
 
-// Private
 // U1 (Scalar) * U2 (Vector) == U3 (Vector)
 // with U1 != U2
-#define DEFINE_DERIVED_OTHER_UNIT_SCALAR_VECTOR(U1,U2,U3)\
+#define MEASURES_DERIVED_1_2(U1,U2,U3)\
     namespace measures\
     {\
         /* vect1 * vect2 -> vect2 */\
@@ -270,7 +286,13 @@ cross_product(Vector, Vector) -> Vector // vector cross product
                 m3.x().value() / m1.value(),\
                 m3.y().value() / m1.value());\
         }\
-        \
+    }
+
+// U1 (Scalar) * U2 (Vector) == U3 (Vector)
+// with U1 != U2
+#define MEASURES_DERIVED_1_3(U1,U2,U3)\
+    namespace measures\
+    {\
         /* vect1 * vect3 -> vect3 */\
         template <typename Num1, typename Num2>\
         vect3<U3,decltype(Num1()*Num2())> operator *(\
@@ -305,11 +327,10 @@ cross_product(Vector, Vector) -> Vector // vector cross product
         }\
     }
 
-// Private
 // U1 (Vector) * U2 (Vector) == U3 (Scalar)
-// U1 (Vector) X U2 (Vector) == U3 (Vector)
+// U1 (Vector) X U2 (Vector) == U4 (Vector)
 // with U1 != U2
-#define DEFINE_DERIVED_OTHER_UNIT_VECTOR_VECTOR(U1,U2,U3)\
+#define MEASURES_DERIVED_2_2(U1,U2,U3,U4)\
     namespace measures\
     {\
         /* vect2 * vect2 -> vect1 */\
@@ -334,24 +355,31 @@ cross_product(Vector, Vector) -> Vector // vector cross product
         \
         /* cross_product(vect2, vect2) -> vect1 */\
         template <typename Num1, typename Num2>\
-        vect1<U3,decltype(Num1()*Num2())> cross_product(\
+        vect1<U4,decltype(Num1()*Num2())> cross_product(\
             vect2<U1,Num1> m1, vect2<U2,Num2> m2)\
         {\
-            return vect1<U3,decltype(Num1()*Num2())>(\
+            return vect1<U4,decltype(Num1()*Num2())>(\
                 m1.x().value() * m2.y().value() -\
                 m1.y().value() * m2.x().value());\
         }\
         \
         /* cross_product(vect2, vect2) -> vect1 */\
         template <typename Num2, typename Num1>\
-        vect1<U3,decltype(Num2()*Num1())> cross_product(\
+        vect1<U4,decltype(Num2()*Num1())> cross_product(\
             vect2<U2,Num1> m2, vect2<U1,Num2> m1)\
         {\
-            return vect1<U3,decltype(Num2()*Num1())>(\
+            return vect1<U4,decltype(Num2()*Num1())>(\
                 m2.x().value() * m1.y().value() -\
                 m2.y().value() * m1.x().value());\
         }\
-        \
+    }
+
+// U1 (Vector) * U2 (Vector) == U3 (Scalar)
+// U1 (Vector) X U2 (Vector) == U4 (Vector)
+// with U1 != U2
+#define MEASURES_DERIVED_3_3(U1,U2,U3,U4)\
+    namespace measures\
+    {\
         /* vect3 * vect3 -> vect1 */\
         template <typename Num1, typename Num2>\
         vect1<U3,decltype(Num1()*Num2())> operator *(\
@@ -376,10 +404,10 @@ cross_product(Vector, Vector) -> Vector // vector cross product
         \
         /* cross_product(vect3, vect3) -> vect3 */\
         template <typename Num1, typename Num2>\
-        vect3<U3,decltype(Num1()*Num2())> cross_product(\
+        vect3<U4,decltype(Num1()*Num2())> cross_product(\
             vect3<U1,Num1> m1, vect3<U2,Num2> m2)\
         {\
-            return vect3<U3,decltype(Num1()*Num2())>(\
+            return vect3<U4,decltype(Num1()*Num2())>(\
                 m1.y().value() * m2.z().value() -\
                 m1.z().value() * m2.y().value(),\
                 m1.z().value() * m2.x().value() -\
@@ -390,10 +418,10 @@ cross_product(Vector, Vector) -> Vector // vector cross product
         \
         /* cross_product(vect3, vect3) -> vect3 */\
         template <typename Num2, typename Num1>\
-        vect3<U3,decltype(Num2()*Num1())> cross_product(\
+        vect3<U4,decltype(Num2()*Num1())> cross_product(\
             vect3<U2,Num2> m2, vect3<U1,Num1> m1)\
         {\
-            return vect3<U3,decltype(Num2()*Num1())>(\
+            return vect3<U4,decltype(Num2()*Num1())>(\
                 m2.y().value() * m1.z().value() -\
                 m2.z().value() * m1.y().value(),\
                 m2.z().value() * m1.x().value() -\
@@ -403,10 +431,9 @@ cross_product(Vector, Vector) -> Vector // vector cross product
         }\
     }
 
-// Private
 // U1 (Vector) * U1 (Vector) == U2 (Scalar)
-// U1 (Vector) X U1 (Vector) == U2 (Vector)
-#define DEFINE_DERIVED_OTHER_UNIT_SQUARED_VECTOR(U1,U2)\
+// U1 (Vector) X U1 (Vector) == U3 (Vector)
+#define MEASURES_DERIVED_SQ_2(U1,U2,U3)\
     namespace measures\
     {\
         /* vect2 * vect2 -> vect1 */\
@@ -426,14 +453,20 @@ cross_product(Vector, Vector) -> Vector // vector cross product
         \
         /* cross_product(vect2, vect2) -> vect1 */\
         template <typename Num1, typename Num2>\
-        vect1<U2,decltype(Num1()*Num2())> cross_product(\
+        vect1<U3,decltype(Num1()*Num2())> cross_product(\
             vect2<U1,Num1> m1, vect2<U1,Num2> m2)\
         {\
-            return vect1<U2,decltype(Num1()*Num2())>(\
+            return vect1<U3,decltype(Num1()*Num2())>(\
                 m1.x().value() * m2.y().value() -\
                 m1.y().value() * m2.x().value());\
         }\
-        \
+    }
+
+// U1 (Vector) * U1 (Vector) == U2 (Scalar)
+// U1 (Vector) X U1 (Vector) == U3 (Vector)
+#define MEASURES_DERIVED_SQ_3(U1,U2,U3)\
+    namespace measures\
+    {\
         /* vect3 * vect3 -> vect1 */\
         template <typename Num1, typename Num2>\
         vect1<U2,decltype(Num1()*Num2())> operator *(\
@@ -452,10 +485,10 @@ cross_product(Vector, Vector) -> Vector // vector cross product
         \
         /* cross_product(vect3, vect3) -> vect3 */\
         template <typename Num1, typename Num2>\
-        vect3<U2,decltype(Num1()*Num2())> cross_product(\
+        vect3<U3,decltype(Num1()*Num2())> cross_product(\
             vect3<U1,Num1> m1, vect3<U1,Num2> m2)\
         {\
-            return vect3<U2,decltype(Num1()*Num2())>(\
+            return vect3<U3,decltype(Num1()*Num2())>(\
                 m1.y().value() * m2.z().value() -\
                 m1.z().value() * m2.y().value(),\
                 m1.z().value() * m2.x().value() -\
@@ -552,7 +585,6 @@ namespace measures
         return unsigned_azimuth<ToUnit,Num>(
             convert<ToUnit>(point1<FromUnit,Num>(m.value())));
     }
-
 
     //////////////////// 1-DIMENSIONAL VECTORS AND POINTS ////////////////////
 
@@ -933,10 +965,10 @@ namespace measures
             x_(static_cast<Num>(x * (unit.ratio() / Unit::ratio()))),
             y_(static_cast<Num>(y * (unit.ratio() / Unit::ratio()))) { }
 
-        // Returns a versor having the direction represented
+        // Returns a vector of norm 1 having the direction represented
         // by a point angle.
         template <class Unit1, typename Num1>
-        static vect2<Unit,Num> make_versor(point1<Unit1,Num1> a)
+        static vect2<Unit,Num> make_unit_vector(point1<Unit1,Num1> a)
         {
             ASSERT_IS_ANGLE(Unit1)
             Num1 a_val = convert<radians>(a).value();
@@ -945,10 +977,10 @@ namespace measures
                 static_cast<Num>(std::sin(a_val)));
         }
 
-        // Returns a versor having the direction represented
+        // Returns a vector of norm 1 having the direction represented
         // by a signed azimuth.
         template <class Unit1, typename Num1>
-        static vect2<Unit,Num> make_versor(signed_azimuth<Unit1,Num1> a)
+        static vect2<Unit,Num> make_unit_vector(signed_azimuth<Unit1,Num1> a)
         {
             ASSERT_IS_ANGLE(Unit1)
             Num1 a_val = convert<radians>(a).value();
@@ -957,10 +989,10 @@ namespace measures
                 static_cast<Num>(std::sin(a_val)));
         }
 
-        // Returns a versor having the direction represented
+        // Returns a vector of norm 1 having the direction represented
         // by an unsigned azimuth.
         template <class Unit1, typename Num1>
-        static vect2<Unit,Num> make_versor(unsigned_azimuth<Unit1,Num1> a)
+        static vect2<Unit,Num> make_unit_vector(unsigned_azimuth<Unit1,Num1> a)
         {
             ASSERT_IS_ANGLE(Unit1)
             Num1 a_val = convert<radians>(a).value();
@@ -968,7 +1000,7 @@ namespace measures
                 static_cast<Num>(std::cos(a_val)),
                 static_cast<Num>(std::sin(a_val)));
         }
-        
+
         // Get unmutable component array.
         Num const* data() const { return &x_; }
 
@@ -1739,7 +1771,7 @@ namespace measures
             static_cast<Num>(std::sqrt(squared_norm_value(v))));
     }
 
-
+    
     //////////////////// AZIMUTHS UTILS ////////////////////
 
     // Private.
@@ -2073,7 +2105,7 @@ namespace measures
             m1.value() - m2.value());
     }
 
-
+    
     //////////////////// TRIGONOMETRIC FUNCTIONS ////////////////////
 
     // sin(vect1) -> N
@@ -2154,7 +2186,7 @@ namespace measures
     Num tan(unsigned_azimuth<Unit,Num> m)
     { return static_cast<Num>(std::tan(convert<radians>(m).value())); }
 
-
+    
     //////////////////// NUMERIC CASTS ////////////////////
     // All these functions return a measure of the same kind, unit,
     // and value, but using the specified ToNum numeric type.
@@ -2216,7 +2248,7 @@ namespace measures
 // to create user-defined literals.
 // The first macro creates a `vect1`, the second macro a `point1`.
 
-#define DEFINE_VECT_UNIT_LITERAL(Unit, Num, Operator) \
+#define MEASURES_VECT_UNIT_LITERAL(Unit, Num, Operator) \
     namespace measures\
     {\
         /*operator for floating-point literals*/\
@@ -2227,7 +2259,7 @@ namespace measures
         { return vect1<Unit,Num>(n); }\
     }
 
-#define DEFINE_POINT_UNIT_LITERAL(Unit, Num, Operator) \
+#define MEASURES_POINT_UNIT_LITERAL(Unit, Num, Operator) \
     namespace measures\
     {\
         /*operator for floating-point literals*/\

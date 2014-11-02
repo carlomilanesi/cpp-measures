@@ -1,22 +1,23 @@
 #include "measures.hpp"
 using namespace measures;
 	
-DEFINE_ANGLE_UNIT(degrees, "^", 360, 0)
+MEASURES_ANGLE_UNIT(degrees, "^", 360, 0)
 	
-DEFINE_MAGNITUDE(Space, metres, " m")
-DEFINE_MAGNITUDE(Area, square_metres, " m2")
-DEFINE_MAGNITUDE(Force, newtons, " N")
-DEFINE_MAGNITUDE(Energy, joules, " J")
-DEFINE_MAGNITUDE(Time, seconds, " s")
-DEFINE_MAGNITUDE(Speed, metres_per_second, " m/s")
-DEFINE_MAGNITUDE(AngularSpeed, radians_per_second, " rad/s")
-DEFINE_UNIT(inches, Space, " in", 0.0254, 0)
-DEFINE_UNIT(square_inches, Area, " in2", 0.0254*0.0254, 0)
-DEFINE_DERIVED_UNIT_SCALAR_SCALAR(seconds, radians_per_second, radians)
-DEFINE_DERIVED_UNIT_SQUARED_SCALAR(inches, square_inches)
-DEFINE_DERIVED_UNIT_SCALAR_VECTOR(seconds, metres_per_second, metres)
-DEFINE_DERIVED_UNIT_VECTOR_VECTOR(newtons, metres, joules)
-DEFINE_DERIVED_UNIT_SQUARED_VECTOR(metres, square_metres)
+MEASURES_MAGNITUDE(Space, metres, " m")
+MEASURES_MAGNITUDE(Area, square_metres, " m2")
+MEASURES_MAGNITUDE(Force, newtons, " N")
+MEASURES_MAGNITUDE(Energy, joules, " J")
+MEASURES_MAGNITUDE(Torque, newton_metres, " Nm")
+MEASURES_MAGNITUDE(Time, seconds, " s")
+MEASURES_MAGNITUDE(Speed, metres_per_second, " m/s")
+MEASURES_MAGNITUDE(AngularSpeed, radians_per_second, " rad/s")
+MEASURES_UNIT(inches, Space, " in", 0.0254, 0)
+MEASURES_UNIT(square_inches, Area, " in2", 0.0254*0.0254, 0)
+MEASURES_DERIVED_1_1(seconds, radians_per_second, radians)
+MEASURES_DERIVED_SQ_1(inches, square_inches)
+MEASURES_DERIVED_1_3_ALL(seconds, metres_per_second, metres)
+MEASURES_DERIVED_3_3_ALL(newtons, metres, joules, newton_metres)
+MEASURES_DERIVED_SQ_3_ALL(metres, square_metres, square_metres)
 	
 int main()
 {	
@@ -118,9 +119,9 @@ int main()
 		vect2<metres,float> v10(inches::id(), 2.5f, 2.6f);
         auto v11 = vect2<metres>();
 
-        vect2<inches> v12(vect2<inches,float>::make_versor(point1<degrees>(1.2)));
-        vect2<inches> v13(vect2<inches,float>::make_versor(signed_azimuth<degrees>(1.2)));
-        vect2<inches> v14(vect2<inches,float>::make_versor(unsigned_azimuth<degrees>(1.2)));
+        vect2<inches> v12(vect2<inches,float>::make_unit_vector(point1<degrees>(1.2)));
+        vect2<inches> v13(vect2<inches,float>::make_unit_vector(signed_azimuth<degrees>(1.2)));
+        vect2<inches> v14(vect2<inches,float>::make_unit_vector(unsigned_azimuth<degrees>(1.2)));
 
 		n = v4.data()[0]; n = v4.data()[1];
 		v4.data()[0] = n; v4.data()[1] = n;
@@ -460,11 +461,12 @@ int main()
 		vect1<newtons,float> force1;
 		vect1<metres,float> space1;
 		vect1<joules,float> energy1;
+		vect1<newton_metres,float> torque1;
 		vect2<newtons,float> force2;
 		vect2<metres,float> space2;
 		vect3<newtons,float> force3;
 		vect3<metres,float> space3;
-		vect3<joules,float> energy3;
+		vect3<newton_metres,float> torque3;
 		
 		energy1 = force1 * space1;
 		energy1 = space1 * force1;
@@ -473,19 +475,19 @@ int main()
 		
 		energy1 = force2 * space2;
 		energy1 = space2 * force2;
-		energy1 = cross_product(force2, space2);
-		energy1 = cross_product(space2, force2);
+		torque1 = cross_product(force2, space2);
+		torque1 = cross_product(space2, force2);
 		
 		energy1 = force3 * space3;
 		energy1 = space3 * force3;
-		energy3 = cross_product(force3, space3);
-		energy3 = cross_product(space3, force3);
+		torque3 = cross_product(force3, space3);
+		torque3 = cross_product(space3, force3);
 
 		if (force1.value() < 0 && space1.value() < 0
-			&& energy1.value() < 0
+			&& energy1.value() < 0 && torque1.value() < 0
 			&& force2.x().value() < 0 && space2.x().value() < 0
 			&& force3.x().value() < 0 && space3.x().value() < 0
-			&& energy3.x().value() < 0) return 1;
+			&& torque3.x().value() < 0) return 1;
 	}
 	
 	{ // SQUARED_VECTOR
@@ -992,20 +994,22 @@ int main()
 		vect1<newtons,float> force1f;
 		vect1<metres,float> space1f;
 		vect1<joules,float> energy1f;
+		vect1<newton_metres,float> torque1f;
 		vect2<newtons,float> force2f;
 		vect2<metres,float> space2f;
 		vect3<newtons,float> force3f;
 		vect3<metres,float> space3f;
-		vect3<joules,float> energy3f;
+		vect3<newton_metres,float> torque3f;
 
 		vect1<newtons> force1d;
 		vect1<metres> space1d;
 		vect1<joules> energy1d;
+		vect1<newton_metres> torque1d;
 		vect2<newtons> force2d;
 		vect2<metres> space2d;
 		vect3<newtons> force3d;
 		vect3<metres> space3d;
-		vect3<joules> energy3d;
+		vect3<newton_metres> torque3d;
 		
 		
 		energy1f = force1f * space1d;
@@ -1015,13 +1019,13 @@ int main()
 		
 		energy1f = force2f * space2d;
 		energy1f = space2f * force2d;
-		energy1f = cross_product(force2f, space2d);
-		energy1f = cross_product(space2f, force2d);
+		torque1f = cross_product(force2f, space2d);
+		torque1f = cross_product(space2f, force2d);
 		
 		energy1f = force3f * space3d;
 		energy1f = space3f * force3d;
-		energy3f = cross_product(force3f, space3d);
-		energy3f = cross_product(space3f, force3d);
+		torque3f = cross_product(force3f, space3d);
+		torque3f = cross_product(space3f, force3d);
 		
 		
 		energy1f = force1d * space1f;
@@ -1031,13 +1035,13 @@ int main()
 		
 		energy1f = force2d * space2f;
 		energy1f = space2d * force2f;
-		energy1f = cross_product(force2d, space2f);
-		energy1f = cross_product(space2d, force2f);
+		torque1f = cross_product(force2d, space2f);
+		torque1f = cross_product(space2d, force2f);
 		
 		energy1f = force3d * space3f;
 		energy1f = space3d * force3f;
-		energy3f = cross_product(force3d, space3f);
-		energy3f = cross_product(space3d, force3f);
+		torque3f = cross_product(force3d, space3f);
+		torque3f = cross_product(space3d, force3f);
 		
 		
 		energy1f = force1d * space1d;
@@ -1047,13 +1051,13 @@ int main()
 		
 		energy1f = force2d * space2d;
 		energy1f = space2d * force2d;
-		energy1f = cross_product(force2d, space2d);
-		energy1f = cross_product(space2d, force2d);
+		torque1f = cross_product(force2d, space2d);
+		torque1f = cross_product(space2d, force2d);
 		
 		energy1f = force3d * space3d;
 		energy1f = space3d * force3d;
-		energy3f = cross_product(force3d, space3d);
-		energy3f = cross_product(space3d, force3d);
+		torque3f = cross_product(force3d, space3d);
+		torque3f = cross_product(space3d, force3d);
 	}
 	
 	{ // SQUARED_VECTOR

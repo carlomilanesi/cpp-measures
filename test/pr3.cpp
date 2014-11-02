@@ -3,9 +3,9 @@
 using namespace measures;
 using namespace std;
 
-DEFINE_MAGNITUDE(Length, metres, " m")
-DEFINE_UNIT(cm, Length, " cm", 0.01, 0)
-DEFINE_UNIT(km, Length, " Km", 1000, 0)
+MEASURES_MAGNITUDE(Length, metres, " m")
+MEASURES_UNIT(cm, Length, " cm", 0.01, 0)
+MEASURES_UNIT(km, Length, " Km", 1000, 0)
 
 void f2(double a, stringstream& ss)
 {

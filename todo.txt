@@ -26,3 +26,4 @@ TODO:
 - test under linux with gcc and clang
 - test quaternions and complex numbers.
 - possibly allow mixed types in assignment operators (like vect1<inches,float>(3) += vect1<inches,double>(4))
+- write a script that extracts source code from the Tutorial, compiles and runs it, and checks its output.

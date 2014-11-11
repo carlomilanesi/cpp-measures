@@ -928,9 +928,190 @@ namespace measures
     vect1<Unit,Num> norm(vect1<Unit,Num> v)
     { return vect1<Unit,Num>(static_cast<Num>(std::abs(v.value()))); }
 
+    // normalized(vect1) -> vect1
+    template <class Unit, typename Num>
+    vect1<Unit,Num> normalized(vect1<Unit,Num> v)
+    { return vect1<Unit,Num>(v.value() < 0 ? -1 : +1); }
+
 
     //////////////////// 2-DIMENSIONAL VECTORS AND POINTS ////////////////////
 
+    template <typename Num = double>
+    class linear_transformation2
+    {
+        template <class, typename>
+        friend class vect2;    
+    public:
+    
+        // Rotation by a relative angle.
+        template <class Unit, typename Num2>
+        static linear_transformation2 rotation(vect1<Unit,Num2> a)
+        {
+            linear_transformation2 result;
+            result.set_rotation_(convert<radians>(a).value());
+            return result;
+        }
+        
+        // Projections
+        
+        // Projection onto a line identified by a point angle.
+        template <class Unit, typename Num2>
+        static linear_transformation2 projection(point1<Unit> a)
+        {
+            linear_transformation2 result;
+            result.set_projection_(convert<radians>(a).value());
+            return result;
+        }
+        
+        // Projection onto a line identified by a signed azimuth.
+        template <class Unit, typename Num2>
+        static linear_transformation2 projection(signed_azimuth<Unit,Num2> a)
+        {
+            linear_transformation2 result;
+            result.set_projection_(convert<radians>(a).value());
+            return result;
+        }
+        
+        // Projection onto a line identified by an unsigned azimuth.
+        template <class Unit, typename Num2>
+        static linear_transformation2 projection(unsigned_azimuth<Unit,Num2> a)
+        {
+            linear_transformation2 result;
+            result.set_projection_(convert<radians>(a).value());
+            return result;
+        }
+
+        // Projection onto a line identified by any plane vector.
+        template <class Unit, typename Num2>
+        static linear_transformation2 projection(vect2<Unit,Num2> v)
+        {
+            // Precondition: norm(v).value() != 0
+            return projection_onto_unit_vector(normalized(v));
+        }
+
+        // Projection onto a line identified by a unit plane vector.
+        // Construction is more efficient.
+        template <class Unit, typename Num2>
+        static linear_transformation2 projection_onto_unit_vector(vect2<Unit,Num2> v)
+        {
+            // Precondition: norm(v).value() == 1
+            linear_transformation2 result;
+            result.set_projection_(v.x().value(), v.y().value());
+            return result;
+        }
+        
+        // Reflections
+        
+        // Reflection over a line identified by a point angle.
+        template <class Unit, typename Num2>
+        static linear_transformation2 reflection(point1<Unit> a)
+        {
+            linear_transformation2 result;
+            result.set_reflection_(convert<radians>(a).value());
+            return result;
+        }
+        
+        // Reflection over a line identified by a signed azimuth.
+        template <class Unit, typename Num2>
+        static linear_transformation2 reflection(signed_azimuth<Unit,Num2> a)
+        {
+            linear_transformation2 result;
+            result.set_reflection_(convert<radians>(a).value());
+            return result;
+        }
+        
+        // Reflection over a line identified by an unsigned azimuth.
+        template <class Unit, typename Num2>
+        static linear_transformation2 reflection(unsigned_azimuth<Unit,Num2> a)
+        {
+            linear_transformation2 result;
+            result.set_reflection_(convert<radians>(a).value());
+            return result;
+        }
+
+        // Reflection over a line identified by any plane vector.
+        template <class Unit, typename Num2>
+        static linear_transformation2 reflection(vect2<Unit,Num2> v)
+        {
+            // Precondition: norm(v).value() != 0
+            return reflection_over_unit_vector(normalized(v));
+        }
+
+        // Reflection over a line identified by a unit plane vector.
+        // Construction is more efficient.
+        template <class Unit, typename Num2>
+        static linear_transformation2 reflection_over_unit_vector(vect2<Unit,Num2> v)
+        {
+            // Precondition: norm(v) == 1
+            linear_transformation2 result;
+            result.set_reflection_(v.x().value(), v.y().value());
+            return result;
+        }
+
+        // Access
+        
+        Num* matrix() { return &c_[0][0]; }
+    
+    private:
+        void set_rotation_(Num a)
+        {
+            auto cos_a = std::cos(a);
+            auto sin_a = std::sin(a);
+            c_[0][0] = cos_a; c_[0][1] = -sin_a;
+            c_[1][0] = sin_a; c_[1][1] = cos_a;
+        }
+
+        void set_projection_(Num cos_a, Num sin_a)
+        {
+            c_[0][0] = cos_a * cos_a; c_[0][1] = cos_a * sin_a;
+            c_[1][0] = sin_a * cos_a; c_[1][1] = sin_a * sin_a;
+        }
+
+        void set_projection_(Num a)
+        {
+            set_projection_(cos(a), sin(a));
+        }
+
+        void set_reflection_(Num cos_a, Num sin_a)
+        {
+            c_[0][0] = 2 * cos_a * cos_a - 1; c_[0][1] = 2 * cos_a * sin_a;
+            c_[1][0] = 2 * cos_a * sin_a; c_[1][1] = 2 * sin_a * sin_a - 1;
+        }
+        
+        void set_reflection_(Num a)
+        {
+            set_reflection_(cos(a), sin(a));
+        }
+        
+        Num c_[2][2];
+    };
+
+    //v.trasformed_by(lt1).trasformed_by(lt2) == v.trasformed_by(combine(lt1, lt2))
+    /*TODO
+    linear_transformation2 combine(
+        const linear_transformation2& lt1,
+        const linear_transformation2& lt2)
+    {
+        linear_transformation2 result;
+        result.c_[0][0] = lt1[0][0] * lt1[0][0] + lt1[0][1] * lt1[1][0];
+        result.c_[0][1] = lt1[0][0] * lt1[0][1] + lt1[0][1] * lt1[1][1];
+        result.c_[1][0] = lt1[1][0] * lt1[0][0] + lt1[1][1] * lt1[1][0];
+        result.c_[1][1] = lt1[1][0] * lt1[0][1] + lt1[1][1] * lt1[1][1];
+        *this = result;
+    }
+    
+    linear_transformation2 inverted()
+    {
+        linear_transformation2 result;
+        result.c_[0][0] = lt1[0][0] * lt1[0][0] + lt1[0][1] * lt1[1][0];
+        result.c_[0][1] = lt1[0][0] * lt1[0][1] + lt1[0][1] * lt1[1][1];
+        result.c_[1][0] = lt1[1][0] * lt1[0][0] + lt1[1][1] * lt1[1][0];
+        result.c_[1][1] = lt1[1][0] * lt1[0][1] + lt1[1][1] * lt1[1][1];
+        return result;
+    }
+    */
+
+    
     template <class Unit, typename Num = double>
     class vect2
     {
@@ -1064,21 +1245,19 @@ namespace measures
             return *this;
         }
 
-        template <class Unit2, typename Num2>
-        vect2<Unit,decltype(Num()*Num2())> rotated_by(vect1<Unit2,Num2> a)
-        {
-            ASSERT_IS_ANGLE(Unit2)
-            return vect2<Unit,decltype(Num()*Num2())>(
-                x_ * cos(a) - y_ * sin(a),
-                x_ * sin(a) + y_ * cos(a));
-        }
-
         vect2<Unit,Num> rotated_left() const
         { return vect2<Unit,Num>(- y_, x_); }
 
         vect2<Unit,Num> rotated_right() const
         { return vect2<Unit,Num>(y_, - x_); }
 
+        template <typename Num2>
+        vect2<Unit,Num> transformed_by(const linear_transformation2<Num2>& lt) const
+        {
+            return vect2<Unit,Num>(
+                lt.c_[0][0] * x_ + lt.c_[0][1] * y_,
+                lt.c_[1][0] * x_ + lt.c_[1][1] * y_);
+        }
     private:
 
         // Components.
@@ -1110,6 +1289,238 @@ namespace measures
             <= squared_norm_value(tolerance);
     }
 
+    template <typename Num = double>
+    class affine_transformation2
+    {
+        template <class, typename>
+        friend class point2;    
+    public:
+
+        // Translation.
+        template <class VectUnit, typename VectNum>
+        static affine_transformation2 translation(vect2<VectUnit,VectNum> v)
+        {
+            affine_transformation2 result;
+            result.c_[0][0] = 1; result.c_[0][1] = 0;
+            result.c_[0][2] = v.x().value();
+            result.c_[1][0] = 0; result.c_[1][1] = 1;
+            result.c_[1][2] = v.y().value();
+            return result;
+        }
+        
+        // Rotation around a point by a relative angle.
+        template <class PointUnit, typename PointNum,
+            class AngleUnit, typename AngleNum>
+        static affine_transformation2 rotation(
+            point2<PointUnit,PointNum> fixed_p,
+            vect1<AngleUnit,AngleNum> angle)
+        {
+            affine_transformation2 result;
+            result.set_rotation_(
+                fixed_p.x().value(), fixed_p.y().value(),
+                convert<radians>(angle).value());
+            return result;
+        }
+        
+        // Projections
+        
+        // Projection onto a line identified by a fixed point
+        // and a point angle.
+        template <class PointUnit, typename PointNum,
+            class AngleUnit, typename AngleNum>
+        static affine_transformation2 projection(
+            point2<PointUnit,PointNum> fixed_p,
+            point1<AngleUnit,AngleNum> angle)
+        {
+            auto a = convert<radians>(angle).value();
+            affine_transformation2 result;
+            result.set_projection_(
+                fixed_p.x().value(), fixed_p.y().value(),
+                std::cos(a), std::sin(a));
+            return result;
+        }
+        
+        // Projection onto a line identified by a fixed point
+        // and a signed azimuth.
+        template <class PointUnit, typename PointNum,
+            class AngleUnit, typename AngleNum>
+        static affine_transformation2 projection(
+            point2<PointUnit,PointNum> fixed_p,
+            signed_azimuth<AngleUnit,AngleNum> angle)
+        {
+            auto a = convert<radians>(angle).value();
+            affine_transformation2 result;
+            result.set_projection_(
+                fixed_p.x().value(), fixed_p.y().value(),
+                std::cos(a), std::sin(a));
+            return result;
+        }
+        
+        // Projection onto a line identified by a fixed point
+        // and an unsigned azimuth.
+        template <class PointUnit, typename PointNum,
+            class AngleUnit, typename AngleNum>
+        static affine_transformation2 projection(
+            point2<PointUnit,PointNum> fixed_p,
+            unsigned_azimuth<AngleUnit,AngleNum> angle)
+        {
+            auto a = convert<radians>(angle).value();
+            affine_transformation2 result;
+            result.set_projection_(
+                fixed_p.x().value(), fixed_p.y().value(),
+                std::cos(a), std::sin(a));
+            return result;
+        }
+
+        // Projection onto a line identified by a fixed point
+        // and any plane vector.
+        template <class PointUnit, typename PointNum,
+            class VectUnit, typename VectNum>
+        static affine_transformation2 projection(
+            point2<PointUnit,PointNum> fixed_p,
+            vect2<VectUnit,VectNum> v)
+        {
+            // Precondition: norm(v).value() != 0
+            return projection_onto_unit_vector(fixed_p, normalized(v));
+        }
+
+        // Projection onto a line identified by a fixed point
+        // and a unit plane vector.
+        // Construction is more efficient.
+        template <class PointUnit, typename PointNum,
+            class VectUnit, typename VectNum>
+        static affine_transformation2 projection_onto_unit_vector(
+            point2<PointUnit,PointNum> fixed_p,
+            vect2<VectUnit,VectNum> uv)
+        {
+            // Precondition: norm(v).value() == 1
+            affine_transformation2 result;
+            result.set_projection_(
+                fixed_p.x().value(), fixed_p.y().value(),
+                uv.x().value(), uv.y().value());
+            return result;
+        }
+        
+        // Reflections
+        
+        // Reflection over a line identified by a fixed point
+        // and a point angle.
+        template <class PointUnit, typename PointNum,
+            class AngleUnit, typename AngleNum>
+        static affine_transformation2 reflection(
+            point2<PointUnit,PointNum> fixed_p,
+            point1<AngleUnit,AngleNum> angle)
+        {
+            auto a = convert<radians>(angle).value();
+            affine_transformation2 result;
+            result.set_reflection_(
+                fixed_p.x().value(), fixed_p.y().value(),
+                std::cos(a), std::sin(a));
+            return result;
+        }
+        
+        // Reflection over a line identified by a fixed point
+        // and a signed azimuth.
+        template <class PointUnit, typename PointNum,
+            class AngleUnit, typename AngleNum>
+        static affine_transformation2 reflection(
+            point2<PointUnit,PointNum> fixed_p,
+            signed_azimuth<AngleUnit,AngleNum> angle)
+        {
+            auto a = convert<radians>(angle).value();
+            affine_transformation2 result;
+            result.set_reflection_(
+                fixed_p.x().value(), fixed_p.y().value(),
+                std::cos(a), std::sin(a));
+            return result;
+        }
+        
+        // Reflection over a line identified by a fixed point
+        // and an unsigned azimuth.
+        template <class PointUnit, typename PointNum,
+            class AngleUnit, typename AngleNum>
+        static affine_transformation2 reflection(
+            point2<PointUnit,PointNum> fixed_p,
+            unsigned_azimuth<AngleUnit,AngleNum> angle)
+        {
+            auto a = convert<radians>(angle).value();
+            affine_transformation2 result;
+            result.set_reflection_(
+                fixed_p.x().value(), fixed_p.y().value(),
+                std::cos(a), std::sin(a));
+            return result;
+        }
+
+        // Reflection over a line identified by a fixed point
+        // and any plane vector.
+        template <class PointUnit, typename PointNum,
+            class VectUnit, typename VectNum>
+        static affine_transformation2 reflection(
+            point2<PointUnit,PointNum> fixed_p,
+            vect2<VectUnit,VectNum> v)
+        {
+            // Precondition: norm(v).value() != 0
+            return reflection_over_unit_vector(fixed_p, normalized(v));
+        }
+
+        // Reflection over a line identified by a fixed point
+        // and a unit plane vector.
+        // Construction is more efficient.
+        template <class PointUnit, typename PointNum,
+            class VectUnit, typename VectNum>
+        static affine_transformation2 reflection_over_unit_vector(
+            point2<PointUnit,PointNum> fixed_p,
+            vect2<VectUnit,VectNum> uv)
+        {
+            // Precondition: norm(v).value() == 1
+            affine_transformation2 result;
+            result.set_reflection_(
+                fixed_p.x().value(), fixed_p.y().value(),
+                uv.x().value(), uv.y().value());
+            return result;
+        }
+
+        // Access
+        
+        Num* matrix() { return &c_[0][0]; }
+    private:
+    
+        void set_rotation_(Num fp_x, Num fp_y, Num angle)
+        {
+            auto cos_a = std::cos(angle);
+            auto sin_a = std::sin(angle);
+            c_[0][0] = cos_a; c_[0][1] = -sin_a;
+            c_[0][2] = fp_x - cos_a * fp_x + sin_a * fp_y;
+            c_[1][0] = sin_a; c_[1][1] = cos_a;
+            c_[1][2] = fp_y - sin_a * fp_x - cos_a * fp_y;
+        }
+
+        void set_projection_(Num fp_x, Num fp_y, Num cos_a, Num sin_a)
+        {
+            auto cc = cos_a * cos_a;
+            auto cs = cos_a * sin_a;
+            auto ss = sin_a * sin_a;
+            auto sxmcy = sin_a * fp_x - cos_a * fp_y;
+            c_[0][0] = cc; c_[0][1] = cs;
+            c_[0][2] = sin_a * sxmcy;
+            c_[1][0] = cs; c_[1][1] = ss;
+            c_[1][2] = - cos_a * sxmcy;
+        }
+        
+        void set_reflection_(Num fp_x, Num fp_y, Num cos_a, Num sin_a)
+        {
+            auto c2ms2 = cos_a * cos_a - sin_a * sin_a;
+            auto cs_bis = cos_a * sin_a;
+            auto sxmcy = sin_a * fp_x - cos_a * fp_y;
+            c_[0][0] = c2ms2; c_[0][1] = cs_bis;
+            c_[0][2] = 2 * sin_a * sxmcy;
+            c_[1][0] = cs_bis; c_[1][1] = - c2ms2;
+            c_[1][2] = -2 * cos_a * sxmcy;
+        }
+        
+        Num c_[2][3];
+    };
+    
     template <class Unit, typename Num = double>
     class point2
     {
@@ -1186,26 +1597,35 @@ namespace measures
 
         template <class Unit2, typename Num2, typename Num3>
         point2<Unit,decltype(Num3()+(Num()-Num3())*Num2())> rotated_by_around(
-            vect1<Unit2,Num2> a, point2<Unit,Num3> fixed_point)
+            vect1<Unit2,Num2> a, point2<Unit,Num3> fixed_p)
         {
             ASSERT_IS_ANGLE(Unit2)
-            return fixed_point + (*this - fixed_point).rotated_by(a);
+            return fixed_p + (*this - fixed_p).transformed_by(
+                linear_transformation2<Num3>::rotation(a));
         }
 
         template <typename Num2>
         point2<Unit,decltype(Num2()+(Num()-Num2()))>
-            rotated_left_around(point2<Unit,Num2> fixed_point)
+            rotated_left_around(point2<Unit,Num2> fixed_p)
         {
-            return fixed_point + (*this - fixed_point).rotated_left();
+            return fixed_p + (*this - fixed_p).rotated_left();
         }
 
         template <typename Num2>
         point2<Unit,decltype(Num2()+(Num()-Num2()))>
-            rotated_right_around(point2<Unit,Num2> fixed_point)
+            rotated_right_around(point2<Unit,Num2> fixed_p)
         {
-            return fixed_point + (*this - fixed_point).rotated_right();
+            return fixed_p + (*this - fixed_p).rotated_right();
         }
 
+        template <typename Num2>
+        point2<Unit,Num> transformed_by(const affine_transformation2<Num2>& at) const
+        {
+            return point2<Unit,Num>(
+                at.c_[0][0] * x_ + at.c_[0][1] * y_ + at.c_[0][2],
+                at.c_[1][0] * x_ + at.c_[1][1] * y_ + at.c_[1][2]);
+        }
+        
     private:
 
         // Components.
@@ -1361,6 +1781,13 @@ namespace measures
     {
         return vect1<Unit,Num>(
             static_cast<Num>(std::sqrt(squared_norm_value(v))));
+    }
+
+    // normalized(vect2) -> vect2
+    template <class Unit, typename Num>
+    vect2<Unit,Num> normalized(vect2<Unit,Num> v)
+    {
+        return v / norm(v).value();
     }
 
 
@@ -1769,6 +2196,13 @@ namespace measures
     {
         return vect1<Unit,Num>(
             static_cast<Num>(std::sqrt(squared_norm_value(v))));
+    }
+
+    // normalized(vect3) -> vect3
+    template <class Unit, typename Num>
+    vect3<Unit,Num> normalized(vect3<Unit,Num> v)
+    {
+        return v / norm(v).value();
     }
 
     

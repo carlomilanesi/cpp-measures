@@ -34,8 +34,8 @@ cl /nologo /EHsc /Ox /Fo%gendir% /Fe%gendir%static_tester.exe static_tester.cpp
 set REDIRECTION_COMMAND="2>NUL >NUL"
 set COMPILER_VERSION_COMMAND=cl
 set COMPILER_BASE_ERRORS_COMMAND=cl /nologo /Za /Zs /I..\ /Fo%gendir%
-set COMPILER_BASE_WARNINGS_COMMAND=cl /nologo /Za /Zs /W4 /WX /I..\ /Fo%gendir%
-%gendir%static_tester /t%gendir% st_test_legal.cpp st_test1.cpp st_test2.cpp
+set COMPILER_BASE_WARNINGS_COMMAND=cl /nologo /EHsc /Za /Zs /W4 /WX /I..\ /Fo%gendir%
+%gendir%static_tester /t%gendir% /pst_test_perfect.cpp /ast_test_allowed.cpp
 if errorlevel 1 goto test_errors
 del %gendir%_* 2>NUL >NUL
 :skip_vcpp_test
@@ -51,7 +51,7 @@ rem SET COMPILER_BASE_ERRORS_COMMAND=g++ -std=c++11 -fsyntax-only -Wfatal-errors
 set COMPILER_BASE_ERRORS_COMMAND=g++ -std=c++11 -Wfatal-errors -pedantic -I../ -o%unixgendir%_test.o -c
 rem SET COMPILER_BASE_WARNINGS_COMMAND=g++ -std=c++11 -fsyntax-only -Wfatal-errors -pedantic -Werror
 set COMPILER_BASE_WARNINGS_COMMAND=g++ -std=c++11 -Wfatal-errors -pedantic -Wconversion -Wall -W -Werror -I../ -o%unixgendir%_test.o -c
-%gendir%static_tester -t%unixgendir% st_test_legal.cpp st_test1.cpp st_test2.cpp
+%gendir%static_tester -t%unixgendir% -pst_test_perfect.cpp -ast_test_allowed.cpp
 if errorlevel 1 goto test_errors
 del %gendir%_* 2>NUL >NUL
 :skip_gcc_test

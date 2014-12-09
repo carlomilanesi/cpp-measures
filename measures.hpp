@@ -1,11 +1,17 @@
 // measures.hpp
 // Released under Mozilla Public Licence 2.0
-// by Carlo Milanesi (carlo.milanesi@tiscali.it) in october 2014
+// by Carlo Milanesi (carlo.milanesi@tiscali.it) in december 2014
 #ifndef MEASURES_HPP
 #define MEASURES_HPP
 #include <cmath>
 #include <type_traits>
 
+#ifdef MEASURES_USE_ALL
+#define MEASURES_USE_2D
+#define MEASURES_USE_3D
+#define MEASURES_USE_ANGLES
+#define MEASURES_USE_IOSTREAM
+#endif
 
 //////////////////// STATIC ASSERTS FOR MAGNITUDE ////////////////////
 
@@ -16,8 +22,10 @@ namespace measures
 #define ASSERT_HAVE_SAME_MAGNITUDE(U1,U2)\
     assert_same_type(typename U1::magnitude(0),\
         typename U2::magnitude(0));
+#ifdef MEASURES_USE_ANGLES
 #define ASSERT_IS_ANGLE(U)\
     assert_same_type(typename U::magnitude(0), Angle(0));
+#endif
 
 //////////////////// UNIT FEATURES ////////////////////
 
@@ -27,8 +35,10 @@ namespace measures
 
     struct unit_features
     { double ratio, offset; char const* suffix; };
+#ifdef MEASURES_USE_ANGLES
     struct angle_unit_features
     { double ratio, offset, turn_fraction; char const* suffix; };
+#endif
 }
 
 
@@ -54,6 +64,7 @@ namespace measures
         };\
     }
 
+#ifdef MEASURES_USE_ANGLES
 #define MEASURES_ANGLE_UNIT(UnitName,Suffix,TurnFraction,Offset)\
     namespace measures\
     {\
@@ -75,6 +86,7 @@ namespace measures
             { return static_cast<Num>(TurnFraction); }\
         };\
     }
+#endif
 
 // Every magnitude class is used as a template parameter
 // or it may be instantiated to represent a dynamic unit.
@@ -100,10 +112,11 @@ namespace measures
 
 //////////////////// PREDEFINED MAGNITUDES AND UNITS ////////////////////
 
+#ifdef MEASURES_USE_ANGLES
 // The "Angle" magnitude and its "radians" unit are required.
 namespace measures
 {
-    static const double pi = atan(1) * 4;
+    static double const pi = atan(1) * 4;
     class radians;
     class Angle
     {
@@ -122,6 +135,7 @@ namespace measures
     };
 }
 MEASURES_ANGLE_UNIT(radians, " rad", 2 * pi, 0)
+#endif
 
 //////////////////// DERIVED UNITS ////////////////////
 
@@ -137,43 +151,55 @@ Vector * Vector -> Scalar // vector dot product
 cross_product(Vector, Vector) -> Vector // vector cross product
 */
 
+#ifdef MEASURES_USE_2D
 // U1 (Scalar) * U2 (Vector) == U3 (Vector)
 // with U1 != U2
 #define MEASURES_DERIVED_1_2_ALL(U1,U2,U3)\
     MEASURES_DERIVED_1_1(U1,U2,U3)\
     MEASURES_DERIVED_1_2(U1,U2,U3)
+#endif
 
+#ifdef MEASURES_USE_3D
 // U1 (Scalar) * U2 (Vector) == U3 (Vector)
 // with U1 != U2
 #define MEASURES_DERIVED_1_3_ALL(U1,U2,U3)\
     MEASURES_DERIVED_1_2_ALL(U1,U2,U3)\
     MEASURES_DERIVED_1_3(U1,U2,U3)
+#endif
 
+#ifdef MEASURES_USE_2D
 // U1 (Vector) * U2 (Vector) == U3 (Scalar)
 // U1 (Vector) X U2 (Vector) == U4 (Vector)
 // with U1 != U2
 #define MEASURES_DERIVED_2_2_ALL(U1,U2,U3,U4)\
     MEASURES_DERIVED_1_1(U1,U2,U3)\
     MEASURES_DERIVED_2_2(U1,U2,U3,U4)
+#endif
 
+#ifdef MEASURES_USE_3D
 // U1 (Vector) * U2 (Vector) == U3 (Scalar)
 // U1 (Vector) X U2 (Vector) == U4 (Vector)
 // with U1 != U2
 #define MEASURES_DERIVED_3_3_ALL(U1,U2,U3,U4)\
     MEASURES_DERIVED_2_2_ALL(U1,U2,U3,U4)\
     MEASURES_DERIVED_3_3(U1,U2,U3,U4)
+#endif
 
+#ifdef MEASURES_USE_2D
 // U1 (Vector) * U1 (Vector) == U2 (Scalar)
 // U1 (Vector) X U1 (Vector) == U3 (Vector)
 #define MEASURES_DERIVED_SQ_2_ALL(U1,U2,U3)\
     MEASURES_DERIVED_SQ_1(U1,U2)\
     MEASURES_DERIVED_SQ_2(U1,U2,U3)
+#endif
 
+#ifdef MEASURES_USE_3D
 // U1 (Vector) * U1 (Vector) == U2 (Scalar)
 // U1 (Vector) X U1 (Vector) == U3 (Vector)
 #define MEASURES_DERIVED_SQ_3_ALL(U1,U2,U3)\
     MEASURES_DERIVED_SQ_2_ALL(U1,U2,U3)\
     MEASURES_DERIVED_SQ_3(U1,U2,U3)
+#endif
 
 // U1 (Scalar) * U2 (Scalar) == U3 (Scalar)
 // with U1 != U2
@@ -252,6 +278,7 @@ cross_product(Vector, Vector) -> Vector // vector cross product
         }\
     }
 
+#ifdef MEASURES_USE_2D
 // U1 (Scalar) * U2 (Vector) == U3 (Vector)
 // with U1 != U2
 #define MEASURES_DERIVED_1_2(U1,U2,U3)\
@@ -287,7 +314,9 @@ cross_product(Vector, Vector) -> Vector // vector cross product
                 m3.y().value() / m1.value());\
         }\
     }
+#endif
 
+#ifdef MEASURES_USE_3D
 // U1 (Scalar) * U2 (Vector) == U3 (Vector)
 // with U1 != U2
 #define MEASURES_DERIVED_1_3(U1,U2,U3)\
@@ -326,7 +355,9 @@ cross_product(Vector, Vector) -> Vector // vector cross product
                 m3.z().value() / m1.value());\
         }\
     }
+#endif
 
+#ifdef MEASURES_USE_2D
 // U1 (Vector) * U2 (Vector) == U3 (Scalar)
 // U1 (Vector) X U2 (Vector) == U4 (Vector)
 // with U1 != U2
@@ -373,7 +404,9 @@ cross_product(Vector, Vector) -> Vector // vector cross product
                 m2.y().value() * m1.x().value());\
         }\
     }
+#endif
 
+#ifdef MEASURES_USE_3D
 // U1 (Vector) * U2 (Vector) == U3 (Scalar)
 // U1 (Vector) X U2 (Vector) == U4 (Vector)
 // with U1 != U2
@@ -430,7 +463,9 @@ cross_product(Vector, Vector) -> Vector // vector cross product
                 m2.y().value() * m1.x().value());\
         }\
     }
+#endif
 
+#ifdef MEASURES_USE_2D
 // U1 (Vector) * U1 (Vector) == U2 (Scalar)
 // U1 (Vector) X U1 (Vector) == U3 (Vector)
 #define MEASURES_DERIVED_SQ_2(U1,U2,U3)\
@@ -461,7 +496,9 @@ cross_product(Vector, Vector) -> Vector // vector cross product
                 m1.y().value() * m2.x().value());\
         }\
     }
+#endif
 
+#ifdef MEASURES_USE_3D
 // U1 (Vector) * U1 (Vector) == U2 (Scalar)
 // U1 (Vector) X U1 (Vector) == U3 (Vector)
 #define MEASURES_DERIVED_SQ_3(U1,U2,U3)\
@@ -497,6 +534,7 @@ cross_product(Vector, Vector) -> Vector // vector cross product
                 m1.y().value() * m2.x().value());\
         }\
     }
+#endif
 
 namespace measures
 {
@@ -504,87 +542,120 @@ namespace measures
 
     template <class Unit, typename Num> class vect1;
     template <class Unit, typename Num> class point1;
+#ifdef MEASURES_USE_2D
     template <class Unit, typename Num> class vect2;
+    template <class Unit, typename Num> class affine_map2;
     template <class Unit, typename Num> class point2;
+#endif
+#ifdef MEASURES_USE_3D
     template <class Unit, typename Num> class vect3;
+    template <class Unit, typename Num> class affine_map3;
     template <class Unit, typename Num> class point3;
+#endif
+#ifdef MEASURES_USE_ANGLES
     template <class Unit, typename Num> class signed_azimuth;
     template <class Unit, typename Num> class unsigned_azimuth;
-
+#endif
 
 //////////////////// UNIT CONVERSIONS ////////////////////
 
     // 1d measures
-    template <class ToUnit, class FromUnit, typename Num>
-    vect1<ToUnit,Num> convert(vect1<FromUnit,Num> m)
+    template <class ToUnit1, class FromUnit, typename Num>
+    vect1<ToUnit1,Num> convert(vect1<FromUnit,Num> m)
     {
-        ASSERT_HAVE_SAME_MAGNITUDE(ToUnit, FromUnit)
-        return vect1<ToUnit,Num>(m.value()
-            * static_cast<Num>(FromUnit::ratio() / ToUnit::ratio()));
+        ASSERT_HAVE_SAME_MAGNITUDE(ToUnit1, FromUnit)
+        return vect1<ToUnit1,Num>(m.value()
+            * static_cast<Num>(FromUnit::ratio() / ToUnit1::ratio()));
     }
 
-    template <class ToUnit, class FromUnit, typename Num>
-    point1<ToUnit,Num> convert(point1<FromUnit,Num> m)
+    template <class ToUnit2, class FromUnit, typename Num>
+    point1<ToUnit2,Num> convert(point1<FromUnit,Num> m)
     {
-        ASSERT_HAVE_SAME_MAGNITUDE(ToUnit, FromUnit)
-        return point1<ToUnit,Num>(m.value()
-            * static_cast<Num>(FromUnit::ratio() / ToUnit::ratio())
-            + static_cast<Num>((FromUnit::offset() - ToUnit::offset())
-            / ToUnit::ratio()));
+        ASSERT_HAVE_SAME_MAGNITUDE(ToUnit2, FromUnit)
+        return point1<ToUnit2,Num>(m.value()
+            * static_cast<Num>(FromUnit::ratio() / ToUnit2::ratio())
+            + static_cast<Num>((FromUnit::offset() - ToUnit2::offset())
+            / ToUnit2::ratio()));
     }
 
+#ifdef MEASURES_USE_2D
     // 2d measures
-    template <class ToUnit, class FromUnit, typename Num>
-    vect2<ToUnit,Num> convert(vect2<FromUnit,Num> m)
+    template <class ToUnit3, class FromUnit, typename Num>
+    vect2<ToUnit3,Num> convert(vect2<FromUnit,Num> m)
     {
-        return vect2<ToUnit,Num>(
-            convert<ToUnit,FromUnit,Num>(m.x()),
-            convert<ToUnit,FromUnit,Num>(m.y()));
+        return vect2<ToUnit3,Num>(
+            convert<ToUnit3,FromUnit,Num>(m.x()),
+            convert<ToUnit3,FromUnit,Num>(m.y()));
     }
 
-    template <class ToUnit, class FromUnit, typename Num>
-    point2<ToUnit,Num> convert(point2<FromUnit,Num> m)
+    template <class ToUnit4, class FromUnit, typename Num>
+    affine_map2<ToUnit4,Num> convert(affine_map2<FromUnit,Num> map)
     {
-        return point2<ToUnit,Num>(
-            convert<ToUnit,FromUnit,Num>(m.x()),
-            convert<ToUnit,FromUnit,Num>(m.y()));
+        affine_map2<ToUnit4,Num> result = map;
+        result.coeff(0, 2) = convert<ToUnit4,FromUnit,Num>(map.coeff(0, 2));
+        result.coeff(1, 2) = convert<ToUnit4,FromUnit,Num>(map.coeff(1, 2));
+        return result;
     }
 
+    template <class ToUnit5, class FromUnit, typename Num>
+    point2<ToUnit5,Num> convert(point2<FromUnit,Num> m)
+    {
+        return point2<ToUnit5,Num>(
+            convert<ToUnit5,FromUnit,Num>(m.x()),
+            convert<ToUnit5,FromUnit,Num>(m.y()));
+    }
+#endif
+
+#ifdef MEASURES_USE_3D
     // 3d measures
-    template <class ToUnit, class FromUnit, typename Num>
-    vect3<ToUnit,Num> convert(vect3<FromUnit,Num> m)
+    template <class ToUnit6, class FromUnit, typename Num>
+    vect3<ToUnit6,Num> convert(vect3<FromUnit,Num> m)
     {
-        return vect3<ToUnit,Num>(
-            convert<ToUnit,FromUnit,Num>(m.x()),
-            convert<ToUnit,FromUnit,Num>(m.y()),
-            convert<ToUnit,FromUnit,Num>(m.z()));
+        return vect3<ToUnit6,Num>(
+            convert<ToUnit6,FromUnit,Num>(m.x()),
+            convert<ToUnit6,FromUnit,Num>(m.y()),
+            convert<ToUnit6,FromUnit,Num>(m.z()));
     }
 
-    template <class ToUnit, class FromUnit, typename Num>
-    point3<ToUnit,Num> convert(point3<FromUnit,Num> m)
+    template <class ToUnit7, class FromUnit, typename Num>
+    affine_map3<ToUnit7,Num> convert(affine_map3<FromUnit,Num> map)
     {
-        return point3<ToUnit,Num>(
-            convert<ToUnit,FromUnit,Num>(m.x()),
-            convert<ToUnit,FromUnit,Num>(m.y()),
-            convert<ToUnit,FromUnit,Num>(m.z()));
+        affine_map3<ToUnit7,Num> result = map;
+        result.coeff(0, 3) = convert<ToUnit7,FromUnit,Num>(map.coeff(0, 3));
+        result.coeff(1, 3) = convert<ToUnit7,FromUnit,Num>(map.coeff(1, 3));
+        result.coeff(2, 3) = convert<ToUnit7,FromUnit,Num>(map.coeff(2, 3));
+        return result;
     }
 
+    template <class ToUnit8, class FromUnit, typename Num>
+    point3<ToUnit8,Num> convert(point3<FromUnit,Num> m)
+    {
+        return point3<ToUnit8,Num>(
+            convert<ToUnit8,FromUnit,Num>(m.x()),
+            convert<ToUnit8,FromUnit,Num>(m.y()),
+            convert<ToUnit8,FromUnit,Num>(m.z()));
+    }
+#endif
+
+#ifdef MEASURES_USE_ANGLES
     // Azimuths
-    template <class ToUnit, class FromUnit, typename Num>
-    signed_azimuth<ToUnit,Num> convert(signed_azimuth<FromUnit,Num> m)
+    template <class ToUnit9, class FromUnit, typename Num>
+    signed_azimuth<ToUnit9,Num> convert(signed_azimuth<FromUnit,Num> m)
     {
-        ASSERT_HAVE_SAME_MAGNITUDE(ToUnit, FromUnit)
-        return signed_azimuth<ToUnit,Num>(
-            convert<ToUnit>(point1<FromUnit,Num>(m.value())));
+        ASSERT_HAVE_SAME_MAGNITUDE(ToUnit9, FromUnit)
+        return signed_azimuth<ToUnit9,Num>(
+            convert<ToUnit9>(point1<FromUnit,Num>(m.value())));
     }
 
-    template <class ToUnit, class FromUnit, typename Num>
-    unsigned_azimuth<ToUnit,Num> convert(unsigned_azimuth<FromUnit,Num> m)
+    template <class ToUnit10, class FromUnit, typename Num>
+    unsigned_azimuth<ToUnit10,Num> convert(unsigned_azimuth<FromUnit,Num> m)
     {
-        ASSERT_HAVE_SAME_MAGNITUDE(ToUnit, FromUnit)
-        return unsigned_azimuth<ToUnit,Num>(
-            convert<ToUnit>(point1<FromUnit,Num>(m.value())));
+        ASSERT_HAVE_SAME_MAGNITUDE(ToUnit10, FromUnit)
+        return unsigned_azimuth<ToUnit10,Num>(
+            convert<ToUnit10>(point1<FromUnit,Num>(m.value())));
     }
+#endif
+
 
     //////////////////// 1-DIMENSIONAL VECTORS AND POINTS ////////////////////
 
@@ -604,7 +675,7 @@ namespace measures
 
         // Constructs using another vect1 of the same unit.
         template <typename Num1>
-        vect1(const vect1<Unit,Num1>& o): x_(o.value()) { }
+        vect1(vect1<Unit,Num1> const& o): x_(o.value()) { }
         
         // Constructs using a unit and a value.
         template <typename Num1>
@@ -688,8 +759,7 @@ namespace measures
     bool is_equal(vect1<Unit,Num1> m1, vect1<Unit,Num2> m2,
         vect1<Unit,Num3> tolerance)
     {
-        return static_cast<Num3>(std::abs(m1.value() - m2.value()))
-            <= tolerance.value();
+        return std::abs((m1 - m2).value()) <= tolerance.value();
     }
 
     // is_less(vect1, vect1, tolerance) -> bool
@@ -697,16 +767,18 @@ namespace measures
     bool is_less(vect1<Unit,Num1> m1, vect1<Unit,Num2> m2,\
         vect1<Unit,Num3> tolerance)
     {
-        return static_cast<Num3>(m1.value())
-            < static_cast<Num3>(m2.value()) - tolerance.value();
+//        return static_cast<Num3>(m1.value())
+//            < static_cast<Num3>(m2.value()) - tolerance.value();
+        return tolerance.value() < (m2 - m1).value();
     }
 
     // is_less_or_equal(vect1, vect1, tolerance) -> bool
     template <class Unit, typename Num1, typename Num2, typename Num3>
     bool is_less_or_equal(vect1<Unit,Num1> m1, vect1<Unit,Num2> m2, vect1<Unit,Num3> tolerance)
     {
-        return static_cast<Num3>(m1.value())
-            <= static_cast<Num3>(m2.value()) + tolerance.value();
+//        return static_cast<Num3>(m1.value())
+//            <= static_cast<Num3>(m2.value()) + tolerance.value();
+        return (m1 - m2).value() <= tolerance.value();
     }
 
     template <class Unit, typename Num = double>
@@ -725,7 +797,7 @@ namespace measures
 
         // Constructs using another point1 of the same unit.
         template <typename Num1>
-        point1(const point1<Unit,Num1>& o): x_(o.value()) { }
+        point1(point1<Unit,Num1> const& o): x_(o.value()) { }
 
         // Constructs using a unit and a value.
         template <typename Num1>
@@ -733,6 +805,7 @@ namespace measures
             x_(static_cast<Num>(x * (unit.ratio() / Unit::ratio())
                 + (unit.offset() - Unit::offset()) / Unit::ratio())) { }
 
+#ifdef MEASURES_USE_ANGLES
         // Constructs using a signed azimuth.
         template <typename Num1>
         explicit point1(signed_azimuth<Unit,Num1> a): x_(a.value()) { }
@@ -740,6 +813,7 @@ namespace measures
         // Constructs using an unsigned azimuth.
         template <typename Num1>
         explicit point1(unsigned_azimuth<Unit,Num1> a): x_(a.value()) { }
+#endif
 
         // Get unmutable value for the given unit.
         Num value(typename Unit::magnitude unit) const
@@ -768,28 +842,31 @@ namespace measures
 
     // midpoint(point1, point1, weight) -> point1
     template <class Unit, typename Num1, typename Num2, typename Num3>
-    point1<Unit,decltype((Num1()+Num2())*Num3())> midpoint(
+    point1<Unit,decltype(Num1()+Num2())> midpoint(
         point1<Unit,Num1> p1, point1<Unit,Num2> p2, Num3 weight)
     {
-        return point1<Unit,decltype((Num1()+Num2())*Num3())>(
-            p1.value() * (1 - weight) + p2.value() * weight);
+        typedef decltype(Num1()+Num2()) ResultNum;
+        return point1<Unit,ResultNum>(
+            p1.value() * static_cast<ResultNum>(1 - weight)
+            + p2.value() * static_cast<ResultNum>(weight));
     }
 
     // midpoint(point1, point1) -> point1
     template <class Unit, typename Num1, typename Num2>
-    point1<Unit,decltype((Num1()+Num2())*float())> midpoint(
+    point1<Unit,decltype(Num1()+Num2())> midpoint(
         point1<Unit,Num1> p1, point1<Unit,Num2> p2)
     {
-        return point1<Unit,decltype((Num1()+Num2())*float())>(
-            (p1.value() + p2.value()) * 0.5f);
+        typedef decltype(Num1()+Num2()) ResultNum;
+        return point1<Unit,ResultNum>(
+            (p1.value() + p2.value()) / static_cast<ResultNum>(2));
     }
 
     // barycentric_combination(int, point1[], Num[]) -> point1
     template <class Unit, typename Num1, typename Num2>
-    point1<Unit,decltype(Num1()*Num2())> barycentric_combination(
+    point1<Unit,decltype(Num1()+Num2())> barycentric_combination(
         int n, point1<Unit,Num1> p[], Num2 weights[])
     {
-        typedef decltype(Num1()*Num2()) ResultNum;
+        typedef decltype(Num1()+Num2()) ResultNum;
         ResultNum result = 0;
         for (int i = 0; i < n; ++i)
         { result += p[i].value() * weights[i]; }
@@ -840,8 +917,7 @@ namespace measures
     bool is_equal(point1<Unit,Num1> m1, point1<Unit,Num2> m2,
         vect1<Unit,Num3> tolerance)
     {
-        return static_cast<Num3>(std::abs(m1.value() - m2.value()))
-            <= tolerance.value();
+        return std::abs((m1 - m2).value()) <= tolerance.value();
     }
 
     // is_less(point1, point1, tolerance) -> bool
@@ -849,8 +925,9 @@ namespace measures
     bool is_less(point1<Unit,Num1> m1, point1<Unit,Num2> m2,
         vect1<Unit,Num3> tolerance)
     {
-        return static_cast<Num3>(m1.value())
-            < static_cast<Num3>(m2.value()) - tolerance.value();
+//        return static_cast<Num3>(m1.value())
+//            < static_cast<Num3>(m2.value()) - tolerance.value();
+        return tolerance.value() < (m2 - m1).value();
     }
 
     // is_less_or_equal(point1, point1, tolerance) -> bool
@@ -858,8 +935,9 @@ namespace measures
     bool is_less_or_equal(point1<Unit,Num1> m1, point1<Unit,Num2> m2,
         vect1<Unit,Num3> tolerance)
     {
-        return static_cast<Num3>(m1.value())
-            <= static_cast<Num3>(m2.value()) + tolerance.value();
+//        return static_cast<Num3>(m1.value())
+//            <= static_cast<Num3>(m2.value()) + tolerance.value();
+        return (m1 - m2).value() <= tolerance.value();
     }
 
     // point1 + vect1 -> point1
@@ -934,125 +1012,167 @@ namespace measures
     { return vect1<Unit,Num>(v.value() < 0 ? -1 : +1); }
 
 
+#ifdef MEASURES_USE_2D
     //////////////////// 2-DIMENSIONAL VECTORS AND POINTS ////////////////////
 
     template <typename Num = double>
-    class linear_transformation2
+    class linear_map2
     {
-        template <class, typename>
-        friend class vect2;    
+        template <class, typename> friend class vect2;    
     public:
+
+        //// No translations
     
-        // Rotation by a relative angle.
+#ifdef MEASURES_USE_ANGLES
+        //// Rotation by a relative angle.
         template <class Unit, typename Num2>
-        static linear_transformation2 rotation(vect1<Unit,Num2> a)
+        static linear_map2 rotation(vect1<Unit,Num2> angle)
         {
-            linear_transformation2 result;
-            result.set_rotation_(convert<radians>(a).value());
+            linear_map2 result;
+            result.set_rotation_(convert<radians>(angle).value());
             return result;
         }
+
+        static linear_map2 rotation_at_right()
+        {
+            linear_map2 result;
+            result.c_[0][0] = 0; result.c_[0][1] = 1;
+            result.c_[1][0] = -1; result.c_[1][1] = 0;
+            return result;
+        }
+
+        static linear_map2 rotation_at_left()
+        {
+            linear_map2 result;
+            result.c_[0][0] = 0; result.c_[0][1] = -1;
+            result.c_[1][0] = 1; result.c_[1][1] = 0;
+            return result;
+        }
+#endif
+
+        //// Projections
         
-        // Projections
-        
+#ifdef MEASURES_USE_ANGLES
         // Projection onto a line identified by a point angle.
         template <class Unit, typename Num2>
-        static linear_transformation2 projection(point1<Unit> a)
+        static linear_map2 projection(point1<Unit,Num2> a)
         {
-            linear_transformation2 result;
+            linear_map2 result;
             result.set_projection_(convert<radians>(a).value());
             return result;
         }
         
         // Projection onto a line identified by a signed azimuth.
         template <class Unit, typename Num2>
-        static linear_transformation2 projection(signed_azimuth<Unit,Num2> a)
+        static linear_map2 projection(signed_azimuth<Unit,Num2> a)
         {
-            linear_transformation2 result;
+            linear_map2 result;
             result.set_projection_(convert<radians>(a).value());
             return result;
         }
         
         // Projection onto a line identified by an unsigned azimuth.
         template <class Unit, typename Num2>
-        static linear_transformation2 projection(unsigned_azimuth<Unit,Num2> a)
+        static linear_map2 projection(unsigned_azimuth<Unit,Num2> a)
         {
-            linear_transformation2 result;
+            linear_map2 result;
             result.set_projection_(convert<radians>(a).value());
             return result;
         }
-
-        // Projection onto a line identified by any plane vector.
-        template <class Unit, typename Num2>
-        static linear_transformation2 projection(vect2<Unit,Num2> v)
-        {
-            // Precondition: norm(v).value() != 0
-            return projection_onto_unit_vector(normalized(v));
-        }
+#endif
 
         // Projection onto a line identified by a unit plane vector.
-        // Construction is more efficient.
+        // Precondition: norm(v).value() == 1
         template <class Unit, typename Num2>
-        static linear_transformation2 projection_onto_unit_vector(vect2<Unit,Num2> v)
+        static linear_map2 projection(vect2<Unit,Num2> v)
         {
-            // Precondition: norm(v).value() == 1
-            linear_transformation2 result;
+            linear_map2 result;
             result.set_projection_(v.x().value(), v.y().value());
             return result;
         }
         
-        // Reflections
+        //// Reflections
         
+#ifdef MEASURES_USE_ANGLES
         // Reflection over a line identified by a point angle.
         template <class Unit, typename Num2>
-        static linear_transformation2 reflection(point1<Unit> a)
+        static linear_map2 reflection(point1<Unit,Num2> a)
         {
-            linear_transformation2 result;
+            linear_map2 result;
             result.set_reflection_(convert<radians>(a).value());
             return result;
         }
         
         // Reflection over a line identified by a signed azimuth.
         template <class Unit, typename Num2>
-        static linear_transformation2 reflection(signed_azimuth<Unit,Num2> a)
+        static linear_map2 reflection(signed_azimuth<Unit,Num2> a)
         {
-            linear_transformation2 result;
+            linear_map2 result;
             result.set_reflection_(convert<radians>(a).value());
             return result;
         }
         
         // Reflection over a line identified by an unsigned azimuth.
         template <class Unit, typename Num2>
-        static linear_transformation2 reflection(unsigned_azimuth<Unit,Num2> a)
+        static linear_map2 reflection(unsigned_azimuth<Unit,Num2> a)
         {
-            linear_transformation2 result;
+            linear_map2 result;
             result.set_reflection_(convert<radians>(a).value());
             return result;
         }
-
-        // Reflection over a line identified by any plane vector.
-        template <class Unit, typename Num2>
-        static linear_transformation2 reflection(vect2<Unit,Num2> v)
-        {
-            // Precondition: norm(v).value() != 0
-            return reflection_over_unit_vector(normalized(v));
-        }
+#endif
 
         // Reflection over a line identified by a unit plane vector.
-        // Construction is more efficient.
+        // Precondition: norm(v) == 1
         template <class Unit, typename Num2>
-        static linear_transformation2 reflection_over_unit_vector(vect2<Unit,Num2> v)
+        static linear_map2 reflection(vect2<Unit,Num2> v)
         {
-            // Precondition: norm(v) == 1
-            linear_transformation2 result;
+            linear_map2 result;
             result.set_reflection_(v.x().value(), v.y().value());
             return result;
         }
 
-        // Access
+        //// Scaling by two factors.
+        template <typename Num2, typename Num3>
+        static linear_map2 scaling(Num2 kx, Num3 ky)
+        {
+            linear_map2 result;
+            result.c_[0][0] = kx; result.c_[0][1] = 0;
+            result.c_[1][0] = 0; result.c_[1][1] = ky;
+            return result;
+        }
+
+        //// Inversion 
+        linear_map2 inverted()
+        {
+            auto determinant = c_[0][0] * c_[1][1] - c_[0][1] * c_[1][0];
+            linear_map2 result;
+            if (determinant == 0)
+            {
+                result.c_[0][0] = 0;
+                result.c_[0][1] = 0;
+                result.c_[1][0] = 0;
+                result.c_[1][1] = 0;
+            }
+            else
+            {
+                auto inverse_determinant = 1 / determinant;
+                result.c_[0][0] = c_[1][1] * inverse_determinant;
+                result.c_[0][1] = c_[0][1] * -inverse_determinant;
+                result.c_[1][0] = c_[1][0] * -inverse_determinant;
+                result.c_[1][1] = c_[0][0] * inverse_determinant;
+            }
+            return result;
+        }
         
-        Num* matrix() { return &c_[0][0]; }
-    
+        //// Access
+        
+        Num coeff(int row, int col) const { return c_[row][col]; }
+        
+        Num& coeff(int row, int col) { return c_[row][col]; }
+        
     private:
+
         void set_rotation_(Num a)
         {
             auto cos_a = std::cos(a);
@@ -1069,7 +1189,7 @@ namespace measures
 
         void set_projection_(Num a)
         {
-            set_projection_(cos(a), sin(a));
+            set_projection_(std::cos(a), std::sin(a));
         }
 
         void set_reflection_(Num cos_a, Num sin_a)
@@ -1080,19 +1200,179 @@ namespace measures
         
         void set_reflection_(Num a)
         {
-            set_reflection_(cos(a), sin(a));
+            set_reflection_(std::cos(a), std::sin(a));
         }
         
         Num c_[2][2];
     };
 
-    //v.trasformed_by(lt1).trasformed_by(lt2) == v.trasformed_by(combine(lt1, lt2))
-    /*TODO
-    linear_transformation2 combine(
-        const linear_transformation2& lt1,
-        const linear_transformation2& lt2)
+    // Composition of two plane linear transformations.
+    template <typename Num1, typename Num2>
+    linear_map2<decltype(Num1()*Num2())> combine(
+        linear_map2<Num1> const& lm1, linear_map2<Num2> const& lm2)
     {
-        linear_transformation2 result;
+        linear_map2<decltype(Num1()*Num2())> result;
+        result.coeff(0, 0)
+            = lm1.coeff(0, 0) * lm2.coeff(0, 0)
+            + lm1.coeff(0, 1) * lm2.coeff(1, 0);
+        result.coeff(0, 1)
+            = lm1.coeff(0, 0) * lm2.coeff(0, 1)
+            + lm1.coeff(0, 1) * lm2.coeff(1, 1);
+        result.coeff(1, 0)
+            = lm1.coeff(1, 0) * lm2.coeff(0, 0)
+            + lm1.coeff(1, 1) * lm2.coeff(1, 0);
+        result.coeff(1, 1)
+            = lm1.coeff(1, 0) * lm2.coeff(0, 1)
+            + lm1.coeff(1, 1) * lm2.coeff(1, 1);
+        return result;
+    }
+
+#ifdef MEASURES_USE_ANGLES
+    //// Rotations
+
+    template <class AngleUnit, typename AngleNum>
+    linear_map2<AngleNum> create_rotation(
+        vect1<AngleUnit,AngleNum> angle)
+    {
+        return linear_map2<AngleNum>::rotation(angle);
+    }
+
+    template <typename Num>
+    linear_map2<Num> create_rotation_at_right()
+    {
+        return linear_map2<Num>::rotation_at_right();
+    }
+
+    template <typename Num>
+    linear_map2<Num> create_rotation_at_left()
+    {
+        return linear_map2<Num>::rotation_at_left();
+    }
+#endif
+
+    //// Projections
+
+#ifdef MEASURES_USE_ANGLES
+    template <class AngleUnit, typename AngleNum>
+    linear_map2<AngleNum> create_projection(
+        point1<AngleUnit,AngleNum> angle)
+    {
+        return linear_map2<AngleNum>::projection(angle);
+    }
+
+    template <class AngleUnit, typename AngleNum>
+    linear_map2<AngleNum> create_projection(
+        signed_azimuth<AngleUnit,AngleNum> angle)
+    {
+        return linear_map2<AngleNum>::projection(angle);
+    }
+    
+    template <class AngleUnit, typename AngleNum>
+    linear_map2<AngleNum> create_projection(
+        unsigned_azimuth<AngleUnit,AngleNum> angle)
+    {
+        return linear_map2<AngleNum>::projection(angle);
+    }
+#endif
+    
+    template <class VectUnit, typename VectNum>
+    linear_map2<VectNum> create_projection(
+        vect2<VectUnit,VectNum> unit_v)
+    {
+        return linear_map2<VectNum>::projection(unit_v);
+    }
+
+    //// Reflections
+
+#ifdef MEASURES_USE_ANGLES
+    template <class AngleUnit, typename AngleNum>
+    linear_map2<AngleNum> create_reflection(
+        point1<AngleUnit,AngleNum> angle)
+    {
+        return linear_map2<AngleNum>::reflection(angle);
+    }
+
+    template <class AngleUnit, typename AngleNum>
+    linear_map2<AngleNum> create_reflection(
+        signed_azimuth<AngleUnit,AngleNum> angle)
+    {
+        return linear_map2<AngleNum>::reflection(angle);
+    }
+    
+    template <class AngleUnit, typename AngleNum>
+    linear_map2<AngleNum> create_reflection(
+        unsigned_azimuth<AngleUnit,AngleNum> angle)
+    {
+        return linear_map2<AngleNum>::reflection(angle);
+    }
+#endif
+    
+    template <class VectUnit, typename VectNum>
+    linear_map2<VectNum> create_reflection(
+        vect2<VectUnit,VectNum> unit_v)
+    {
+        return linear_map2<VectNum>::reflection(unit_v);
+    }
+
+    //// Scaling
+    
+    template <typename NumX, typename NumY>
+    linear_map2<decltype(NumX()+NumY())> create_scaling(
+        NumX kx, NumY ky)
+    {
+        return linear_map2<decltype(NumX()+NumY())>
+            ::scaling(kx, ky);
+    }
+
+    /*
+        //// Access
+        
+        Num coeff(int row, int col) const { return c_[row][col]; }
+        
+        Num& coeff(int row, int col) { return c_[row][col]; }
+    inversa matrice 3x3
+    detA = a11a22a33+a21a32a13+a31a12a23 -a11a32a23-a31a22a13-a21a12a33
+    a22a33-a23a32, a13a32-a12a33, a12a23-a13a22
+    a23a31-a21a33, a11a33-a13a31, a13a21-a11a23 / detA
+    a21a32-a22a31, a12a31-a11a32, a11a22-a12a21
+    
+    se a31=0, a32=0 e a33 = 1, si ottiene
+    detA=a11a22 -a21a12
+    a22, -a12, a12a23-a13a22 |
+    -a21, a11, a13a21-a11a23 | / detA
+    0, 0, a11a22-a12a21      |
+    ossia l'ultima riga è [0, 0, 1]
+??
+    inverted matrice 4x4
+    detA = a11a22a33a44+a11a23a34a42+a11a24a32a43
+          +a12a21a34a43+a12a23a31a44+a12a24a33a41
+          +a13a21a32a44+a13a22a34a41+a13a24a31a42
+          +a14a21a33a42+a14a22a31a43+a14a23a32a41
+          -a11a22a34a43-a11a23a32a44-a11a24a33a42
+          -a12a21a33a44-a12a23a34a41-a12a24a31a43
+          -a13a21a34a42-a13a22a31a44-a13a24a32a41
+          -a14a21a32a43-a14a22a33a41-a14a23a31a42          
+    a22a33a44+a23a34a42+a24a32a43-a22a34a43-a23a32a44-a24a33a42, a12a34a43+a13a32a44+a14a33a42-a12a33a44-a13a34a42-a14a32a43, a12a23a44+a13a24a42+a14a22a43-a12a24a43-a13a22a44-a14a23a42, a12a24a33+a13a22a34+a14a23a32-a12a23a34-a13a24a32-a14a22a33
+    a21a34a43+a23a31a44+a24a33a41-a21a33a44-a23a34a41-a24a31a43, a11a33a44+a13a34a41+a14a31a43-a11a34a43-a13a31a44-a14a33a41, a11a24a43+a13a21a44+a14a23a41-a11a23a44-a13a24a41-a14a21a43, a11a23a34+a13a24a31+a14a21a33-a11a24a33-a13a21a34-a14a23a31 / detA
+    a21a32a44+a22a34a41+a24a31a42-a21a34a42-a22a31a44-a24a32a41, a11a34a42+a12a31a44+a14a32a41-a11a32a44-a12a34a41-a14a31a42, a11a22a44+a12a24a41+a14a21a42-a11a24a42-a12a21a44-a14a22a41, a11a24a32+a12a21a34+a14a22a31-a11a22a34-a12a24a31-a14a21a32
+    a21a33a42+a22a31a43+a23a32a41-a21a32a43-a22a33a41-a23a31a42, a11a32a43+a12a33a41+a13a31a42-a11a33a42-a12a31a43-a13a32a41, a11a23a42+a12a21a43+a13a22a41-a11a22a43-a12a23a41-a13a21a42, a11a22a33+a12a23a31+a13a21a32-a11a23a32-a12a21a33-a13a22a31
+
+    se a41=0, a42=0, a43=0 e a44=1, si ottiene
+    detA = a11a22a33+a12a23a31+a13a21a32-a11a23a32-a12a21a33-a13a22a31
+    a22a33-a23a32, a13a32-a12a33, a12a23-a13a22, a12a24a33+a13a22a34+a14a23a32-a12a23a34-a13a24a32-a14a22a33 |
+    a23a31-a21a33, a11a33-a13a31, a13a21-a11a23, a11a23a34+a13a24a31+a14a21a33-a11a24a33-a13a21a34-a14a23a31 | / detA
+    a21a32-a22a31, a12a31-a11a32, a11a22-a12a21, a11a24a32+a12a21a34+a14a22a31-a11a22a34-a12a24a31-a14a21a32 |
+    0, 0, 0, a11a22a33+a12a23a31+a13a21a32-a11a23a32-a12a21a33-a13a22a31                                     |
+    ossia l'ultima riga è [0, 0, 0, 1]
+    */
+    
+    //v.mapped_by(lt1).mapped_by(lt2) == v.mapped_by(combine(lt1, lt2))
+    /*TODO
+    linear_map2 combine(
+        const linear_map2& lt1,
+        const linear_map2& lt2)
+    {
+        linear_map2 result;
         result.c_[0][0] = lt1[0][0] * lt1[0][0] + lt1[0][1] * lt1[1][0];
         result.c_[0][1] = lt1[0][0] * lt1[0][1] + lt1[0][1] * lt1[1][1];
         result.c_[1][0] = lt1[1][0] * lt1[0][0] + lt1[1][1] * lt1[1][0];
@@ -1100,15 +1380,6 @@ namespace measures
         *this = result;
     }
     
-    linear_transformation2 inverted()
-    {
-        linear_transformation2 result;
-        result.c_[0][0] = lt1[0][0] * lt1[0][0] + lt1[0][1] * lt1[1][0];
-        result.c_[0][1] = lt1[0][0] * lt1[0][1] + lt1[0][1] * lt1[1][1];
-        result.c_[1][0] = lt1[1][0] * lt1[0][0] + lt1[1][1] * lt1[1][0];
-        result.c_[1][1] = lt1[1][0] * lt1[0][1] + lt1[1][1] * lt1[1][1];
-        return result;
-    }
     */
 
     
@@ -1137,7 +1408,7 @@ namespace measures
 
         // Constructs using another vect2 of the same unit.
         template <typename Num1>
-        vect2(const vect2<Unit,Num1>& o):
+        vect2(vect2<Unit,Num1> const& o):
             x_(o.x().value()), y_(o.y().value()) { }
         
         // Constructs using a unit and two values.
@@ -1146,6 +1417,7 @@ namespace measures
             x_(static_cast<Num>(x * (unit.ratio() / Unit::ratio()))),
             y_(static_cast<Num>(y * (unit.ratio() / Unit::ratio()))) { }
 
+#ifdef MEASURES_USE_ANGLES
         // Returns a vector of norm 1 having the direction represented
         // by a point angle.
         template <class Unit1, typename Num1>
@@ -1181,6 +1453,7 @@ namespace measures
                 static_cast<Num>(std::cos(a_val)),
                 static_cast<Num>(std::sin(a_val)));
         }
+#endif
 
         // Get unmutable component array.
         Num const* data() const { return &x_; }
@@ -1245,14 +1518,8 @@ namespace measures
             return *this;
         }
 
-        vect2<Unit,Num> rotated_left() const
-        { return vect2<Unit,Num>(- y_, x_); }
-
-        vect2<Unit,Num> rotated_right() const
-        { return vect2<Unit,Num>(y_, - x_); }
-
         template <typename Num2>
-        vect2<Unit,Num> transformed_by(const linear_transformation2<Num2>& lt) const
+        vect2<Unit,Num> mapped_by(linear_map2<Num2> const& lt) const
         {
             return vect2<Unit,Num>(
                 lt.c_[0][0] * x_ + lt.c_[0][1] * y_,
@@ -1285,22 +1552,22 @@ namespace measures
     bool is_equal(vect2<Unit,Num1> m1, vect2<Unit,Num2> m2,
         vect1<Unit,Num3> tolerance)
     {
-        return squared_norm_value(m1 - m2)
+        // "abs" is needed for complex numbers.
+        return std::abs(squared_norm_value(m1 - m2))
             <= squared_norm_value(tolerance);
     }
 
-    template <typename Num = double>
-    class affine_transformation2
+    template <class Unit, typename Num = double>
+    class affine_map2
     {
-        template <class, typename>
-        friend class point2;    
+        template <class, typename> friend class point2;    
     public:
 
         // Translation.
-        template <class VectUnit, typename VectNum>
-        static affine_transformation2 translation(vect2<VectUnit,VectNum> v)
+        template <typename VectNum>
+        static affine_map2 translation(vect2<Unit,VectNum> v)
         {
-            affine_transformation2 result;
+            affine_map2 result;
             result.c_[0][0] = 1; result.c_[0][1] = 0;
             result.c_[0][2] = v.x().value();
             result.c_[1][0] = 0; result.c_[1][1] = 1;
@@ -1308,32 +1575,51 @@ namespace measures
             return result;
         }
         
-        // Rotation around a point by a relative angle.
-        template <class PointUnit, typename PointNum,
-            class AngleUnit, typename AngleNum>
-        static affine_transformation2 rotation(
-            point2<PointUnit,PointNum> fixed_p,
+#ifdef MEASURES_USE_ANGLES
+        // Rotation about a point by a relative angle.
+        template <typename PointNum, class AngleUnit, typename AngleNum>
+        static affine_map2 rotation(point2<Unit,PointNum> fixed_p,
             vect1<AngleUnit,AngleNum> angle)
         {
-            affine_transformation2 result;
+            affine_map2 result;
             result.set_rotation_(
                 fixed_p.x().value(), fixed_p.y().value(),
                 convert<radians>(angle).value());
             return result;
         }
+
+        template <typename PointNum>
+        static affine_map2 rotation_at_right(
+            point2<Unit,PointNum> fixed_p)
+        {
+            affine_map2 result;
+            result.set_right_rotation_(
+                fixed_p.x().value(), fixed_p.y().value(), -1);
+            return result;
+        }
+
+        template <typename PointNum>
+        static affine_map2 rotation_at_left(
+            point2<Unit,PointNum> fixed_p)
+        {
+            affine_map2 result;
+            result.set_right_rotation_(
+                fixed_p.x().value(), fixed_p.y().value(), 1);
+            return result;
+        }
+#endif
         
         // Projections
         
+#ifdef MEASURES_USE_ANGLES
         // Projection onto a line identified by a fixed point
         // and a point angle.
-        template <class PointUnit, typename PointNum,
-            class AngleUnit, typename AngleNum>
-        static affine_transformation2 projection(
-            point2<PointUnit,PointNum> fixed_p,
+        template <typename PointNum, class AngleUnit, typename AngleNum>
+        static affine_map2 projection(point2<Unit,PointNum> fixed_p,
             point1<AngleUnit,AngleNum> angle)
         {
             auto a = convert<radians>(angle).value();
-            affine_transformation2 result;
+            affine_map2 result;
             result.set_projection_(
                 fixed_p.x().value(), fixed_p.y().value(),
                 std::cos(a), std::sin(a));
@@ -1342,14 +1628,12 @@ namespace measures
         
         // Projection onto a line identified by a fixed point
         // and a signed azimuth.
-        template <class PointUnit, typename PointNum,
-            class AngleUnit, typename AngleNum>
-        static affine_transformation2 projection(
-            point2<PointUnit,PointNum> fixed_p,
+        template <typename PointNum, class AngleUnit, typename AngleNum>
+        static affine_map2 projection(point2<Unit,PointNum> fixed_p,
             signed_azimuth<AngleUnit,AngleNum> angle)
         {
             auto a = convert<radians>(angle).value();
-            affine_transformation2 result;
+            affine_map2 result;
             result.set_projection_(
                 fixed_p.x().value(), fixed_p.y().value(),
                 std::cos(a), std::sin(a));
@@ -1358,43 +1642,28 @@ namespace measures
         
         // Projection onto a line identified by a fixed point
         // and an unsigned azimuth.
-        template <class PointUnit, typename PointNum,
-            class AngleUnit, typename AngleNum>
-        static affine_transformation2 projection(
-            point2<PointUnit,PointNum> fixed_p,
+        template <typename PointNum, class AngleUnit, typename AngleNum>
+        static affine_map2 projection(point2<Unit,PointNum> fixed_p,
             unsigned_azimuth<AngleUnit,AngleNum> angle)
         {
             auto a = convert<radians>(angle).value();
-            affine_transformation2 result;
+            affine_map2 result;
             result.set_projection_(
                 fixed_p.x().value(), fixed_p.y().value(),
                 std::cos(a), std::sin(a));
             return result;
         }
-
-        // Projection onto a line identified by a fixed point
-        // and any plane vector.
-        template <class PointUnit, typename PointNum,
-            class VectUnit, typename VectNum>
-        static affine_transformation2 projection(
-            point2<PointUnit,PointNum> fixed_p,
-            vect2<VectUnit,VectNum> v)
-        {
-            // Precondition: norm(v).value() != 0
-            return projection_onto_unit_vector(fixed_p, normalized(v));
-        }
+#endif
 
         // Projection onto a line identified by a fixed point
         // and a unit plane vector.
-        // Construction is more efficient.
-        template <class PointUnit, typename PointNum,
-            class VectUnit, typename VectNum>
-        static affine_transformation2 projection_onto_unit_vector(
-            point2<PointUnit,PointNum> fixed_p,
+        // Precondition: norm(v).value() == 1
+        template <typename PointNum, class VectUnit, typename VectNum>
+        static affine_map2 projection(
+            point2<Unit,PointNum> fixed_p,
             vect2<VectUnit,VectNum> uv)
         {
-            // Precondition: norm(v).value() == 1
-            affine_transformation2 result;
+            affine_map2 result;
             result.set_projection_(
                 fixed_p.x().value(), fixed_p.y().value(),
                 uv.x().value(), uv.y().value());
@@ -1403,16 +1672,15 @@ namespace measures
         
         // Reflections
         
+#ifdef MEASURES_USE_ANGLES
         // Reflection over a line identified by a fixed point
         // and a point angle.
-        template <class PointUnit, typename PointNum,
-            class AngleUnit, typename AngleNum>
-        static affine_transformation2 reflection(
-            point2<PointUnit,PointNum> fixed_p,
+        template <typename PointNum, class AngleUnit, typename AngleNum>
+        static affine_map2 reflection(point2<Unit,PointNum> fixed_p,
             point1<AngleUnit,AngleNum> angle)
         {
             auto a = convert<radians>(angle).value();
-            affine_transformation2 result;
+            affine_map2 result;
             result.set_reflection_(
                 fixed_p.x().value(), fixed_p.y().value(),
                 std::cos(a), std::sin(a));
@@ -1421,14 +1689,12 @@ namespace measures
         
         // Reflection over a line identified by a fixed point
         // and a signed azimuth.
-        template <class PointUnit, typename PointNum,
-            class AngleUnit, typename AngleNum>
-        static affine_transformation2 reflection(
-            point2<PointUnit,PointNum> fixed_p,
+        template <typename PointNum, class AngleUnit, typename AngleNum>
+        static affine_map2 reflection(point2<Unit,PointNum> fixed_p,
             signed_azimuth<AngleUnit,AngleNum> angle)
         {
             auto a = convert<radians>(angle).value();
-            affine_transformation2 result;
+            affine_map2 result;
             result.set_reflection_(
                 fixed_p.x().value(), fixed_p.y().value(),
                 std::cos(a), std::sin(a));
@@ -1437,54 +1703,87 @@ namespace measures
         
         // Reflection over a line identified by a fixed point
         // and an unsigned azimuth.
-        template <class PointUnit, typename PointNum,
-            class AngleUnit, typename AngleNum>
-        static affine_transformation2 reflection(
-            point2<PointUnit,PointNum> fixed_p,
+        template <typename PointNum, class AngleUnit, typename AngleNum>
+        static affine_map2 reflection(point2<Unit,PointNum> fixed_p,
             unsigned_azimuth<AngleUnit,AngleNum> angle)
         {
             auto a = convert<radians>(angle).value();
-            affine_transformation2 result;
+            affine_map2 result;
             result.set_reflection_(
                 fixed_p.x().value(), fixed_p.y().value(),
                 std::cos(a), std::sin(a));
             return result;
         }
-
-        // Reflection over a line identified by a fixed point
-        // and any plane vector.
-        template <class PointUnit, typename PointNum,
-            class VectUnit, typename VectNum>
-        static affine_transformation2 reflection(
-            point2<PointUnit,PointNum> fixed_p,
-            vect2<VectUnit,VectNum> v)
-        {
-            // Precondition: norm(v).value() != 0
-            return reflection_over_unit_vector(fixed_p, normalized(v));
-        }
+#endif
 
         // Reflection over a line identified by a fixed point
         // and a unit plane vector.
-        // Construction is more efficient.
-        template <class PointUnit, typename PointNum,
-            class VectUnit, typename VectNum>
-        static affine_transformation2 reflection_over_unit_vector(
-            point2<PointUnit,PointNum> fixed_p,
+        // Precondition: norm(v).value() == 1
+        template <typename PointNum, class VectUnit, typename VectNum>
+        static affine_map2 reflection(
+            point2<Unit,PointNum> fixed_p,
             vect2<VectUnit,VectNum> uv)
         {
-            // Precondition: norm(v).value() == 1
-            affine_transformation2 result;
+            affine_map2 result;
             result.set_reflection_(
                 fixed_p.x().value(), fixed_p.y().value(),
                 uv.x().value(), uv.y().value());
             return result;
         }
 
-        // Access
+        // Scaling by two factors from a fixed point.
+        template <typename PointNum, typename Num2, typename Num3>
+        static affine_map2 scaling(point2<Unit,PointNum> fixed_p,
+            Num2 kx, Num3 ky)
+        {
+            affine_map2 result;
+            result.c_[0][0] = kx;
+            result.c_[0][1] = 0;
+            result.c_[0][2] = fixed_p.x().value() * (1 - kx);
+            result.c_[1][0] = 0;
+            result.c_[1][1] = ky;
+            result.c_[1][2] = fixed_p.y().value() * (1 - ky);
+            return result;
+        }
+
         
-        Num* matrix() { return &c_[0][0]; }
+        affine_map2 inverted()
+        {
+            auto determinant = c_[0][0] * c_[1][1] - c_[0][1] * c_[1][0];
+            affine_map2 result;
+            if (determinant == 0)
+            {
+                result.c_[0][0] = 0;
+                result.c_[0][1] = 0;
+                result.c_[0][2] = 0;
+                result.c_[1][0] = 0;
+                result.c_[1][1] = 0;
+                result.c_[1][2] = 0;
+            }
+            else
+            {
+                auto inverse_determinant = 1 / determinant;
+                result.c_[0][0] = c_[1][1] * inverse_determinant;
+                result.c_[0][1] = c_[0][1] * -inverse_determinant;
+                result.c_[0][2] = (c_[0][1] * c_[1][2]
+                    - c_[0][2] * c_[1][1]) * inverse_determinant;
+                result.c_[1][0] = c_[1][0] * -inverse_determinant;
+                result.c_[1][1] = c_[0][0] * inverse_determinant;
+                result.c_[1][2] = (c_[0][2] * c_[1][0]
+                    - c_[0][0] * c_[1][2]) * inverse_determinant;
+            }
+            return result;
+        }
+
+        //// Access
+        
+        Num coeff(int row, int col) const { return c_[row][col]; }
+        
+        Num& coeff(int row, int col) { return c_[row][col]; }
+
     private:
     
+#ifdef MEASURES_USE_ANGLES
         void set_rotation_(Num fp_x, Num fp_y, Num angle)
         {
             auto cos_a = std::cos(angle);
@@ -1494,6 +1793,15 @@ namespace measures
             c_[1][0] = sin_a; c_[1][1] = cos_a;
             c_[1][2] = fp_y - sin_a * fp_x - cos_a * fp_y;
         }
+
+        void set_right_rotation_(Num fp_x, Num fp_y, Num sine)
+        {
+            c_[0][0] = 0; c_[0][1] = -sine;
+            c_[0][2] = fp_x + sine * fp_y;
+            c_[1][0] = sine; c_[1][1] = 0;
+            c_[1][2] = fp_y - sine * fp_x;
+        }
+#endif
 
         void set_projection_(Num fp_x, Num fp_y, Num cos_a, Num sin_a)
         {
@@ -1520,6 +1828,172 @@ namespace measures
         
         Num c_[2][3];
     };
+
+    // Composition of two plane affine transformations.
+    template <class Unit, typename Num1, typename Num2>
+    affine_map2<Unit,decltype(Num1()*Num2())> combine(
+        affine_map2<Unit,Num1> const& am1, affine_map2<Unit,Num2> const& am2)
+    {
+        affine_map2<Unit,decltype(Num1()*Num2())> result;
+        result.coeff(0, 0)
+            = am1.coeff(0, 0) * am2.coeff(0, 0)
+            + am1.coeff(0, 1) * am2.coeff(1, 0);
+        result.coeff(0, 1)
+            = am1.coeff(0, 0) * am2.coeff(0, 1)
+            + am1.coeff(0, 1) * am2.coeff(1, 1);
+        result.coeff(0, 2)
+            = am1.coeff(0, 0) * am2.coeff(0, 2)
+            + am1.coeff(0, 1) * am2.coeff(1, 2)
+            + am1.coeff(0, 2);
+        result.coeff(1, 0)
+            = am1.coeff(1, 0) * am2.coeff(0, 0)
+            + am1.coeff(1, 1) * am2.coeff(1, 0);
+        result.coeff(1, 1)
+            = am1.coeff(1, 0) * am2.coeff(0, 1)
+            + am1.coeff(1, 1) * am2.coeff(1, 1);
+        result.coeff(1, 2)
+            = am1.coeff(1, 0) * am2.coeff(0, 2)
+            + am1.coeff(1, 1) * am2.coeff(1, 2)
+            + am1.coeff(1, 2);
+        return result;
+    }
+
+    //// Translation
+    
+    template <class Unit, typename Num>
+    affine_map2<Unit,Num> create_translation(vect2<Unit,Num> v)
+    {
+        return affine_map2<Unit,Num>::translation(v);
+    }
+
+#ifdef MEASURES_USE_ANGLES
+    //// Rotations
+    
+    template <class PointUnit, typename PointNum,
+        class AngleUnit, typename AngleNum>
+    affine_map2<PointUnit,decltype(PointNum()*AngleNum())> create_rotation(
+        point2<PointUnit,PointNum> fixed_p, vect1<AngleUnit,AngleNum> angle)
+    {
+        return affine_map2<PointUnit,decltype(PointNum()*AngleNum())>
+            ::rotation(fixed_p, angle);
+    }
+
+    template <class PointUnit, typename PointNum>
+    affine_map2<PointUnit,PointNum> create_rotation_at_right(
+        point2<PointUnit,PointNum> fixed_p)
+    {
+        return affine_map2<PointUnit,PointNum>::rotation_at_right(fixed_p);
+    }
+
+    template <class PointUnit, typename PointNum>
+    affine_map2<PointUnit,PointNum> create_rotation_at_left(
+        point2<PointUnit,PointNum> fixed_p)
+    {
+        return affine_map2<PointUnit,PointNum>::rotation_at_left(fixed_p);
+    }
+#endif
+
+    //// Projections
+
+#ifdef MEASURES_USE_ANGLES
+    template <class PointUnit, typename PointNum,
+        class AngleUnit, typename AngleNum>
+    affine_map2<PointUnit,decltype(PointNum()*AngleNum())> create_projection(
+        point2<PointUnit,PointNum> fixed_p,
+        point1<AngleUnit,AngleNum> angle)
+    {
+        return affine_map2<PointUnit,decltype(PointNum()*AngleNum())>
+            ::projection(fixed_p, angle);
+    }
+
+    template <class PointUnit, typename PointNum,
+        class AngleUnit, typename AngleNum>
+    affine_map2<PointUnit,decltype(PointNum()*AngleNum())> create_projection(
+        point2<PointUnit,PointNum> fixed_p,
+        signed_azimuth<AngleUnit,AngleNum> angle)
+    {
+        return affine_map2<PointUnit,decltype(PointNum()*AngleNum())>
+            ::projection(fixed_p, angle);
+    }
+    
+    template <class PointUnit, typename PointNum,
+        class AngleUnit, typename AngleNum>
+    affine_map2<PointUnit,decltype(PointNum()*AngleNum())> create_projection(
+        point2<PointUnit,PointNum> fixed_p,
+        unsigned_azimuth<AngleUnit,AngleNum> angle)
+    {
+        return affine_map2<PointUnit,decltype(PointNum()*AngleNum())>
+            ::projection(fixed_p, angle);
+    }
+#endif
+    
+    template <class PointUnit, typename PointNum,
+        class VectUnit, typename VectNum>
+    affine_map2<PointUnit,decltype(PointNum()*VectNum())> create_projection(
+        point2<PointUnit,PointNum> fixed_p,
+        vect2<VectUnit,VectNum> unit_v)
+    {
+        return affine_map2<PointUnit,decltype(PointNum()*VectNum())>
+            ::projection(fixed_p, unit_v);
+    }
+
+    //// Reflections
+
+#ifdef MEASURES_USE_ANGLES
+    template <class PointUnit, typename PointNum,
+        class AngleUnit, typename AngleNum>
+    affine_map2<PointUnit,decltype(PointNum()*AngleNum())> create_reflection(
+        point2<PointUnit,PointNum> fixed_p,
+        point1<AngleUnit,AngleNum> angle)
+    {
+        return affine_map2<PointUnit,decltype(PointNum()*AngleNum())>
+            ::reflection(fixed_p, angle);
+    }
+
+    template <class PointUnit, typename PointNum,
+        class AngleUnit, typename AngleNum>
+    affine_map2<PointUnit,decltype(PointNum()*AngleNum())> create_reflection(
+        point2<PointUnit,PointNum> fixed_p,
+        signed_azimuth<AngleUnit,AngleNum> angle)
+    {
+        return affine_map2<PointUnit,decltype(PointNum()*AngleNum())>
+            ::reflection(fixed_p, angle);
+    }
+    
+    template <class PointUnit, typename PointNum,
+        class AngleUnit, typename AngleNum>
+    affine_map2<PointUnit,decltype(PointNum()*AngleNum())> create_reflection(
+        point2<PointUnit,PointNum> fixed_p,
+        unsigned_azimuth<AngleUnit,AngleNum> angle)
+    {
+        return affine_map2<PointUnit,decltype(PointNum()*AngleNum())>
+            ::reflection(fixed_p, angle);
+    }
+#endif
+    
+    template <class PointUnit, typename PointNum,
+        class VectUnit, typename VectNum>
+    affine_map2<PointUnit,decltype(PointNum()*VectNum())> create_reflection(
+        point2<PointUnit,PointNum> fixed_p,
+        vect2<VectUnit,VectNum> unit_v)
+    {
+        return affine_map2<PointUnit,decltype(PointNum()*VectNum())>
+            ::reflection(fixed_p, unit_v);
+    }
+
+    //// Scaling
+    
+    template <class PointUnit, typename PointNum, typename NumX, typename NumY>
+    affine_map2<PointUnit,decltype(PointNum()*(NumX()+NumY()))> create_scaling(
+        point2<PointUnit,PointNum> fixed_p,
+        NumX kx, NumY ky)
+    {
+        return affine_map2<PointUnit,decltype(PointNum()*(NumX()+NumY()))>
+            ::scaling(fixed_p, kx, ky);
+    }
+
+    
+    //// Point2
     
     template <class Unit, typename Num = double>
     class point2
@@ -1546,7 +2020,7 @@ namespace measures
 
         // Constructs using another point2 of the same unit.
         template <typename Num1>
-        point2(const point2<Unit,Num1>& o):
+        point2(point2<Unit,Num1> const& o):
             x_(o.x().value()), y_(o.y().value()) { }
 
         // Constructs using a unit and two values.
@@ -1595,35 +2069,12 @@ namespace measures
             return *this;
         }
 
-        template <class Unit2, typename Num2, typename Num3>
-        point2<Unit,decltype(Num3()+(Num()-Num3())*Num2())> rotated_by_around(
-            vect1<Unit2,Num2> a, point2<Unit,Num3> fixed_p)
-        {
-            ASSERT_IS_ANGLE(Unit2)
-            return fixed_p + (*this - fixed_p).transformed_by(
-                linear_transformation2<Num3>::rotation(a));
-        }
-
         template <typename Num2>
-        point2<Unit,decltype(Num2()+(Num()-Num2()))>
-            rotated_left_around(point2<Unit,Num2> fixed_p)
-        {
-            return fixed_p + (*this - fixed_p).rotated_left();
-        }
-
-        template <typename Num2>
-        point2<Unit,decltype(Num2()+(Num()-Num2()))>
-            rotated_right_around(point2<Unit,Num2> fixed_p)
-        {
-            return fixed_p + (*this - fixed_p).rotated_right();
-        }
-
-        template <typename Num2>
-        point2<Unit,Num> transformed_by(const affine_transformation2<Num2>& at) const
+        point2<Unit,Num> mapped_by(affine_map2<Unit,Num2> const& am) const
         {
             return point2<Unit,Num>(
-                at.c_[0][0] * x_ + at.c_[0][1] * y_ + at.c_[0][2],
-                at.c_[1][0] * x_ + at.c_[1][1] * y_ + at.c_[1][2]);
+                am.c_[0][0] * x_ + am.c_[0][1] * y_ + am.c_[0][2],
+                am.c_[1][0] * x_ + am.c_[1][1] * y_ + am.c_[1][2]);
         }
         
     private:
@@ -1634,22 +2085,26 @@ namespace measures
 
     // midpoint(point2, point2, weight) -> point2
     template <class Unit, typename Num1, typename Num2, typename Num3>
-    point2<Unit,decltype((Num1()+Num2())*Num3())> midpoint(
+    point2<Unit,decltype(Num1()+Num2())> midpoint(
         point2<Unit,Num1> p1, point2<Unit,Num2> p2, Num3 weight)
     {
-        return point2<Unit,decltype((Num1()+Num2())*Num3())>(
-            p1.x().value() * (1 - weight) + p2.x().value() * weight,
-            p1.y().value() * (1 - weight) + p2.y().value() * weight);
+        typedef decltype(Num1()+Num2()) ResultNum;
+        return point2<Unit,ResultNum>(
+            p1.x().value() * static_cast<ResultNum>(1 - weight)
+                + p2.x().value() * static_cast<ResultNum>(weight),
+            p1.y().value() * static_cast<ResultNum>(1 - weight)
+                + p2.y().value() * static_cast<ResultNum>(weight));
     }
 
     // midpoint(point2, point2) -> point2
     template <class Unit, typename Num1, typename Num2>
-    point2<Unit,decltype((Num1()+Num2())*float())> midpoint(
+    point2<Unit,decltype(Num1()+Num2())> midpoint(
         point2<Unit,Num1> p1, point2<Unit,Num2> p2)
     {
-        return point2<Unit,decltype((Num1()+Num2())*float())>(
-            (p1.x().value() + p2.x().value()) * 0.5f,
-            (p1.y().value() + p2.y().value()) * 0.5f);
+        typedef decltype(Num1()+Num2()) ResultNum;
+        return point2<Unit,ResultNum>(
+            (p1.x().value() + p2.x().value()) / static_cast<ResultNum>(2),
+            (p1.y().value() + p2.y().value()) / static_cast<ResultNum>(2));
     }
 
     // barycentric_combination(int, point2[], Num[]) -> point2
@@ -1698,7 +2153,8 @@ namespace measures
     bool is_equal(point2<Unit,Num1> m1, point2<Unit,Num2> m2,
         vect1<Unit,Num3> tolerance)
     {
-        return squared_norm_value(m1 - m2)
+        // "abs" is needed for complex numbers.
+        return std::abs(squared_norm_value(m1 - m2))
             <= squared_norm_value(tolerance);
     }
 
@@ -1789,10 +2245,366 @@ namespace measures
     {
         return v / norm(v).value();
     }
+#endif
 
 
+#ifdef MEASURES_USE_3D
     //////////////////// 3-DIMENSIONAL POINTS AND VECTORS ////////////////////
 
+/*??
+
+        linear_map3 inverted(linear_map3 const& at)
+        {
+            auto determinant
+                = c_[0][0] * c_[1][1] * c_[2][2]
+                + c_[1][0] * c_[2][1] * c_[0][2]
+                + c_[2][0] * c_[0][1] * c_[1][2]
+                - c_[0][0] * c_[2][1] * c_[1][2]
+                - c_[2][0] * c_[1][1] * c_[0][2]
+                - c_[1][0] * c_[0][1] * c_[2][2];
+            linear_map3 result;
+            if (determinant == 0)
+            {
+                result.c_[0][0] = 0;
+                result.c_[0][1] = 0;
+                result.c_[0][2] = 0;
+                result.c_[1][0] = 0;
+                result.c_[1][1] = 0;
+                result.c_[1][2] = 0;
+                result.c_[2][0] = 0;
+                result.c_[2][1] = 0;
+                result.c_[2][2] = 0;
+            }
+            else
+            {
+                result.c_[0][0] = (lt.c_[1][1] * lt.c_[2][2]
+                    - lt.c_[1][2] * lt.c_[2][1]) * (1 / determinant);
+                result.c_[0][1] = (lt.c_[0][2] * lt.c_[2][1]
+                    - lt.c_[0][1] * lt.c_[2][2]) * (1 / determinant);
+                result.c_[0][2] = (lt.c_[0][1] * lt.c_[1][2]
+                    - lt.c_[0][2] * lt.c_[1][1]) * (1 / determinant);
+                result.c_[1][0] = (lt.c_[1][2] * lt.c_[2][0]
+                    - lt.c_[1][0] * lt.c_[2][2]) * (1 / determinant);
+                result.c_[1][1] = (lt.c_[0][0] * lt.c_[2][2]
+                    - lt.c_[0][2] * lt.c_[2][0]) * (1 / determinant);
+                result.c_[1][2] = (lt.c_[0][2] * lt.c_[1][0]
+                    - lt.c_[0][0] * lt.c_[1][2]) * (1 / determinant);
+                result.c_[2][0] = (lt.c_[1][0] * lt.c_[2][1]
+                    - lt.c_[1][1] * lt.c_[2][0]) * (1 / determinant);
+                result.c_[2][1] = (lt.c_[0][1] * lt.c_[2][0]
+                    - lt.c_[0][0] * lt.c_[2][1]) * (1 / determinant);
+                result.c_[2][2] = (lt.c_[0][0] * lt.c_[1][1]
+                    - lt.c_[0][1] * lt.c_[1][0]) * (1 / determinant);
+            }
+            return result;
+        }
+
+        Num coeff(int row, int col) const { return c_[row][col]; }
+        
+        Num& coeff(int row, int col) { return c_[row][col]; }
+*/
+
+    template <typename Num = double>
+    class linear_map3
+    {
+        template <class, typename> friend class vect3;    
+    public:
+
+#ifdef MEASURES_USE_ANGLES
+        // Rotation by a relative angle
+        // about a line identified by a unit vector.
+        // Precondition: norm(unit_v).value() == 1
+        template <class DirUnit, typename DirNum,
+            class AngleUnit, typename AngleNum>
+        static linear_map3 rotation(
+            vect3<DirUnit,DirNum> unit_v,
+            vect1<AngleUnit,AngleNum> angle)
+        {
+            linear_map3 result;
+            auto cos_a = cos(angle);
+            auto sin_a = sin(angle);
+            auto u = unit_v.x().value();
+            auto v = unit_v.y().value();
+            auto w = unit_v.z().value();
+            result.c_[0][0] = u * u * (1 - cos_a) + cos_a;
+            result.c_[0][1] = u * v * (1 - cos_a) - w * sin_a;
+            result.c_[0][2] = u * w * (1 - cos_a) + v * sin_a;
+            result.c_[1][0] = u * v * (1 - cos_a) + w * sin_a;
+            result.c_[1][1] = v * v * (1 - cos_a) + cos_a;
+            result.c_[1][2] = v * w * (1 - cos_a) - u * sin_a;
+            result.c_[2][0] = u * w * (1 - cos_a) - v * sin_a;
+            result.c_[2][1] = v * w * (1 - cos_a) + u * sin_a;
+            result.c_[2][2] = w * w * (1 - cos_a) + cos_a;
+            return result;
+        }
+
+        // Rotation at right by a right angle about a line
+        // identified by a unit vector.
+        // Precondition: norm(unit_v).value() == 1
+        template <class DirUnit, typename DirNum>
+        static linear_map3 rotation_at_right(
+            vect3<DirUnit,DirNum> unit_v)
+        {
+            return rotation_at_left_about_unit_vector_(unit_v, -1);
+        }
+
+        // Rotation at left by a right angle about a line
+        // identified by a unit vector.
+        // Precondition: norm(unit_v).value() == 1
+        template <class DirUnit, typename DirNum>
+        static linear_map3 rotation_at_left(
+            vect3<DirUnit,DirNum> unit_v)
+        {
+            return rotation_at_left_about_unit_vector_(unit_v, 1);
+        }
+#endif
+        
+        //// Projections
+        
+        // Projection onto a line identified by a unit vector.
+        // Precondition: norm(unit_v).value() == 1
+        template <class DirUnit, typename DirNum>
+        static linear_map3 projection_onto_line(vect3<DirUnit,DirNum> unit_v)
+        {
+            linear_map3 result;
+            auto u = unit_v.x().value();
+            auto v = unit_v.y().value();
+            auto w = unit_v.z().value();
+            result.c_[0][0] = u * u;
+            result.c_[0][1] = u * v;
+            result.c_[0][2] = u * w;
+            result.c_[1][0] = u * v;
+            result.c_[1][1] = v * v;
+            result.c_[1][2] = v * w;
+            result.c_[2][0] = u * w;
+            result.c_[2][1] = v * w;
+            result.c_[2][2] = w * w;
+            return result;
+        }
+        
+        // Projection onto a plane identified
+        // by a unit normal vector.
+        // Precondition: norm(unit_v).value() == 1
+        template <class NormalUnit, typename NormalNum>
+        static linear_map3 projection_onto_plane(
+            vect3<NormalUnit,NormalNum> unit_v)
+        {
+            return projection_onto_plane(
+                unit_v.x().value(), unit_v.y().value(), unit_v.z().value());
+        }
+
+        // Projection onto a plane identified by the coefficients
+        // of the normalized equation ax + by + cz = 0.
+        // Precondition: a * a + b * b + c * c == 1.
+        template <typename CoeffNum>
+        static linear_map3 projection_onto_plane(
+            CoeffNum a, CoeffNum b, CoeffNum c)
+        {
+            linear_map3 result;
+            result.c_[0][0] = b * b + c * c;
+            result.c_[0][1] = -a * b;
+            result.c_[0][2] = -a * c;
+            result.c_[1][0] = -a * b;
+            result.c_[1][1] = a * a + c * c;
+            result.c_[1][2] = -b * c;
+            result.c_[2][0] = -a * c;
+            result.c_[2][1] = -b * c;
+            result.c_[2][2] = a * a + b * b;
+            return result;
+        }
+        
+        //// Reflections
+        
+        // Reflection over a line identified by a unit vector.
+        // Precondition: norm(unit_v).value() == 1
+        template <class DirUnit, typename DirNum>
+        static linear_map3 reflection_over_line(vect3<DirUnit,DirNum> unit_v)
+        {
+            linear_map3 result;
+            auto u = unit_v.x().value();
+            auto v = unit_v.y().value();
+            auto w = unit_v.z().value();
+            result.c_[0][0] = 2 * u * u - 1;
+            result.c_[0][1] = 2 * u * v;
+            result.c_[0][2] = 2 * u * w;
+            result.c_[1][0] = 2 * u * v;
+            result.c_[1][1] = 2 * v * v - 1;
+            result.c_[1][2] = 2 * v * w;
+            result.c_[2][0] = 2 * u * w;
+            result.c_[2][1] = 2 * v * w;
+            result.c_[2][2] = 2 * w * w - 1;
+            return result;
+        }
+
+        // Reflection over a plane identified
+        // by a unit normal vector.
+        // Precondition: norm(unit_v).value() == 1
+        template <class NormalUnit, typename NormalNum>
+        static linear_map3 reflection_over_plane(
+            vect3<NormalUnit,NormalNum> unit_v)
+        {
+            return reflection_over_plane(
+                unit_v.x().value(), unit_v.y().value(), unit_v.z().value());
+        }
+        
+        // Reflection over a plane identified by the coefficients
+        // of the normalized equation ax + by + cz = 0.
+        // Precondition: a * a + b * b + c * c == 1.
+        template <typename CoeffNum>
+        static linear_map3 reflection_over_plane(
+            CoeffNum a, CoeffNum b, CoeffNum c)
+        {
+            linear_map3 result;
+            result.c_[0][0] = 2 * (b * b + c * c) - 1;
+            result.c_[0][1] = -2 * a * b;
+            result.c_[0][2] = -2 * a * c;
+            result.c_[1][0] = -2 * a * b;
+            result.c_[1][1] = 2 * (a * a + c * c) - 1;
+            result.c_[1][2] = -2 * b * c;
+            result.c_[2][0] = -2 * a * c;
+            result.c_[2][1] = -2 * b * c;
+            result.c_[2][2] = 2 * (a * a + b * b) - 1;
+            return result;
+        }
+
+        //// Scaling by three factors.
+        template <typename NumX, typename NumY, typename NumZ>
+        static linear_map3 scaling(NumX kx, NumY ky, NumZ kz)
+        {
+            linear_map3<Num> result;
+            result.c_[0][0] = kx; result.c_[0][1] = 0; result.c_[0][2] = 0;
+            result.c_[1][0] = 0; result.c_[1][1] = ky; result.c_[1][2] = 0;
+            result.c_[2][0] = 0; result.c_[2][1] = 0; result.c_[2][2] = kz;
+            return result;
+        }
+
+        //// Inversion 
+        linear_map3 inverted()
+        {
+            auto determinant
+                = c_[0][0] * c_[1][1] * c_[2][2]
+                + c_[1][0] * c_[2][1] * c_[0][2]
+                + c_[2][0] * c_[0][1] * c_[1][2]
+                - c_[0][0] * c_[2][1] * c_[1][2]
+                - c_[2][0] * c_[1][1] * c_[0][2]
+                - c_[1][0] * c_[0][1] * c_[2][2];
+            linear_map3 result;
+            if (determinant == 0)
+            {
+                result.c_[0][0] = 0;
+                result.c_[0][1] = 0;
+                result.c_[0][2] = 0;
+                result.c_[1][0] = 0;
+                result.c_[1][1] = 0;
+                result.c_[1][2] = 0;
+                result.c_[2][0] = 0;
+                result.c_[2][1] = 0;
+                result.c_[2][2] = 0;
+            }
+            else
+            {
+                result.c_[0][0] = (c_[1][1] * c_[2][2]
+                    - c_[1][2] * c_[2][1]) * (1 / determinant);
+                result.c_[0][1] = (c_[0][2] * c_[2][1]
+                    - c_[0][1] * c_[2][2]) * (1 / determinant);
+                result.c_[0][2] = (c_[0][1] * c_[1][2]
+                    - c_[0][2] * c_[1][1]) * (1 / determinant);
+                result.c_[1][0] = (c_[1][2] * c_[2][0]
+                    - c_[1][0] * c_[2][2]) * (1 / determinant);
+                result.c_[1][1] = (c_[0][0] * c_[2][2]
+                    - c_[0][2] * c_[2][0]) * (1 / determinant);
+                result.c_[1][2] = (c_[0][2] * c_[1][0]
+                    - c_[0][0] * c_[1][2]) * (1 / determinant);
+                result.c_[2][0] = (c_[1][0] * c_[2][1]
+                    - c_[1][1] * c_[2][0]) * (1 / determinant);
+                result.c_[2][1] = (c_[0][1] * c_[2][0]
+                    - c_[0][0] * c_[2][1]) * (1 / determinant);
+                result.c_[2][2] = (c_[0][0] * c_[1][1]
+                    - c_[0][1] * c_[1][0]) * (1 / determinant);
+            }
+            return result;
+        }
+        
+        //// Access
+        
+        Num coeff(int row, int col) const { return c_[row][col]; }
+        
+        Num& coeff(int row, int col) { return c_[row][col]; }
+        
+    private:
+
+#ifdef MEASURES_USE_ANGLES
+        template <typename PointNum, class DirUnit, typename DirNum,
+            typename AngleNum>
+        static linear_map3 rotation_at_left_about_unit_vector_(
+            vect3<DirUnit,DirNum> unit_v, AngleNum sine)
+        {
+            linear_map3 result;
+            auto u = unit_v.x().value();
+            auto v = unit_v.y().value();
+            auto w = unit_v.z().value();
+            result.c_[0][0] = u * u;
+            result.c_[0][1] = u * v - w * sine;
+            result.c_[0][2] = u * w + v * sine;
+            result.c_[1][0] = u * v + w * sine;
+            result.c_[1][1] = v * v;
+            result.c_[1][2] = v * w - u * sine;
+            result.c_[2][0] = u * w - v * sine;
+            result.c_[2][1] = v * w + u * sine;
+            result.c_[2][2] = w * w;
+            return result;
+        }
+#endif
+       
+        Num c_[3][3];
+    };
+
+    // Composition of two space linear transformations.
+    template <typename Num1, typename Num2>
+    linear_map3<decltype(Num1()*Num2())> combine(
+        linear_map3<Num1> const& lm1, linear_map3<Num2> const& lm2)
+    {
+        linear_map3<decltype(Num1()*Num2())> result;
+        result.coeff(0, 0)
+            = lm1.coeff(0, 0) * lm2.coeff(0, 0)
+            + lm1.coeff(0, 1) * lm2.coeff(1, 0)
+            + lm1.coeff(0, 2) * lm2.coeff(2, 0);
+        result.coeff(0, 1)
+            = lm1.coeff(0, 0) * lm2.coeff(0, 1)
+            + lm1.coeff(0, 1) * lm2.coeff(1, 1)
+            + lm1.coeff(0, 2) * lm2.coeff(2, 1);
+        result.coeff(0, 2)
+            = lm1.coeff(0, 0) * lm2.coeff(0, 2)
+            + lm1.coeff(0, 1) * lm2.coeff(1, 2)
+            + lm1.coeff(0, 2) * lm2.coeff(2, 2);
+        result.coeff(1, 0)
+            = lm1.coeff(1, 0) * lm2.coeff(0, 0)
+            + lm1.coeff(1, 1) * lm2.coeff(1, 0)
+            + lm1.coeff(1, 2) * lm2.coeff(2, 0);
+        result.coeff(1, 1)
+            = lm1.coeff(1, 0) * lm2.coeff(0, 1)
+            + lm1.coeff(1, 1) * lm2.coeff(1, 1)
+            + lm1.coeff(1, 2) * lm2.coeff(2, 1);
+        result.coeff(1, 2)
+            = lm1.coeff(1, 0) * lm2.coeff(0, 2)
+            + lm1.coeff(1, 1) * lm2.coeff(1, 2)
+            + lm1.coeff(1, 2) * lm2.coeff(2, 2);
+        result.coeff(2, 0)
+            = lm1.coeff(2, 0) * lm2.coeff(0, 0)
+            + lm1.coeff(2, 1) * lm2.coeff(1, 0)
+            + lm1.coeff(2, 2) * lm2.coeff(2, 0);
+        result.coeff(2, 1)
+            = lm1.coeff(2, 0) * lm2.coeff(0, 1)
+            + lm1.coeff(2, 1) * lm2.coeff(1, 1)
+            + lm1.coeff(2, 2) * lm2.coeff(2, 1);
+        result.coeff(2, 2)
+            = lm1.coeff(2, 0) * lm2.coeff(0, 2)
+            + lm1.coeff(2, 1) * lm2.coeff(1, 2)
+            + lm1.coeff(2, 2) * lm2.coeff(2, 2);
+        return result;
+    }
+
+    
     template <class Unit, typename Num = double>
     class vect3
     {
@@ -1820,7 +2632,7 @@ namespace measures
 
         // Constructs using another vect3 of the same unit.
         template <typename Num1>
-        vect3(const vect3<Unit,Num1>& o):
+        vect3(vect3<Unit,Num1> const& o):
             x_(o.x().value()), y_(o.y().value()), z_(o.z().value()) { }
 
         // +vect3 -> vect3
@@ -1905,6 +2717,15 @@ namespace measures
         vect1<Unit,Num>& z()
 		{ return reinterpret_cast<vect1<Unit,Num>&>(z_); }
 
+        template <typename Num2>
+        vect3<Unit,Num> mapped_by(linear_map3<Num2> const& lt) const
+        {
+            return vect3<Unit,Num>(
+                lt.c_[0][0] * x_ + lt.c_[0][1] * y_ + lt.c_[0][2] * z_,
+                lt.c_[1][0] * x_ + lt.c_[1][1] * y_ + lt.c_[1][2] * z_,
+                lt.c_[2][0] * x_ + lt.c_[2][1] * y_ + lt.c_[2][2] * z_);
+        }
+
     private:
 
         // Components.
@@ -1934,10 +2755,443 @@ namespace measures
     bool is_equal(vect3<Unit,Num1> m1, vect3<Unit,Num2> m2,
         vect1<Unit,Num3> tolerance)
     {
-        return squared_norm_value(m1 - m2)
+        // "abs" is needed for complex numbers.
+        return std::abs(squared_norm_value(m1 - m2))
             <= squared_norm_value(tolerance);
     }
 
+    
+    template <class Unit, typename Num = double>
+    class affine_map3
+    {
+        template <class, typename> friend class point3;    
+    public:
+
+        // Translation.
+        template <typename VectNum>
+        static affine_map3 translation(vect3<Unit,VectNum> v)
+        {
+            affine_map3 result;
+            result.c_[0][0] = 1;
+            result.c_[0][1] = 0;
+            result.c_[0][2] = 0;
+            result.c_[0][3] = v.x().value();
+            result.c_[1][0] = 0;
+            result.c_[1][1] = 1;
+            result.c_[1][2] = 0;
+            result.c_[1][3] = v.y().value();
+            result.c_[2][0] = 0;
+            result.c_[2][1] = 0;
+            result.c_[2][2] = 1;
+            result.c_[2][3] = v.y().value();
+            return result;
+        }
+        
+#ifdef MEASURES_USE_ANGLES
+        //// Rotations.
+        
+        // Rotation by a relative angle
+        // about a line identified by a point and a unit vector.
+        // Precondition: norm(v).value() == 1
+        template <typename PointNum, class DirUnit,
+            typename DirNum, class AngleUnit, typename AngleNum>
+        static affine_map3 rotation(
+            point3<Unit,PointNum> fixed_p,
+            vect3<DirUnit,DirNum> unit_v,
+            vect1<AngleUnit,AngleNum> angle)
+        {
+            affine_map3 result;
+            auto cos_a = cos(angle);
+            auto sin_a = sin(angle);
+            auto u = unit_v.x().value();
+            auto v = unit_v.y().value();
+            auto w = unit_v.z().value();
+            auto u2 = u * u;
+            auto v2 = v * v;
+            auto w2 = w * w;
+            auto a = fixed_p.x().value();
+            auto b = fixed_p.y().value();
+            auto c = fixed_p.z().value();
+            result.c_[0][0] = u2 * (1 - cos_a) + cos_a;
+            result.c_[0][1] = u * v * (1 - cos_a) - w * sin_a;
+            result.c_[0][2] = u * w * (1 - cos_a) + v * sin_a;
+            result.c_[0][3] = (a * (1 - u2) - u * (b * v + c * w))
+                * (1 - cos_a) + (b * w - c * v) * sin_a;
+            result.c_[1][0] = u * v * (1 - cos_a) + w * sin_a;
+            result.c_[1][1] = v2 * (1 - cos_a) + cos_a;
+            result.c_[1][2] = v * w * (1 - cos_a) - u * sin_a;
+            result.c_[1][3] = (b * (1 - v2) - v * (a * u + c * w))
+                * (1 - cos_a) + (c * u - a * w) * sin_a;
+            result.c_[2][0] = u * w * (1 - cos_a) - v * sin_a;
+            result.c_[2][1] = v * w * (1 - cos_a) + u * sin_a;
+            result.c_[2][2] = w2 * (1 - cos_a) + cos_a;
+            result.c_[2][3] = (c * (1 - w2) - w * (a * u + b * v))
+                * (1 - cos_a) + (a * v - b * u) * sin_a;
+            return result;
+        }
+
+        // Rotation at right by a right angle about a line
+        // identified by a point and a unit vector.
+        // Precondition: norm(v).value() == 1
+        template <typename PointNum, class DirUnit, typename DirNum>
+        static affine_map3 rotation_at_right(
+            point3<Unit,PointNum> fixed_p, vect3<DirUnit,DirNum> unit_v)
+        {
+            return rotation_at_left_about_unit_vector_(
+                fixed_p, unit_v, -1);
+        }
+
+        // Rotation at left by a right angle about a line
+        // identified by a point and a unit vector.
+        // Precondition: norm(unit_v).value() == 1
+        template <typename PointNum, class DirUnit, typename DirNum>
+        static affine_map3 rotation_at_left(
+            point3<Unit,PointNum> fixed_p, vect3<DirUnit,DirNum> unit_v)
+        {
+            return rotation_at_left_about_unit_vector_(
+                fixed_p, unit_v, 1);
+        }
+#endif
+        
+        //// Projections.
+        
+        // Projection onto a line identified by a point and a unit vector.
+        // Precondition: norm(unit_v).value() == 1
+        template <typename PointNum, class DirUnit, typename DirNum>
+        static affine_map3 projection_onto_line(
+            point3<Unit,PointNum> fixed_p, vect3<DirUnit,DirNum> unit_v)
+        {
+            affine_map3 result;
+            auto u = unit_v.x().value();
+            auto v = unit_v.y().value();
+            auto w = unit_v.z().value();
+            auto a = fixed_p.x().value();
+            auto b = fixed_p.y().value();
+            auto c = fixed_p.z().value();
+            result.c_[0][0] = u * u;
+            result.c_[0][1] = u * v;
+            result.c_[0][2] = u * w;
+            result.c_[0][3] = a - u * u * a - u * v * b - u * w * c;
+            result.c_[1][0] = u * v;
+            result.c_[1][1] = v * v;
+            result.c_[1][2] = v * w;
+            result.c_[1][3] = b - u * v * a - v * v * b - v * w * c;
+            result.c_[2][0] = u * w;
+            result.c_[2][1] = v * w;
+            result.c_[2][2] = w * w;
+            result.c_[2][3] = c - u * w * a - v * w * b - w * w * c;
+            return result;
+        }
+        
+        // Projection onto a plane identified by a point
+        // and a unit normal vector.
+        // Precondition: norm(unit_v).value() == 1
+        template <typename PointNum, class NormalUnit, typename NormalNum>
+        static affine_map3 projection_onto_plane(
+            point3<Unit,PointNum> fixed_p, vect3<NormalUnit,NormalNum> unit_v)
+        {
+            auto u = unit_v.x().value();
+            auto v = unit_v.y().value();
+            auto w = unit_v.z().value();
+            return projection_onto_plane(u, v, w,
+                - u * fixed_p.x().value()
+                - v * fixed_p.y().value()
+                - w * fixed_p.z().value());
+        }
+
+        // Projection onto a plane identified by the coefficients
+        // of the normalized equation ax + by + cz + d = 0.
+        // Precondition: a * a + b * b + c * c == 1.
+        template <typename CoeffNum>
+        static affine_map3 projection_onto_plane(
+            CoeffNum a, CoeffNum b, CoeffNum c, CoeffNum d)
+        {
+            affine_map3 result;
+            result.c_[0][0] = b * b + c * c;
+            result.c_[0][1] = -a * b;
+            result.c_[0][2] = -a * c;
+            result.c_[0][3] = -a * d;
+            result.c_[1][0] = -a * b;
+            result.c_[1][1] = a * a + c * c;
+            result.c_[1][2] = -b * c;
+            result.c_[1][3] = -b * d;
+            result.c_[2][0] = -a * c;
+            result.c_[2][1] = -b * c;
+            result.c_[2][2] = a * a + b * b;
+            result.c_[2][3] = -c * d;
+            return result;
+        }
+
+        //// Reflections.
+        
+        // Reflection over a line identified by a point and a unit vector.
+        // Precondition: norm(unit_v).value() == 1
+        template <typename PointNum, class DirUnit, typename DirNum>
+        static affine_map3 reflection_over_line(
+            point3<Unit,PointNum> fixed_p, vect3<DirUnit,DirNum> unit_v)
+        {
+            affine_map3 result;
+            auto u = unit_v.x().value();
+            auto v = unit_v.y().value();
+            auto w = unit_v.z().value();
+            auto a = fixed_p.x().value();
+            auto b = fixed_p.y().value();
+            auto c = fixed_p.z().value();
+            result.c_[0][0] = 2 * u * u - 1;
+            result.c_[0][1] = 2 * u * v;
+            result.c_[0][2] = 2 * u * w;
+            result.c_[0][3] = 2 * (a - u * u * a - u * v * b - u * w * c);
+            result.c_[1][0] = 2 * u * v;
+            result.c_[1][1] = 2 * v * v - 1;
+            result.c_[1][2] = 2 * v * w;
+            result.c_[1][3] = 2 * (b - u * v * a - v * v * b - v * w * c);
+            result.c_[2][0] = 2 * u * w;
+            result.c_[2][1] = 2 * v * w;
+            result.c_[2][2] = 2 * w * w - 1;
+            result.c_[2][3] = 2 * (c - u * w * a - v * w * b - w * w * c);
+            return result;
+        }
+        
+        // Reflection over a plane identified by a point
+        // and a unit normal vector.
+        // Precondition: norm(unit_v).value() == 1
+        template <typename PointNum, class NormalUnit, typename NormalNum>
+        static affine_map3 reflection_over_plane(
+            point3<Unit,PointNum> fixed_p, vect3<NormalUnit,NormalNum> unit_v)
+        {
+            auto u = unit_v.x().value();
+            auto v = unit_v.y().value();
+            auto w = unit_v.z().value();
+            return reflection_over_plane(u, v, w,
+                - u * fixed_p.x().value()
+                - v * fixed_p.y().value()
+                - w * fixed_p.z().value());
+        }
+
+        // Reflection over a plane identified by the coefficients
+        // of the normalized equation ax + by + cz + d = 0.
+        // Precondition: a * a + b * b + c * c == 1.
+        template <typename CoeffNum>
+        static affine_map3 reflection_over_plane(
+            CoeffNum a, CoeffNum b, CoeffNum c, CoeffNum d)
+        {
+            affine_map3 result;
+            result.c_[0][0] = 2 * (b * b + c * c) - 1;
+            result.c_[0][1] = -2 * a * b;
+            result.c_[0][2] = -2 * a * c;
+            result.c_[0][3] = -2 * a * d;
+            result.c_[1][0] = -2 * a * b;
+            result.c_[1][1] = 2 * (a * a + c * c) - 1;
+            result.c_[1][2] = -2 * b * c;
+            result.c_[1][3] = -2 * b * d;
+            result.c_[2][0] = -2 * a * c;
+            result.c_[2][1] = -2 * b * c;
+            result.c_[2][2] = 2 * (a * a + b * b) - 1;
+            result.c_[2][3] = -2 * c * d;
+            return result;
+        }
+        
+        // Scaling by three factors from a fixed point.
+        template <typename PointNum,
+            typename NumX, typename NumY, typename NumZ>
+        static affine_map3 scaling(point3<Unit,PointNum> fixed_p,
+            NumX kx, NumY ky, NumZ kz)
+        {
+            affine_map3 result;
+            result.c_[0][0] = kx;
+            result.c_[0][1] = 0;
+            result.c_[0][2] = 0;
+            result.c_[0][3] = fixed_p.x().value() * (1 - kx);
+            result.c_[1][0] = 0;
+            result.c_[1][1] = ky;
+            result.c_[1][2] = 0;
+            result.c_[1][3] = fixed_p.y().value() * (1 - ky);
+            result.c_[2][0] = 0;
+            result.c_[2][1] = 0;
+            result.c_[2][2] = kz;
+            result.c_[2][3] = fixed_p.z().value() * (1 - ky);
+            return result;
+        }
+        
+        // Inversion.
+        affine_map3 inverted()
+        {
+            auto determinant
+                = c_[0][0] * c_[1][1] * c_[2][2]
+                + c_[1][0] * c_[2][1] * c_[0][2]
+                + c_[2][0] * c_[0][1] * c_[1][2]
+                - c_[0][0] * c_[2][1] * c_[1][2]
+                - c_[2][0] * c_[1][1] * c_[0][2]
+                - c_[1][0] * c_[0][1] * c_[2][2];
+            affine_map3 result;
+            if (determinant == 0)
+            {
+                result.c_[0][0] = 0;
+                result.c_[0][1] = 0;
+                result.c_[0][2] = 0;
+                result.c_[0][3] = 0;
+                result.c_[1][0] = 0;
+                result.c_[1][1] = 0;
+                result.c_[1][2] = 0;
+                result.c_[1][3] = 0;
+                result.c_[2][0] = 0;
+                result.c_[2][1] = 0;
+                result.c_[2][2] = 0;
+                result.c_[2][3] = 0;
+            }
+            else
+            {
+                result.c_[0][0] = (c_[1][1] * c_[2][2]
+                    - c_[1][2] * c_[2][1]) * (1 / determinant);
+                result.c_[0][1] = (c_[0][2] * c_[2][1]
+                    - c_[0][1] * c_[2][2]) * (1 / determinant);
+                result.c_[0][2] = (c_[0][1] * c_[1][2]
+                    - c_[0][2] * c_[1][1]) * (1 / determinant);
+                result.c_[0][3]
+                    = (c_[0][1] * c_[1][3] * c_[2][2]
+                    + c_[0][2] * c_[1][1] * c_[2][3]
+                    + c_[0][3] * c_[1][2] * c_[2][1]
+                    - c_[0][1] * c_[1][2] * c_[2][3]
+                    - c_[0][2] * c_[1][3] * c_[2][1]
+                    - c_[0][3] * c_[1][1] * c_[2][2]
+                    ) * (1 / determinant);
+                result.c_[1][0] = (c_[1][2] * c_[2][0]
+                    - c_[1][0] * c_[2][2]) * (1 / determinant);
+                result.c_[1][1] = (c_[0][0] * c_[2][2]
+                    - c_[0][2] * c_[2][0]) * (1 / determinant);
+                result.c_[1][2] = (c_[0][2] * c_[1][0]
+                    - c_[0][0] * c_[1][2]) * (1 / determinant);
+                result.c_[1][3]
+                    = (c_[0][0] * c_[1][2] * c_[2][3]
+                    + c_[0][2] * c_[1][3] * c_[2][0]
+                    + c_[0][3] * c_[1][0] * c_[2][2]
+                    - c_[0][0] * c_[1][3] * c_[2][2]
+                    - c_[0][2] * c_[1][0] * c_[2][3]
+                    - c_[0][3] * c_[1][2] * c_[2][0]
+                    ) * (1 / determinant);
+                result.c_[2][0] = (c_[1][0] * c_[2][1]
+                    - c_[1][1] * c_[2][0]) * (1 / determinant);
+                result.c_[2][1] = (c_[0][1] * c_[2][0]
+                    - c_[0][0] * c_[2][1]) * (1 / determinant);
+                result.c_[2][2] = (c_[0][0] * c_[1][1]
+                    - c_[0][1] * c_[1][0]) * (1 / determinant);
+                result.c_[2][3]
+                    = (c_[0][0] * c_[1][3] * c_[2][1]
+                    + c_[0][1] * c_[1][0] * c_[2][3]
+                    + c_[0][3] * c_[1][1] * c_[2][0]
+                    - c_[0][0] * c_[1][1] * c_[2][3]
+                    - c_[0][1] * c_[1][3] * c_[2][0]
+                    - c_[0][3] * c_[1][0] * c_[2][1]
+                    ) * (1 / determinant);
+            }
+            return result;
+        }
+
+        Num coeff(int row, int col) const { return c_[row][col]; }
+        
+        Num& coeff(int row, int col) { return c_[row][col]; }
+
+    private:
+#ifdef MEASURES_USE_ANGLES
+        template <typename PointNum, class DirUnit, typename DirNum,
+            typename AngleNum>
+        static affine_map3 rotation_at_left_about_unit_vector_(
+            point3<Unit,PointNum> fixed_p, vect3<DirUnit,DirNum> unit_v,
+            AngleNum sine)
+        {
+            affine_map3 result;
+            auto u = unit_v.x().value();
+            auto v = unit_v.y().value();
+            auto w = unit_v.z().value();
+            auto u2 = u * u;
+            auto v2 = v * v;
+            auto w2 = w * w;
+            auto a = fixed_p.x().value();
+            auto b = fixed_p.y().value();
+            auto c = fixed_p.z().value();
+            result.c_[0][0] = u2;
+            result.c_[0][1] = u * v - w * sine;
+            result.c_[0][2] = u * w + v * sine;
+            result.c_[0][3] = (a * (1 - u2) - u * (b * v + c * w))
+                + (b * w - c * v) * sine;
+            result.c_[1][0] = u * v + w * sine;
+            result.c_[1][1] = v2;
+            result.c_[1][2] = v * w - u * sine;
+            result.c_[1][3] = (b * (1 - v2) - v * (a * u + c * w))
+                + (c * u - a * w) * sine;
+            result.c_[2][0] = u * w - v * sine;
+            result.c_[2][1] = v * w + u * sine;
+            result.c_[2][2] = w2;
+            result.c_[2][3] = (c * (1 - w2) - w * (a * u + b * v))
+                + (a * v - b * u) * sine;
+            return result;
+        }
+#endif
+        
+        Num c_[3][4];
+    };
+    
+    // Composition of two space affine transformations.
+    template <class Unit, typename Num1, typename Num2>
+    affine_map3<Unit,decltype(Num1()*Num2())> combine(
+        affine_map3<Unit,Num1> const& am1, affine_map3<Unit,Num2> const& am2)
+    {
+        affine_map3<Unit,decltype(Num1()*Num2())> result;
+        result.coeff(0, 0)
+            = am1.coeff(0, 0) * am2.coeff(0, 0)
+            + am1.coeff(0, 1) * am2.coeff(1, 0)
+            + am1.coeff(0, 2) * am2.coeff(2, 0);
+        result.coeff(0, 1)
+            = am1.coeff(0, 0) * am2.coeff(0, 1)
+            + am1.coeff(0, 1) * am2.coeff(1, 1)
+            + am1.coeff(0, 2) * am2.coeff(2, 1);
+        result.coeff(0, 2)
+            = am1.coeff(0, 0) * am2.coeff(0, 2)
+            + am1.coeff(0, 1) * am2.coeff(1, 2)
+            + am1.coeff(0, 2) * am2.coeff(2, 2);
+        result.coeff(0, 3)
+            = am1.coeff(0, 0) * am2.coeff(0, 3)
+            + am1.coeff(0, 1) * am2.coeff(1, 3)
+            + am1.coeff(0, 2) * am2.coeff(2, 3)
+            + am1.coeff(0, 3);
+        result.coeff(1, 0)
+            = am1.coeff(1, 0) * am2.coeff(0, 0)
+            + am1.coeff(1, 1) * am2.coeff(1, 0)
+            + am1.coeff(1, 2) * am2.coeff(2, 0);
+        result.coeff(1, 1)
+            = am1.coeff(1, 0) * am2.coeff(0, 1)
+            + am1.coeff(1, 1) * am2.coeff(1, 1)
+            + am1.coeff(1, 2) * am2.coeff(2, 1);
+        result.coeff(1, 2)
+            = am1.coeff(1, 0) * am2.coeff(0, 2)
+            + am1.coeff(1, 1) * am2.coeff(1, 2)
+            + am1.coeff(1, 2) * am2.coeff(2, 2);
+        result.coeff(1, 3)
+            = am1.coeff(1, 0) * am2.coeff(0, 3)
+            + am1.coeff(1, 1) * am2.coeff(1, 3)
+            + am1.coeff(1, 2) * am2.coeff(2, 3)
+            + am1.coeff(1, 3);
+        result.coeff(2, 0)
+            = am1.coeff(2, 0) * am2.coeff(0, 0)
+            + am1.coeff(2, 1) * am2.coeff(1, 0)
+            + am1.coeff(2, 2) * am2.coeff(2, 0);
+        result.coeff(2, 1)
+            = am1.coeff(2, 0) * am2.coeff(0, 1)
+            + am1.coeff(2, 1) * am2.coeff(1, 1)
+            + am1.coeff(2, 2) * am2.coeff(2, 1);
+        result.coeff(2, 2)
+            = am1.coeff(2, 0) * am2.coeff(0, 2)
+            + am1.coeff(2, 1) * am2.coeff(1, 2)
+            + am1.coeff(2, 2) * am2.coeff(2, 2);
+        result.coeff(2, 3)
+            = am1.coeff(2, 0) * am2.coeff(0, 3)
+            + am1.coeff(2, 1) * am2.coeff(1, 3)
+            + am1.coeff(2, 2) * am2.coeff(2, 3)
+            + am1.coeff(2, 3);
+        return result;
+    }
+
+    
     template <class Unit, typename Num = double>
     class point3
     {
@@ -1965,7 +3219,7 @@ namespace measures
 
         // Constructs using another point3 of the same unit and number type.
         template <typename Num1>
-        point3(const point3<Unit,Num1>& o):
+        point3(point3<Unit,Num1> const& o):
             x_(o.x().value()), y_(o.y().value()), z_(o.z().value()) { }
 
         // point3 += vect3 -> point3
@@ -2025,6 +3279,19 @@ namespace measures
         point1<Unit,Num>& z()
         { return reinterpret_cast<point1<Unit,Num>&>(z_); }
 
+
+        template <typename Num2>
+        point3<Unit,Num> mapped_by(affine_map3<Unit,Num2> const& lt) const
+        {
+            return point3<Unit,Num>(
+                lt.c_[0][0] * x_ + lt.c_[0][1] * y_ + lt.c_[0][2] * z_
+                    + lt.c_[0][3],
+                lt.c_[1][0] * x_ + lt.c_[1][1] * y_ + lt.c_[1][2] * z_
+                    + lt.c_[1][3],
+                lt.c_[2][0] * x_ + lt.c_[2][1] * y_ + lt.c_[2][2] * z_
+                    + lt.c_[2][3]);
+        }
+
     private:
 
         // Components.
@@ -2033,24 +3300,29 @@ namespace measures
 
     // midpoint(point3, point3, weight) -> point3
     template <class Unit, typename Num1, typename Num2, typename Num3>
-    point3<Unit,decltype((Num1()+Num2())*Num3())> midpoint(
+    point3<Unit,decltype(Num1()+Num2())> midpoint(
         point3<Unit,Num1> p1, point3<Unit,Num2> p2, Num3 weight)
     {
-        return point3<Unit,decltype((Num1()+Num2())*Num3())>(
-            p1.x().value() * (1 - weight) + p2.x().value() * weight,
-            p1.y().value() * (1 - weight) + p2.y().value() * weight,
-            p1.z().value() * (1 - weight) + p2.z().value() * weight);
+        typedef decltype(Num1()+Num2()) ResultNum;
+        return point3<Unit,ResultNum>(
+            p1.x().value() * static_cast<ResultNum>(1 - weight)
+                + p2.x().value() * static_cast<ResultNum>(weight),
+            p1.y().value() * static_cast<ResultNum>(1 - weight)
+                + p2.y().value() * static_cast<ResultNum>(weight),
+            p1.z().value() * static_cast<ResultNum>(1 - weight)
+                + p2.z().value() * static_cast<ResultNum>(weight));
     }
 
     // midpoint(point3, point3) -> point3
     template <class Unit, typename Num1, typename Num2>
-    point3<Unit,decltype((Num1()+Num2())*float())> midpoint(
+    point3<Unit,decltype(Num1()+Num2())> midpoint(
         point3<Unit,Num1> p1, point3<Unit,Num2> p2)
     {
-        return point3<Unit,decltype((Num1()+Num2())*float())>(
-            (p1.x().value() + p2.x().value()) * 0.5f,
-            (p1.y().value() + p2.y().value()) * 0.5f,
-            (p1.z().value() + p2.z().value()) * 0.5f);
+        typedef decltype(Num1()+Num2()) ResultNum;
+        return point3<Unit,ResultNum>(
+            (p1.x().value() + p2.x().value()) / static_cast<ResultNum>(2),
+            (p1.y().value() + p2.y().value()) / static_cast<ResultNum>(2),
+            (p1.z().value() + p2.z().value()) / static_cast<ResultNum>(2));
     }
 
     // barycentric_combination(int, point3[], Num[]) -> point3
@@ -2103,7 +3375,8 @@ namespace measures
     bool is_equal(point3<Unit,Num1> m1, point3<Unit,Num2> m2,
         vect1<Unit,Num3> tolerance)
     {
-        return squared_norm_value(m1 - m2)
+        // "abs" is needed for complex numbers.
+        return std::abs(squared_norm_value(m1 - m2))
             <= squared_norm_value(tolerance);
     }
 
@@ -2204,8 +3477,10 @@ namespace measures
     {
         return v / norm(v).value();
     }
+#endif
 
     
+#ifdef MEASURES_USE_ANGLES
     //////////////////// AZIMUTHS UTILS ////////////////////
 
     // Private.
@@ -2214,7 +3489,7 @@ namespace measures
     Num normalize_signed_azimuth(Num x, Num one_turn,
         typename std::enable_if<std::is_integral<Num>::value >::type* = 0)
     {
-        const Num half_turn = one_turn / 2;
+        Num const half_turn = one_turn / 2;
         if (std::abs(x) < half_turn) return x;
         Num x2 = (x + half_turn) % one_turn;
         return x2 >= 0 ? x2 - half_turn : x2 + half_turn;
@@ -2227,7 +3502,7 @@ namespace measures
         typename std::enable_if<std::is_floating_point<Num>
         ::value >::type* = 0)
     {
-        Num half_turn = one_turn * 0.5f;
+        Num half_turn = one_turn / 2;
         if (std::abs(x) < half_turn) return x;
         //Num x2 = std::fmod(x + half_turn, one_turn);
         Num x2 = static_cast<Num>(std::fmod(x + half_turn, one_turn));
@@ -2619,7 +3894,7 @@ namespace measures
     template <class Unit, typename Num>
     Num tan(unsigned_azimuth<Unit,Num> m)
     { return static_cast<Num>(std::tan(convert<radians>(m).value())); }
-
+#endif
     
     //////////////////// NUMERIC CASTS ////////////////////
     // All these functions return a measure of the same kind, unit,
@@ -2633,6 +3908,7 @@ namespace measures
     point1<Unit,ToNum> cast(point1<Unit,FromNum> m)
     { return point1<Unit,ToNum>(static_cast<ToNum>(m.value())); }
 
+#ifdef MEASURES_USE_2D
     template <typename ToNum, typename FromNum, class Unit>
     vect2<Unit,ToNum> cast(vect2<Unit,FromNum> m)
     {
@@ -2646,7 +3922,9 @@ namespace measures
         return point2<Unit,ToNum>(static_cast<ToNum>(m.x().value()),
             static_cast<ToNum>(m.y().value()));
     }
+#endif
 
+#ifdef MEASURES_USE_3D
     template <typename ToNum, typename FromNum, class Unit>
     vect3<Unit,ToNum> cast(vect3<Unit,FromNum> m)
     {
@@ -2662,7 +3940,9 @@ namespace measures
             static_cast<ToNum>(m.y().value()),
             static_cast<ToNum>(m.z().value()));
     }
+#endif
 
+#ifdef MEASURES_USE_ANGLES
     template <typename ToNum, typename FromNum, class Unit>
     signed_azimuth<Unit,ToNum> cast(signed_azimuth<Unit,FromNum> m)
     {
@@ -2674,6 +3954,7 @@ namespace measures
     {
         return unsigned_azimuth<Unit,ToNum>(static_cast<ToNum>(m.value()));
     }
+#endif
 }
 
 
@@ -2703,4 +3984,371 @@ namespace measures
         point1<Unit,Num> operator "" _##Operator(unsigned long long n)\
         { return point1<Unit,Num>(n); }\
     }
+#endif
+
+#ifdef MEASURES_USE_IOSTREAM
+#include <iostream>
+#include <sstream>
+#include <limits>
+
+// vect1			1 m
+// point1			[1] m
+// vect2			1 2 m
+// point2			[1 2] m
+// vect3			1 2 3 m
+// point3			[1 2 3] m
+// signed_azimuth	S1^
+// unsigned_azimuth	U1^
+
+namespace measures
+{
+	/////////////////// 1-DIMENSIONAL VECTORS AND POINTS ///////////////////
+
+	template <class Unit, typename Num>
+	std::ostream& operator <<(std::ostream& os,
+		vect1<Unit,Num> const& o)
+	{
+		os << o.value() << Unit::suffix();
+		return os;
+	}
+	
+	template <class Unit, typename Num>
+	std::istream& operator >>(std::istream& is,
+		vect1<Unit,Num>& o)
+	{
+		Num v;
+		is >> v;
+		is.ignore(strlen(Unit::suffix()));
+		o = vect1<Unit,Num>(v);
+		return is;
+	}
+	
+	template <class Unit, typename Num>
+	std::ostream& operator <<(std::ostream& os,
+		point1<Unit,Num> const& o)
+	{
+		os << "[" << o.value() << "]" << Unit::suffix();
+		return os;
+	}
+	
+	template <class Unit, typename Num>
+	std::istream& operator >>(std::istream& is,
+		point1<Unit,Num>& o)
+	{
+		Num v;
+		is.ignore();
+		is >> v;
+		is.ignore(1 + strlen(Unit::suffix()));
+		o = point1<Unit,Num>(v);
+		return is;
+	}
+
+
+#ifdef MEASURES_USE_2D
+	/////////////////// 2-DIMENSIONAL VECTORS AND POINTS ///////////////////
+
+    template <typename Num>
+	std::ostream& operator <<(std::ostream& os, linear_map2<Num> const& lm)
+	{
+        int const n_rows = 2;
+        int const n_cols = 2;
+        std::ostringstream ostr[n_rows];
+        for (int c = 0; c < n_cols; ++c)
+        {
+            std::stringstream::pos_type max_size = 0;
+            for (int r = 0; r < n_rows; ++r)
+            {
+                if (c == 0) ostr[r] << "| ";
+                ostr[r] << lm.coeff(r, c);
+                max_size = max(max_size, ostr[r].tellp());
+            }
+            for (int r = 0; r < n_rows; ++r)
+            {
+                ostr[r] << std::string(1 + max_size - ostr[r].tellp(), ' ');
+            }
+        }
+        for (int r = 0; r < n_rows; ++r)
+        {
+            os << ostr[r].str() << "|" << std::endl;
+        }
+		return os;
+	}
+
+	template <typename Num>
+	std::istream& operator >>(std::istream& is, linear_map2<Num>& lm)
+	{
+        int const n_rows = 2;
+        int const n_cols = 2;
+        for (int r = 0; r < n_rows; ++r)
+        {
+            is.ignore(2);
+            for (int c = 0; c < n_cols; ++c)
+            {
+                is >> lm.coeff(r, c);
+            }
+            is.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
+        }
+		return is;
+	}
+
+	template <class Unit, typename Num>
+	std::ostream& operator <<(std::ostream& os,
+        affine_map2<Unit,Num> const& am)
+	{
+        int const n_rows = 2;
+        int const n_cols = 3;
+        std::ostringstream ostr[n_rows];
+        for (int c = 0; c < n_cols; ++c)
+        {
+            std::stringstream::pos_type max_size = 0;
+            for (int r = 0; r < n_rows; ++r)
+            {
+                if (c == 0) ostr[r] << "| ";
+                ostr[r] << am.coeff(r, c);
+                if (c == n_cols - 1) ostr[r] << Unit::suffix();
+                max_size = max(max_size, ostr[r].tellp());
+            }
+            for (int r = 0; r < n_rows; ++r)
+            {
+                ostr[r] << std::string(1 + max_size - ostr[r].tellp(), ' ');
+            }
+        }
+        for (int r = 0; r < n_rows; ++r)
+        {
+            os << ostr[r].str() << "|" << std::endl;
+        }
+		return os;
+	}
+
+	template <class Unit, typename Num>
+	std::istream& operator >>(std::istream& is, affine_map2<Unit,Num>& am)
+	{
+        int const n_rows = 2;
+        int const n_cols = 3;
+        for (int r = 0; r < n_rows; ++r)
+        {
+            is.ignore(2);
+            for (int c = 0; c < n_cols; ++c)
+            {
+                is >> am.coeff(r, c);
+            }
+            is.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
+        }
+		return is;
+	}
+
+	template <class Unit, typename Num>
+	std::ostream& operator <<(std::ostream& os, vect2<Unit,Num> const& o)
+	{
+		os << o.x().value() << " " << o.y().value() << Unit::suffix();
+		return os;
+	}
+
+	template <class Unit, typename Num>
+	std::istream& operator >>(std::istream& is, vect2<Unit,Num>& o)
+	{
+		Num v1, v2;
+		is >> v1 >> v2;
+		is.ignore(strlen(Unit::suffix()));
+		o = vect2<Unit,Num>(v1, v2);
+		return is;
+	}
+	
+	template <class Unit, typename Num>
+	std::ostream& operator <<(std::ostream& os, point2<Unit,Num> const& o)
+	{
+		os << "[" << o.x().value() << " " << o.y().value() << "]"
+            << Unit::suffix();
+		return os;
+	}
+
+	template <class Unit, typename Num>
+	std::istream& operator >>(std::istream& is, point2<Unit,Num>& o)
+	{
+		Num v1, v2;
+		is.ignore();
+		is >> v1 >> v2;
+		is.ignore(1 + strlen(Unit::suffix()));
+		o = point2<Unit,Num>(v1, v2);
+		return is;
+	}
+#endif
+
+
+#ifdef MEASURES_USE_3D
+	/////////////////// 3-DIMENSIONAL VECTORS AND POINTS ///////////////////
+
+    template <typename Num>
+	std::ostream& operator <<(std::ostream& os, linear_map3<Num> const& lm)
+	{
+        int const n_rows = 3;
+        int const n_cols = 3;
+        std::ostringstream ostr[n_rows];
+        for (int c = 0; c < n_cols; ++c)
+        {
+            std::stringstream::pos_type max_size = 0;
+            for (int r = 0; r < n_rows; ++r)
+            {
+                if (c == 0) ostr[r] << "| ";
+                ostr[r] << lm.coeff(r, c);
+                max_size = max(max_size, ostr[r].tellp());
+            }
+            for (int r = 0; r < n_rows; ++r)
+            {
+                ostr[r] << std::string(1 + max_size - ostr[r].tellp(), ' ');
+            }
+        }
+        for (int r = 0; r < n_rows; ++r)
+        {
+            os << ostr[r].str() << "|" << std::endl;
+        }
+		return os;
+	}
+
+	template <typename Num>
+	std::istream& operator >>(std::istream& is, linear_map3<Num>& lm)
+	{
+        int const n_rows = 3;
+        int const n_cols = 3;
+        for (int r = 0; r < n_rows; ++r)
+        {
+            is.ignore(2);
+            for (int c = 0; c < n_cols; ++c)
+            {
+                is >> lm.coeff(r, c);
+            }
+            is.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
+        }
+		return is;
+	}
+
+	template <class Unit, typename Num>
+	std::ostream& operator <<(std::ostream& os,
+        affine_map3<Unit,Num> const& am)
+	{
+        int const n_rows = 3;
+        int const n_cols = 4;
+        std::ostringstream ostr[n_rows];
+        for (int c = 0; c < n_cols; ++c)
+        {
+            std::stringstream::pos_type max_size = 0;
+            for (int r = 0; r < n_rows; ++r)
+            {
+                if (c == 0) ostr[r] << "| ";
+                ostr[r] << am.coeff(r, c);
+                if (c == n_cols - 1) ostr[r] << Unit::suffix();
+                max_size = max(max_size, ostr[r].tellp());
+            }
+            for (int r = 0; r < n_rows; ++r)
+            {
+                ostr[r] << std::string(1 + max_size - ostr[r].tellp(), ' ');
+            }
+        }
+        for (int r = 0; r < n_rows; ++r)
+        {
+            os << ostr[r].str() << "|" << std::endl;
+        }
+		return os;
+	}
+
+	template <class Unit, typename Num>
+	std::istream& operator >>(std::istream& is, affine_map3<Unit,Num>& am)
+	{
+        int const n_rows = 3;
+        int const n_cols = 4;
+        for (int r = 0; r < n_rows; ++r)
+        {
+            is.ignore(2);
+            for (int c = 0; c < n_cols; ++c)
+            {
+                is >> am.coeff(r, c);
+            }
+            is.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
+        }
+		return is;
+	}
+
+	template <class Unit, typename Num>
+	std::ostream& operator <<(std::ostream& os, vect3<Unit,Num> const& o)
+	{
+		os << o.x().value() << " " << o.y().value() << " " << o.z().value()
+            << Unit::suffix();
+		return os;
+	}
+
+	template <class Unit, typename Num>
+	std::istream& operator >>(std::istream& is, vect3<Unit,Num>& o)
+	{
+		Num v1, v2, v3;
+		is >> v1 >> v2 >> v3;
+		is.ignore(strlen(Unit::suffix()));
+		o = vect3<Unit,Num>(v1, v2, v3);
+		return is;
+	}
+
+	template <class Unit, typename Num>
+	std::ostream& operator <<(std::ostream& os, point3<Unit,Num> const& o)
+	{
+		os << "[" << o.x().value() << " " << o.y().value()
+            << " " << o.z().value() << "]" << Unit::suffix();
+		return os;
+	}
+
+	template <class Unit, typename Num>
+	std::istream& operator >>(std::istream& is, point3<Unit,Num>& o)
+	{
+		Num v1, v2, v3;
+		is.ignore();
+		is >> v1 >> v2 >> v3;
+		is.ignore(1 + strlen(Unit::suffix()));
+		o = point3<Unit,Num>(v1, v2, v3);
+		return is;
+	}
+#endif
+
+
+#ifdef MEASURES_USE_ANGLES
+	/////////////////// AZIMUTHS ///////////////////
+	
+	template <class Unit, typename Num>
+	std::ostream& operator <<(std::ostream& os,
+		signed_azimuth<Unit,Num> const& o)
+	{
+		os << "S" << o.value() << Unit::suffix();
+		return os;
+	}
+	
+	template <class Unit, typename Num>
+	std::istream& operator >>(std::istream& is,
+		signed_azimuth<Unit,Num>& o)
+	{
+		Num v;
+		is.ignore();
+		is >> v;
+		is.ignore(strlen(Unit::suffix()));
+		o = signed_azimuth<Unit,Num>(v);
+		return is;
+	}
+	
+	template <class Unit, typename Num>
+	std::ostream& operator <<(std::ostream& os,
+		unsigned_azimuth<Unit,Num> const& o)
+	{
+		os << "U" << o.value() << Unit::suffix();
+		return os;
+	}
+	
+	template <class Unit, typename Num>
+	std::istream& operator >>(std::istream& is,
+		unsigned_azimuth<Unit,Num>& o)
+	{
+		Num v;
+		is.ignore();
+		is >> v;
+		is.ignore(strlen(Unit::suffix()));
+		o = unsigned_azimuth<Unit,Num>(v);
+		return is;
+	}
+#endif
+}
 #endif

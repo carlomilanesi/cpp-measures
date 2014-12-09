@@ -1,14 +1,13 @@
 #include "gtest/gtest.h"
-#include <iostream>
-#include <limits>
 #include <complex>
+
+#define MEASURES_USE_ALL
+#include "measures.hpp"
+using namespace measures;
 using namespace std;
 
-#include "measures_io.hpp"
-using namespace measures;
-
 MEASURES_MAGNITUDE(Space, metres, " m")
-MEASURES_ANGLE_UNIT(degrees, "°", 360, 0)
+MEASURES_ANGLE_UNIT(degrees, "^", 360, 0)
 MEASURES_ANGLE_UNIT(turns, " rev", 1, 0)
 #define AZIMUTH_TOLERANCE 0.00002f
 #define MIN_THRESHOLD 1e-14
@@ -22,10 +21,16 @@ decltype(Num1()/Num2()) modulo(Num1 a, Num2 b)
 }
 
 template <class T>
-class measureTest: public testing::Test { };
+class general_test: public testing::Test { };
+typedef testing::Types<int,long,long long,float,double,long double,
+    complex<float>,complex<double>,complex<long double>> AllImplementations;
+TYPED_TEST_CASE(general_test, AllImplementations);
 
-typedef testing::Types<int,long,long long,float,double,long double> Implementations;
-TYPED_TEST_CASE(measureTest, Implementations);
+template <class T>
+class comparison_test: public testing::Test { };
+typedef testing::Types<int,long,long long,float,double,long double>
+    ComparableImplementations;
+TYPED_TEST_CASE(comparison_test, ComparableImplementations);
 
 template <typename T>
 struct test_values
@@ -35,21 +40,21 @@ struct test_values
 };
 
 template <typename T>
-const T test_values<T>::v[] = {
-	numeric_limits<T>::lowest() + 1,
-	(numeric_limits<T>::lowest() + 1) / 17,
-	-static_cast<T>(std::sqrt(numeric_limits<T>::max() / 3)),
-	-1 - numeric_limits<T>::epsilon(),
+T const test_values<T>::v[] = {
+	numeric_limits<T>::lowest() + static_cast<T>(1),
+	(numeric_limits<T>::lowest() + static_cast<T>(1)) / static_cast<T>(17),
+	-static_cast<T>(std::sqrt(numeric_limits<T>::max() / static_cast<T>(10))),
+	static_cast<T>(-1) - numeric_limits<T>::epsilon(),
 	numeric_limits<T>::is_integer ? -1 : -numeric_limits<T>::min(),
 	0,
 	numeric_limits<T>::is_integer ? 1 : numeric_limits<T>::min(),
-	1 + numeric_limits<T>::epsilon(),
-	static_cast<T>(std::sqrt(numeric_limits<T>::max() / 3)),
-	numeric_limits<T>::max() / 17,
+	static_cast<T>(1) + numeric_limits<T>::epsilon(),
+	static_cast<T>(std::sqrt(numeric_limits<T>::max() / static_cast<T>(10))),
+	numeric_limits<T>::max() / static_cast<T>(17),
 	numeric_limits<T>::max(),
 };
 
-TEST(measureTest, turn)
+TEST(general_test, turn)
 {
 	EXPECT_FLOAT_EQ(360, degrees::turn_fraction<int>());
 	EXPECT_FLOAT_EQ(2 * pi, radians::turn_fraction<double>());
@@ -59,13 +64,12 @@ TEST(measureTest, turn)
 	EXPECT_FLOAT_EQ(1, turns::id().turn_fraction<int>());
 }
 
-//#if 0
-TYPED_TEST(measureTest, vect1)
+TYPED_TEST(general_test, vect1)
 {
 	auto epsilon = numeric_limits<TypeParam>::is_integer ?
-		1 : numeric_limits<TypeParam>::epsilon();
-	auto tolerance = vect1<metres,TypeParam>(epsilon * 2);
-	auto zero = vect1<metres,TypeParam>(0);
+		1 : numeric_limits<float>::epsilon();
+	auto tolerance = vect1<metres,float>(epsilon * 2);
+	auto zero = vect1<metres,float>(0);
 	
 	// Try several numeric values.
 	for (int i = 0; i < test_values<TypeParam>::count; ++i)
@@ -111,26 +115,26 @@ TYPED_TEST(measureTest, vect1)
 		{
 			m1 = vect1<metres,TypeParam>(val1);
 			auto m3 = m1 *= val2;
-			EXPECT_FLOAT_EQ(val1 * val2, m1.value());
-			EXPECT_FLOAT_EQ(val1 * val2, m3.value());
+			EXPECT_FLOAT_EQ(0, abs(val1 * val2 - m1.value()));
+			EXPECT_FLOAT_EQ(0, abs(val1 * val2 - m3.value()));
 			auto m4 = m1 *= val3;
-			EXPECT_FLOAT_EQ(val1 * val2 * val3, m1.value());
-			EXPECT_FLOAT_EQ(val1 * val2 * val3, m4.value());
+			EXPECT_FLOAT_EQ(0, abs(val1 * val2 * val3 - m1.value()));
+			EXPECT_FLOAT_EQ(0, abs(val1 * val2 * val3 - m4.value()));
 		}
 		
 		// Operator /=.
 		// All test-values.
-		if (val2 != 0)
+		if (abs(val2) != 0)
 		{
 			m1 = vect1<metres,TypeParam>(val1);
 			auto m3 = m1 /= val2;
 			EXPECT_EQ(val1 / val2, m1.value());
 			EXPECT_EQ(val1 / val2, m3.value());
-			if (val3 != 0)
+			if (abs(val3) != 0)
 			{
 				auto m4 = m1 /= val3;
-				EXPECT_FLOAT_EQ(val1 / val2 / val3, m1.value());
-				EXPECT_FLOAT_EQ(val1 / val2 / val3, m4.value());
+				EXPECT_FLOAT_EQ(0, abs(val1 / val2 / val3 - m1.value()));
+				EXPECT_FLOAT_EQ(0, abs(val1 / val2 / val3 - m4.value()));
 			}
 		}
 
@@ -141,11 +145,78 @@ TYPED_TEST(measureTest, vect1)
 		m2 = m1;
 		EXPECT_TRUE(m1 == m2);
 		EXPECT_FALSE(m1 != m2);
+		EXPECT_TRUE(is_equal(m1, m2, zero));
+
+		// Comparing equal measures with a tolerance.
+		// Avoid extreme test-values with a non-zero tolerance,
+		// as they would cause overflow by incrementing or decrementing.
+		if (0 < i && i < test_values<TypeParam>::count - 1)
+		{
+			EXPECT_TRUE(is_equal(m1, m2, tolerance));
+		}
+
+		// Comparing a measure with its half, if it is large,
+		// with its double if it is small.
+		if (abs(m1.value()) > 1) m2 /= 2;
+		else m1 *= 2;
+
+		// Ignore zero case, as its half is the same as itself.
+		if (abs(m2.value()) != 0)
+        {
+            EXPECT_FALSE(m1 == m2);
+            EXPECT_TRUE(m1 != m2);
+        }
+	}
+	
+	// Comparing 1 with a bit more than 1.
+	auto m3 = vect1<metres,TypeParam>(1);
+	auto m4 = vect1<metres,TypeParam>(1 + epsilon);
+	EXPECT_FALSE(m3 == m4);
+	EXPECT_TRUE(m3 != m4);
+	EXPECT_TRUE(is_equal(m3, m4, tolerance));
+
+	// Comparing -1 with a bit less than -1.
+	auto m5 = vect1<metres,TypeParam>(-1);
+	auto m6 = vect1<metres,TypeParam>(-1 - epsilon);
+	EXPECT_FALSE(m5 == m6);
+	EXPECT_TRUE(m5 != m6);
+	EXPECT_TRUE(is_equal(m5, m6, tolerance));
+
+	// Compare non-extreme numbers, far from zero,
+	// with a small tolerance or with a large tolerance.
+	auto m7 = vect1<metres,TypeParam>(45);
+	auto m8 = vect1<metres,TypeParam>(48);
+	auto tol1 = vect1<metres,float>(2);
+	auto tol2 = vect1<metres,float>(4);
+	EXPECT_FALSE(is_equal(m7, m8, tol1));
+	EXPECT_FALSE(is_equal(m8, m7, tol1));
+	EXPECT_TRUE(is_equal(m7, m8, tol2));
+	EXPECT_TRUE(is_equal(m8, m7, tol2));
+}
+
+TYPED_TEST(comparison_test, vect1)
+{
+	auto epsilon = numeric_limits<TypeParam>::is_integer ?
+		1 : numeric_limits<float>::epsilon();
+	auto tolerance = vect1<metres,float>(epsilon * 2);
+	auto zero = vect1<metres,float>(0);
+	
+	// Try several numeric values.
+	for (int i = 0; i < test_values<TypeParam>::count; ++i)
+	{
+		TypeParam val1 = test_values<TypeParam>::v[i];
+		TypeParam val2 = static_cast<TypeParam>(2.19);
+		TypeParam val3 = 3;
+
+		// Relational operators.
+		
+		// Comparing equal measures.
+		auto m1 = vect1<metres,TypeParam>(val1);
+		auto m2 = m1;
 		EXPECT_FALSE(m1 < m2);
 		EXPECT_TRUE(m1 <= m2);
 		EXPECT_FALSE(m1 > m2);
 		EXPECT_TRUE(m1 >= m2);
-		EXPECT_TRUE(is_equal(m1, m2, zero));
 		EXPECT_FALSE(is_less(m1, m2, zero));
 		EXPECT_TRUE(is_less_or_equal(m1, m2, zero));
 
@@ -154,22 +225,19 @@ TYPED_TEST(measureTest, vect1)
 		// as they would cause overflow by incrementing or decrementing.
 		if (0 < i && i < test_values<TypeParam>::count - 1)
 		{
-			EXPECT_TRUE(is_equal(m1, m2, tolerance));
 			EXPECT_FALSE(is_less(m1, m2, tolerance));
 			EXPECT_TRUE(is_less_or_equal(m1, m2, tolerance));
 		}
 
 		// Comparing a measure with its half, if it is large,
 		// with its double if it is small.
-		if (m1.value() < -1 || m1.value() > 1) m2 /= 2;
+		if (abs(m1.value()) > 1) m2 /= 2;
 		else m1 *= 2;
 
 		// Consider separately positive and negative cases.
 		// Ignore zero case, as its half is the same as itself.
 		if (m2.value() > 0)
 		{
-			EXPECT_FALSE(m1 == m2);
-			EXPECT_TRUE(m1 != m2);
 			EXPECT_FALSE(m1 < m2);
 			EXPECT_FALSE(m1 <= m2);
 			EXPECT_TRUE(m1 > m2);
@@ -180,8 +248,6 @@ TYPED_TEST(measureTest, vect1)
 		}
 		else if (m2.value() < 0)
 		{
-			EXPECT_FALSE(m1 == m2);
-			EXPECT_TRUE(m1 != m2);
 			EXPECT_TRUE(m1 < m2);
 			EXPECT_TRUE(m1 <= m2);
 			EXPECT_FALSE(m1 > m2);
@@ -195,8 +261,6 @@ TYPED_TEST(measureTest, vect1)
 	// Comparing 1 with a bit more than 1.
 	auto m3 = vect1<metres,TypeParam>(1);
 	auto m4 = vect1<metres,TypeParam>(1 + epsilon);
-	EXPECT_FALSE(m3 == m4);
-	EXPECT_TRUE(m3 != m4);
 	EXPECT_TRUE(m3 < m4);
 	EXPECT_TRUE(m3 <= m4);
 	EXPECT_FALSE(m3 > m4);
@@ -208,8 +272,6 @@ TYPED_TEST(measureTest, vect1)
 	// Comparing -1 with a bit less than -1.
 	auto m5 = vect1<metres,TypeParam>(-1);
 	auto m6 = vect1<metres,TypeParam>(-1 - epsilon);
-	EXPECT_FALSE(m5 == m6);
-	EXPECT_TRUE(m5 != m6);
 	EXPECT_FALSE(m5 < m6);
 	EXPECT_FALSE(m5 <= m6);
 	EXPECT_TRUE(m5 > m6);
@@ -222,12 +284,8 @@ TYPED_TEST(measureTest, vect1)
 	// with a small tolerance or with a large tolerance.
 	auto m7 = vect1<metres,TypeParam>(45);
 	auto m8 = vect1<metres,TypeParam>(48);
-	auto tol1 = vect1<metres,TypeParam>(2);
-	auto tol2 = vect1<metres,TypeParam>(4);
-	EXPECT_FALSE(is_equal(m7, m8, tol1));
-	EXPECT_FALSE(is_equal(m8, m7, tol1));
-	EXPECT_TRUE(is_equal(m7, m8, tol2));
-	EXPECT_TRUE(is_equal(m8, m7, tol2));
+	auto tol1 = vect1<metres,float>(2);
+	auto tol2 = vect1<metres,float>(4);
 
 	EXPECT_TRUE(is_less(m7, m8, tol1));
 	EXPECT_FALSE(is_less(m8, m7, tol1));
@@ -240,12 +298,110 @@ TYPED_TEST(measureTest, vect1)
 	EXPECT_TRUE(is_less_or_equal(m8, m7, tol2));
 }
 
-TYPED_TEST(measureTest, point1)
+TYPED_TEST(general_test, point1)
 {
 	auto epsilon = numeric_limits<TypeParam>::is_integer ?
-		1 : numeric_limits<TypeParam>::epsilon();
-	auto tolerance = vect1<metres,TypeParam>(epsilon * 2);
-	auto zero = vect1<metres,TypeParam>(0);
+		1 : numeric_limits<float>::epsilon();
+	auto tolerance = vect1<metres,float>(epsilon * 2);
+	auto zero = vect1<metres,float>(0);
+	
+	// Try several numeric values.
+	for (int i = 0; i < test_values<TypeParam>::count; ++i)
+	{
+		TypeParam val1 = test_values<TypeParam>::v[i];
+		TypeParam val2 = static_cast<TypeParam>(2.19);
+		TypeParam val3 = 3;
+		auto m1 = point1<metres,TypeParam>(val1);
+		auto m2 = vect1<metres,TypeParam>(val2);
+
+		// Construction and "value".
+		EXPECT_EQ(val1, m1.value());
+		EXPECT_EQ(val2, m2.value());
+
+		// Operator +=.
+		// All test-values except the largest one,
+		// as it would cause overflow by incrementing.
+		if (i < test_values<TypeParam>::count - 1)
+		{
+			m1 = point1<metres,TypeParam>(val1);
+			auto m3 = m1 += m2;
+			EXPECT_EQ(val1 + val2, m1.value());
+			EXPECT_EQ(val1 + val2, m3.value());
+		}
+
+		// Operator -=.
+		// All test-values except the lowest one,
+		// as it would cause overflow by decrementing.
+		if (0 < i)
+		{
+			m1 = point1<metres,TypeParam>(val1);
+			auto m3 = m1 -= m2;
+			EXPECT_EQ(val1 - val2, m1.value());
+			EXPECT_EQ(val1 - val2, m3.value());
+		}
+
+		// Relational operators.
+		
+		// Comparing equal measures.
+		m1 = point1<metres,TypeParam>(val1);
+		auto m3 = m1;
+		EXPECT_TRUE(m1 == m3);
+		EXPECT_FALSE(m1 != m3);
+		EXPECT_TRUE(is_equal(m1, m3, zero));
+
+		// Comparing equal measures with a tolerance.
+		// Avoid extreme test-values with a non-zero tolerance,
+		// as they would cause overflow by incrementing or decrementing.
+		if (0 < i && i < test_values<TypeParam>::count - 1)
+		{
+			EXPECT_TRUE(is_equal(m1, m3, tolerance));
+		}
+
+		// Comparing a measure with its half, if it is large,
+		// with its double if it is small.
+		m3 = point1<metres,TypeParam>(abs(m1.value()) > 1 ?
+            val1 / static_cast<TypeParam>(2) : val1 * static_cast<TypeParam>(2));
+
+		// Ignore zero case, as its half is the same as itself.
+		if (abs(m3.value()) != 0)
+        {
+            EXPECT_FALSE(m1 == m3);
+            EXPECT_TRUE(m1 != m3);
+        }
+	}
+	
+	// Comparing 1 with a bit more than 1.
+	auto m3 = point1<metres,TypeParam>(1);
+	auto m4 = point1<metres,TypeParam>(1 + epsilon);
+	EXPECT_FALSE(m3 == m4);
+	EXPECT_TRUE(m3 != m4);
+	EXPECT_TRUE(is_equal(m3, m4, tolerance));
+
+	// Comparing -1 with a bit less than -1.
+	auto m5 = point1<metres,TypeParam>(-1);
+	auto m6 = point1<metres,TypeParam>(-1 - epsilon);
+	EXPECT_FALSE(m5 == m6);
+	EXPECT_TRUE(m5 != m6);
+	EXPECT_TRUE(is_equal(m5, m6, tolerance));
+
+	// Compare non-extreme numbers, far from zero,
+	// with a small tolerance or with a large tolerance.
+	auto m7 = point1<metres,TypeParam>(45);
+	auto m8 = point1<metres,TypeParam>(48);
+	auto tol1 = vect1<metres,float>(2);
+	auto tol2 = vect1<metres,float>(4);
+	EXPECT_FALSE(is_equal(m7, m8, tol1));
+	EXPECT_FALSE(is_equal(m8, m7, tol1));
+	EXPECT_TRUE(is_equal(m7, m8, tol2));
+	EXPECT_TRUE(is_equal(m8, m7, tol2));
+}
+
+TYPED_TEST(comparison_test, point1)
+{
+	auto epsilon = numeric_limits<TypeParam>::is_integer ?
+		1 : numeric_limits<float>::epsilon();
+	auto tolerance = vect1<metres,float>(epsilon * 2);
+	auto zero = vect1<metres,float>(0);
 	
 	// Try several numeric values.
 	for (int i = 0; i < test_values<TypeParam>::count; ++i)
@@ -308,7 +464,7 @@ TYPED_TEST(measureTest, point1)
 		}
 
 		// Comparing a measure with its half.
-		m3 = point1<metres,TypeParam>(val1 / 2);
+		m3 = point1<metres,TypeParam>(val1 / static_cast<TypeParam>(2));
 		
 		// Consider separately positive and negative cases.
 		// Ignore zero case, as its half is the same as itself.
@@ -368,8 +524,8 @@ TYPED_TEST(measureTest, point1)
 	// with a small tolerance or with a large tolerance.
 	auto m7 = point1<metres,TypeParam>(45);
 	auto m8 = point1<metres,TypeParam>(48);
-	auto tol1 = vect1<metres,TypeParam>(2);
-	auto tol2 = vect1<metres,TypeParam>(4);
+	auto tol1 = vect1<metres,float>(2);
+	auto tol2 = vect1<metres,float>(4);
 	EXPECT_FALSE(is_equal(m7, m8, tol1));
 	EXPECT_FALSE(is_equal(m8, m7, tol1));
 	EXPECT_TRUE(is_equal(m7, m8, tol2));
@@ -386,9 +542,8 @@ TYPED_TEST(measureTest, point1)
 	EXPECT_TRUE(is_less_or_equal(m8, m7, tol2));
 }
 
-TYPED_TEST(measureTest, vectpoint1)
+TYPED_TEST(general_test, vectpoint1)
 {
-
 	// Midpoint.
 	// Try all pairs of numeric values except extremes.
 	for (int i1 = 1; i1 < test_values<TypeParam>::count - 1; ++i1)
@@ -399,10 +554,13 @@ TYPED_TEST(measureTest, vectpoint1)
 		{
 			TypeParam val2 = test_values<TypeParam>::v[i2];
 			auto m2 = point1<metres,TypeParam>(val2);
-			EXPECT_FLOAT_EQ((val1 + val2) * 0.5f, midpoint(m1, m2).value());
-			EXPECT_FLOAT_EQ(val1, midpoint(m1, m2, 0).value());
-			EXPECT_FLOAT_EQ(val2, midpoint(m1, m2, 1).value());
-			EXPECT_FLOAT_EQ(val1 * (1 - 0.23f) + val2 * 0.23f, midpoint(m1, m2, 0.23f).value());
+			EXPECT_FLOAT_EQ(0, abs((val1 + val2) / static_cast<TypeParam>(2)
+                - midpoint(m1, m2).value()));
+			EXPECT_FLOAT_EQ(0, abs(val1
+                - midpoint(m1, m2, 0).value()));
+			EXPECT_FLOAT_EQ(0, abs(val2 - midpoint(m1, m2, 1).value()));
+			EXPECT_FLOAT_EQ(0, abs(val1 * static_cast<TypeParam>(1 - 0.23f) + val2 * static_cast<TypeParam>(0.23f)
+                - midpoint(m1, m2, 0.23f).value()));
 		}
 	}
 
@@ -423,22 +581,22 @@ TYPED_TEST(measureTest, vectpoint1)
 			auto m4 = point1<metres,TypeParam>(val4);
 			point1<metres,TypeParam> point1array[] = { m1, m2, m3, m4 };
 			TypeParam weights[] = { 2, 3, 7, 4 };
-			EXPECT_FLOAT_EQ(val1 * weights[0],
-				barycentric_combination(1, point1array, weights).value());
-			EXPECT_FLOAT_EQ(val1 * weights[0] + val2 * weights[1],
-				barycentric_combination(2, point1array, weights).value());
-			EXPECT_FLOAT_EQ(val1 * weights[0] + val2 * weights[1]
-				+ val3 * weights[2],
-				barycentric_combination(3, point1array, weights).value());
-			EXPECT_FLOAT_EQ(val1 * weights[0] + val2 * weights[1]
-				+ val3 * weights[2] + val4 * weights[3],
-				barycentric_combination(4, point1array, weights).value());
+			EXPECT_FLOAT_EQ(0, abs(val1 * weights[0]
+				- barycentric_combination(1, point1array, weights).value()));
+			EXPECT_FLOAT_EQ(0, abs(val1 * weights[0] + val2 * weights[1]
+				- barycentric_combination(2, point1array, weights).value()));
+			EXPECT_FLOAT_EQ(0, abs(val1 * weights[0] + val2 * weights[1]
+				+ val3 * weights[2]
+				- barycentric_combination(3, point1array, weights).value()));
+			EXPECT_FLOAT_EQ(0, abs(val1 * weights[0] + val2 * weights[1]
+				+ val3 * weights[2] + val4 * weights[3]
+				- barycentric_combination(4, point1array, weights).value()));
 		}
 	}
 	
 	// Try all pairs of numeric values except extremes.
-	TypeParam sqrt_of_max = static_cast<TypeParam>(std::sqrt(test_values<TypeParam>
-		::v[test_values<TypeParam>::count - 1]));
+	auto sqrt_of_max = abs(static_cast<TypeParam>(std::sqrt(test_values<TypeParam>
+		::v[test_values<TypeParam>::count - 1])));
 	for (int i1 = 1; i1 < test_values<TypeParam>::count - 1; ++i1)
 	{
 		TypeParam val1 = test_values<TypeParam>::v[i1];
@@ -475,10 +633,16 @@ TYPED_TEST(measureTest, vectpoint1)
 			}
 			
 			// vect1 / N -> vect1
-			if (val2 != 0) EXPECT_EQ(val1 / val2, (v1 / val2).value());
+			if (abs(val2) != 0)
+            {
+                EXPECT_EQ(val1 / val2, (v1 / val2).value());
+            }
 
 			// vect1 / vect1 -> N
-			if (val2 != 0) EXPECT_EQ(val1 / val2, v1 / v2);
+			if (abs(val2) != 0)
+            {
+                EXPECT_EQ(val1 / val2, v1 / v2);
+            }
 		}
 	}
 	
@@ -495,12 +659,12 @@ TYPED_TEST(measureTest, vectpoint1)
 }
 
 //////////////////////////////////////////////////////////////////////
-TYPED_TEST(measureTest, vect2)
+TYPED_TEST(general_test, vect2)
 {
 	auto epsilon = numeric_limits<TypeParam>::is_integer ?
-		1 : numeric_limits<TypeParam>::epsilon();
-	auto tolerance = vect1<metres,TypeParam>(epsilon * 2);
-	auto zero = vect1<metres,TypeParam>(0);
+		1 : numeric_limits<float>::epsilon();
+	auto tolerance = vect1<metres,float>(epsilon * 2);
+	auto zero = vect1<metres,float>(0);
 	
 	// Try several numeric values.
 	for (int i = 0; i < test_values<TypeParam>::count; ++i)
@@ -563,34 +727,34 @@ TYPED_TEST(measureTest, vect2)
 			{
 				m1 = vect2<metres,TypeParam>(val1x, val1y);
 				auto m3 = m1 *= val2;
-				EXPECT_FLOAT_EQ(val1x * val2, m1.x().value());
-				EXPECT_FLOAT_EQ(val1y * val2, m1.y().value());
-				EXPECT_FLOAT_EQ(val1x * val2, m3.x().value());
-				EXPECT_FLOAT_EQ(val1y * val2, m3.y().value());
+				EXPECT_FLOAT_EQ(0, abs(val1x * val2 - m1.x().value()));
+				EXPECT_FLOAT_EQ(0, abs(val1y * val2 - m1.y().value()));
+				EXPECT_FLOAT_EQ(0, abs(val1x * val2 - m3.x().value()));
+				EXPECT_FLOAT_EQ(0, abs(val1y * val2 - m3.y().value()));
 				auto m4 = m1 *= val3;
-				EXPECT_FLOAT_EQ(val1x * val2 * val3, m1.x().value());
-				EXPECT_FLOAT_EQ(val1y * val2 * val3, m1.y().value());
-				EXPECT_FLOAT_EQ(val1x * val2 * val3, m4.x().value());
-				EXPECT_FLOAT_EQ(val1y * val2 * val3, m4.y().value());
+				EXPECT_FLOAT_EQ(0, abs(val1x * val2 * val3 - m1.x().value()));
+				EXPECT_FLOAT_EQ(0, abs(val1y * val2 * val3 - m1.y().value()));
+				EXPECT_FLOAT_EQ(0, abs(val1x * val2 * val3 - m4.x().value()));
+				EXPECT_FLOAT_EQ(0, abs(val1y * val2 * val3 - m4.y().value()));
 			}
 			
 			// Operator /=.
 			// All test-values.
-			if (val2 != 0)
+			if (abs(val2) != 0)
 			{
 				m1 = vect2<metres,TypeParam>(val1x, val1y);
 				auto m3 = m1 /= val2;
-				EXPECT_FLOAT_EQ(val1x / val2, m1.x().value());
-				EXPECT_FLOAT_EQ(val1y / val2, m1.y().value());
-				EXPECT_FLOAT_EQ(val1x / val2, m3.x().value());
-				EXPECT_FLOAT_EQ(val1y / val2, m3.y().value());
-				if (val3 != 0)
+				EXPECT_FLOAT_EQ(0, abs(val1x / val2 - m1.x().value()));
+				EXPECT_FLOAT_EQ(0, abs(val1y / val2 - m1.y().value()));
+				EXPECT_FLOAT_EQ(0, abs(val1x / val2 - m3.x().value()));
+				EXPECT_FLOAT_EQ(0, abs(val1y / val2 - m3.y().value()));
+				if (abs(val3) != 0)
 				{
 					auto m4 = m1 /= val3;
-					EXPECT_FLOAT_EQ(val1x / val2 / val3, m1.x().value());
-					EXPECT_FLOAT_EQ(val1y / val2 / val3, m1.y().value());
-					EXPECT_FLOAT_EQ(val1x / val2 / val3, m4.x().value());
-					EXPECT_FLOAT_EQ(val1y / val2 / val3, m4.y().value());
+					EXPECT_FLOAT_EQ(0, abs(val1x / val2 / val3 - m1.x().value()));
+					EXPECT_FLOAT_EQ(0, abs(val1y / val2 / val3 - m1.y().value()));
+					EXPECT_FLOAT_EQ(0, abs(val1x / val2 / val3 - m4.x().value()));
+					EXPECT_FLOAT_EQ(0, abs(val1y / val2 / val3 - m4.y().value()));
 				}
 			}
 
@@ -614,7 +778,7 @@ TYPED_TEST(measureTest, vect2)
 				// with its double if it is small.
 				if (abs(m2.x().value()) >= MIN_THRESHOLD)
 				{
-					if (squared_norm_value(m2) > 1) m2 /= 2;
+					if (abs(squared_norm_value(m2)) > 1) m2 /= 2;
 					else m1 *= 2;
 					EXPECT_FALSE(m1 == m2);
 					EXPECT_TRUE(m1 != m2);					
@@ -626,36 +790,44 @@ TYPED_TEST(measureTest, vect2)
 
 	// Comparing 1 with a bit more than 1.
 	auto m3 = vect2<metres,TypeParam>(1, 1);
-	auto m4 = vect2<metres,TypeParam>(1 + epsilon, 1 + epsilon);
+	auto m4 = vect2<metres,TypeParam>(1 + epsilon, 1);
+	auto m4b = vect2<metres,TypeParam>(1, 1 + epsilon);
 	EXPECT_FALSE(m3 == m4);
+	EXPECT_FALSE(m3 == m4b);
 	EXPECT_TRUE(m3 != m4);
+	EXPECT_TRUE(m3 != m4b);
 	EXPECT_TRUE(is_equal(m3, m4, tolerance));
+	EXPECT_TRUE(is_equal(m3, m4b, tolerance));
 
 	// Comparing -1 with a bit less than -1.
 	auto m5 = vect2<metres,TypeParam>(-1, -1);
-	auto m6 = vect2<metres,TypeParam>(-1 - epsilon, -1 - epsilon);
+	auto m6 = vect2<metres,TypeParam>(-1 - epsilon, -1);
+	auto m6b = vect2<metres,TypeParam>(-1, -1 - epsilon);
 	EXPECT_FALSE(m5 == m6);
+	EXPECT_FALSE(m5 == m6b);
 	EXPECT_TRUE(m5 != m6);
+	EXPECT_TRUE(m5 != m6b);
 	EXPECT_TRUE(is_equal(m5, m6, tolerance));
+	EXPECT_TRUE(is_equal(m5, m6b, tolerance));
 
 	// Compare non-extreme numbers, far from zero,
 	// with a small tolerance or with a large tolerance.
 	auto m7 = vect2<metres,TypeParam>(4, 4);
 	auto m8 = vect2<metres,TypeParam>(8, 8);
-	auto tol1 = vect1<metres,TypeParam>(5);
-	auto tol2 = vect1<metres,TypeParam>(6);
+	auto tol1 = vect1<metres,float>(5);
+	auto tol2 = vect1<metres,float>(6);
 	EXPECT_FALSE(is_equal(m7, m8, tol1));
 	EXPECT_FALSE(is_equal(m8, m7, tol1));
 	EXPECT_TRUE(is_equal(m7, m8, tol2));
 	EXPECT_TRUE(is_equal(m8, m7, tol2));
 }
 
-TYPED_TEST(measureTest, point2)
+TYPED_TEST(general_test, point2)
 {
 	auto epsilon = numeric_limits<TypeParam>::is_integer ?
-		1 : numeric_limits<TypeParam>::epsilon();
-	auto tolerance = vect1<metres,TypeParam>(epsilon * 2);
-	auto zero = vect1<metres,TypeParam>(0);
+		1 : numeric_limits<float>::epsilon();
+	auto tolerance = vect1<metres,float>(epsilon * 2);
+	auto zero = vect1<metres,float>(0);
 	
 	// Try several numeric values.
 	for (int i = 0; i < test_values<TypeParam>::count; ++i)
@@ -730,12 +902,23 @@ TYPED_TEST(measureTest, point2)
 				// with its double if it is small.
 				if (abs(m3.x().value()) >= MIN_THRESHOLD)
 				{
+                    auto m3b = m3;
 					if (abs(m3.x().value()) + abs(m3.y().value()) > 2)
-						m3 = point2<metres,TypeParam>(m3.x().value() / 2, m3.y().value() / 2);
-					else m1 = point2<metres,TypeParam>(m1.x().value() * 2, m1.y().value() * 2);
+                    {
+						m3 = point2<metres,TypeParam>(m3.x().value() / static_cast<TypeParam>(2), m3.y().value());
+						m3b = point2<metres,TypeParam>(m3.x().value(), m3.y().value() / static_cast<TypeParam>(2));
+					}
+                    else
+                    {
+                        m3 = point2<metres,TypeParam>(m3.x().value() * static_cast<TypeParam>(2), m3.y().value());
+                        m3b = point2<metres,TypeParam>(m3.x().value(), m3.y().value() * static_cast<TypeParam>(2));
+                    }
 					EXPECT_FALSE(m1 == m3);
+					EXPECT_FALSE(m1 == m3b);
 					EXPECT_TRUE(m1 != m3);					
+					EXPECT_TRUE(m1 != m3b);					
 					EXPECT_FALSE(is_equal(m1, m3, zero));
+					EXPECT_FALSE(is_equal(m1, m3b, zero));
 				}
 			}
 		}
@@ -743,31 +926,39 @@ TYPED_TEST(measureTest, point2)
 
 	// Comparing 1 with a bit more than 1.
 	auto m3 = point2<metres,TypeParam>(1, 1);
-	auto m4 = point2<metres,TypeParam>(1 + epsilon, 1 + epsilon);
+	auto m4 = point2<metres,TypeParam>(1 + epsilon, 1);
+	auto m4b = point2<metres,TypeParam>(1, 1 + epsilon);
 	EXPECT_FALSE(m3 == m4);
+	EXPECT_FALSE(m3 == m4b);
 	EXPECT_TRUE(m3 != m4);
+	EXPECT_TRUE(m3 != m4b);
 	EXPECT_TRUE(is_equal(m3, m4, tolerance));
+	EXPECT_TRUE(is_equal(m3, m4b, tolerance));
 
 	// Comparing -1 with a bit less than -1.
 	auto m5 = point2<metres,TypeParam>(-1, -1);
-	auto m6 = point2<metres,TypeParam>(-1 - epsilon, -1 - epsilon);
+	auto m6 = point2<metres,TypeParam>(-1 - epsilon, -1);
+	auto m6b = point2<metres,TypeParam>(-1, -1 - epsilon);
 	EXPECT_FALSE(m5 == m6);
+	EXPECT_FALSE(m5 == m6b);
 	EXPECT_TRUE(m5 != m6);
+	EXPECT_TRUE(m5 != m6b);
 	EXPECT_TRUE(is_equal(m5, m6, tolerance));
+	EXPECT_TRUE(is_equal(m5, m6b, tolerance));
 
 	// Compare non-extreme numbers, far from zero,
 	// with a small tolerance or with a large tolerance.
 	auto m7 = point2<metres,TypeParam>(4, 4);
 	auto m8 = point2<metres,TypeParam>(8, 8);
-	auto tol1 = vect1<metres,TypeParam>(5);
-	auto tol2 = vect1<metres,TypeParam>(6);
+	auto tol1 = vect1<metres,float>(5);
+	auto tol2 = vect1<metres,float>(6);
 	EXPECT_FALSE(is_equal(m7, m8, tol1));
 	EXPECT_FALSE(is_equal(m8, m7, tol1));
 	EXPECT_TRUE(is_equal(m7, m8, tol2));
 	EXPECT_TRUE(is_equal(m8, m7, tol2));
 }
 
-TYPED_TEST(measureTest, vectpoint2)
+TYPED_TEST(general_test, vectpoint2)
 {
 	// Midpoint.
 	// Try all pairs of pairs of numeric values except extremes.
@@ -786,15 +977,14 @@ TYPED_TEST(measureTest, vectpoint2)
 				{
 					TypeParam val2y = test_values<TypeParam>::v[j2];
 					auto m2 = point2<metres,TypeParam>(val2x, val2y);
-					
-					EXPECT_FLOAT_EQ((val1x + val2x) * 0.5f, midpoint(m1, m2).x().value());
-					EXPECT_FLOAT_EQ((val1y + val2y) * 0.5f, midpoint(m1, m2).y().value());
-					EXPECT_FLOAT_EQ(val1x, midpoint(m1, m2, 0).x().value());
-					EXPECT_FLOAT_EQ(val1y, midpoint(m1, m2, 0).y().value());
-					EXPECT_FLOAT_EQ(val2x, midpoint(m1, m2, 1).x().value());
-					EXPECT_FLOAT_EQ(val2y, midpoint(m1, m2, 1).y().value());
-					EXPECT_FLOAT_EQ(val1x * (1 - 0.23f) + val2x * 0.23f, midpoint(m1, m2, 0.23f).x().value());
-					EXPECT_FLOAT_EQ(val1y * (1 - 0.23f) + val2y * 0.23f, midpoint(m1, m2, 0.23f).y().value());
+					EXPECT_FLOAT_EQ(0, abs((val1x + val2x) / static_cast<TypeParam>(2) - midpoint(m1, m2).x().value()));
+					EXPECT_FLOAT_EQ(0, abs((val1y + val2y) / static_cast<TypeParam>(2) - midpoint(m1, m2).y().value()));
+					EXPECT_FLOAT_EQ(0, abs(val1x - midpoint(m1, m2, 0).x().value()));
+					EXPECT_FLOAT_EQ(0, abs(val1y - midpoint(m1, m2, 0).y().value()));
+					EXPECT_FLOAT_EQ(0, abs(val2x - midpoint(m1, m2, 1).x().value()));
+					EXPECT_FLOAT_EQ(0, abs(val2y - midpoint(m1, m2, 1).y().value()));
+					EXPECT_FLOAT_EQ(0, abs(val1x * static_cast<TypeParam>(1 - 0.23f) + val2x * static_cast<TypeParam>(0.23f) - midpoint(m1, m2, 0.23f).x().value()));
+					EXPECT_FLOAT_EQ(0, abs(val1y * static_cast<TypeParam>(1 - 0.23f) + val2y * static_cast<TypeParam>(0.23f) - midpoint(m1, m2, 0.23f).y().value()));
 				}
 			}
 		}
@@ -826,36 +1016,36 @@ TYPED_TEST(measureTest, vectpoint2)
 					auto m4 = point2<metres,TypeParam>(val4x, val4y);
 					point2<metres,TypeParam> point2array[] = { m1, m2, m3, m4 };
 					TypeParam weights[] = { 2, 3, 7, 4 };
-					EXPECT_FLOAT_EQ(val1x * weights[0],
-						barycentric_combination(1, point2array, weights).x().value());
-					EXPECT_FLOAT_EQ(val1y * weights[0],
-						barycentric_combination(1, point2array, weights).y().value());
-					EXPECT_FLOAT_EQ(val1x * weights[0] + val2x * weights[1],
-						barycentric_combination(2, point2array, weights).x().value());
-					EXPECT_FLOAT_EQ(val1y * weights[0] + val2y * weights[1],
-						barycentric_combination(2, point2array, weights).y().value());
-					EXPECT_FLOAT_EQ(val1x * weights[0] + val2x * weights[1]
-						+ val3x * weights[2],
-						barycentric_combination(3, point2array, weights).x().value());
-					EXPECT_FLOAT_EQ(val1y * weights[0] + val2y * weights[1]
-						+ val3y * weights[2],
-						barycentric_combination(3, point2array, weights).y().value());
-					EXPECT_FLOAT_EQ(val1x * weights[0] + val2x * weights[1]
-						+ val3x * weights[2] + val4x * weights[3],
-						barycentric_combination(4, point2array, weights).x().value());
-					EXPECT_FLOAT_EQ(val1y * weights[0] + val2y * weights[1]
-						+ val3y * weights[2] + val4y * weights[3],
-						barycentric_combination(4, point2array, weights).y().value());
+					EXPECT_FLOAT_EQ(0, abs(val1x * weights[0]
+						- barycentric_combination(1, point2array, weights).x().value()));
+					EXPECT_FLOAT_EQ(0, abs(val1y * weights[0]
+						- barycentric_combination(1, point2array, weights).y().value()));
+					EXPECT_FLOAT_EQ(0, abs(val1x * weights[0] + val2x * weights[1]
+						- barycentric_combination(2, point2array, weights).x().value()));
+					EXPECT_FLOAT_EQ(0, abs(val1y * weights[0] + val2y * weights[1]
+						- barycentric_combination(2, point2array, weights).y().value()));
+					EXPECT_FLOAT_EQ(0, abs(val1x * weights[0] + val2x * weights[1]
+						+ val3x * weights[2]
+						- barycentric_combination(3, point2array, weights).x().value()));
+					EXPECT_FLOAT_EQ(0, abs(val1y * weights[0] + val2y * weights[1]
+						+ val3y * weights[2]
+						- barycentric_combination(3, point2array, weights).y().value()));
+					EXPECT_FLOAT_EQ(0, abs(val1x * weights[0] + val2x * weights[1]
+						+ val3x * weights[2] + val4x * weights[3]
+						- barycentric_combination(4, point2array, weights).x().value()));
+					EXPECT_FLOAT_EQ(0, abs(val1y * weights[0] + val2y * weights[1]
+						+ val3y * weights[2] + val4y * weights[3]
+						- barycentric_combination(4, point2array, weights).y().value()));
 				}
 			}
 		}
 	}
 	
 	// Try all pairs of pairs of numeric values except extremes.
-	TypeParam sqrt_of_max = static_cast<TypeParam>(std::sqrt(test_values<TypeParam>
-		::v[test_values<TypeParam>::count - 1]));
-    TypeParam sqrt_of_min = static_cast<TypeParam>(std::sqrt(test_values<TypeParam>
-        ::v[(test_values<TypeParam>::count + 1) / 2]));
+	auto sqrt_of_max = abs(static_cast<TypeParam>(std::sqrt(test_values<TypeParam>
+		::v[test_values<TypeParam>::count - 1])));
+    auto sqrt_of_min = abs(static_cast<TypeParam>(std::sqrt(test_values<TypeParam>
+        ::v[(test_values<TypeParam>::count + 1) / 2])));
 	for (int i1 = 1; i1 < test_values<TypeParam>::count - 1; ++i1)
 	{
 		TypeParam val1x = test_values<TypeParam>::v[i1];
@@ -913,8 +1103,8 @@ TYPED_TEST(measureTest, vectpoint2)
 					}
 					
 					// vect2 / N -> vect2
-					if (val2x != 0) EXPECT_EQ(val1x / val2x, (v1 / val2x).x().value());
-					if (val2y != 0) EXPECT_EQ(val1y / val2y, (v1 / val2y).y().value());
+					if (abs(val2x) != 0) EXPECT_EQ(val1x / val2x, (v1 / val2x).x().value());
+					if (abs(val2y) != 0) EXPECT_EQ(val1y / val2y, (v1 / val2y).y().value());
 				}
 			}
 		}
@@ -930,20 +1120,20 @@ TYPED_TEST(measureTest, vectpoint2)
 			if (abs(val1x) < sqrt_of_max && abs(val1y) < sqrt_of_max
                 && abs(val1x) > sqrt_of_min && abs(val1y) > sqrt_of_min)
 			{
-				EXPECT_FLOAT_EQ(val1x * val1x + val1y * val1y, squared_norm_value(m1));
-				EXPECT_FLOAT_EQ(static_cast<TypeParam>(
-					std::sqrt(val1x * val1x + val1y * val1y)), norm(m1).value());
+				EXPECT_FLOAT_EQ(0, abs(val1x * val1x + val1y * val1y - squared_norm_value(m1)));
+				EXPECT_FLOAT_EQ(0, abs(static_cast<TypeParam>(
+					std::sqrt(val1x * val1x + val1y * val1y)) - norm(m1).value()));
 			}
 		}
 	}
 }
 
-TYPED_TEST(measureTest, vect3)
+TYPED_TEST(general_test, vect3)
 {
 	auto epsilon = numeric_limits<TypeParam>::is_integer ?
-		1 : numeric_limits<TypeParam>::epsilon();
-	auto tolerance = vect1<metres,TypeParam>(epsilon * 2);
-	auto zero = vect1<metres,TypeParam>(0);
+		1 : numeric_limits<float>::epsilon();
+	auto tolerance = vect1<metres,float>(epsilon * 2);
+	auto zero = vect1<metres,float>(0);
 	
 	// Try several numeric values.
 	for (int i = 0; i < test_values<TypeParam>::count; ++i)
@@ -1002,15 +1192,15 @@ TYPED_TEST(measureTest, vect3)
 				{
 					m1 = vect3<metres,TypeParam>(val1x, val1y, val1z);
 					auto m3 = m1 -= m2;
-					EXPECT_FLOAT_EQ(val1x - val2x, m1.x().value());
-					EXPECT_FLOAT_EQ(val1y - val2y, m1.y().value());
-					EXPECT_FLOAT_EQ(val1z - val2z, m1.z().value());
-					EXPECT_FLOAT_EQ(val2x, m2.x().value());
-					EXPECT_FLOAT_EQ(val2y, m2.y().value());
-					EXPECT_FLOAT_EQ(val2z, m2.z().value());
-					EXPECT_FLOAT_EQ(val1x - val2x, m3.x().value());
-					EXPECT_FLOAT_EQ(val1y - val2y, m3.y().value());
-					EXPECT_FLOAT_EQ(val1z - val2z, m3.z().value());
+					EXPECT_FLOAT_EQ(0, abs(val1x - val2x - m1.x().value()));
+					EXPECT_FLOAT_EQ(0, abs(val1y - val2y - m1.y().value()));
+					EXPECT_FLOAT_EQ(0, abs(val1z - val2z - m1.z().value()));
+					EXPECT_FLOAT_EQ(0, abs(val2x - m2.x().value()));
+					EXPECT_FLOAT_EQ(0, abs(val2y - m2.y().value()));
+					EXPECT_FLOAT_EQ(0, abs(val2z - m2.z().value()));
+					EXPECT_FLOAT_EQ(0, abs(val1x - val2x - m3.x().value()));
+					EXPECT_FLOAT_EQ(0, abs(val1y - val2y - m3.y().value()));
+					EXPECT_FLOAT_EQ(0, abs(val1z - val2z - m3.z().value()));
 				}
 
 				// Operator *=.
@@ -1022,42 +1212,42 @@ TYPED_TEST(measureTest, vect3)
 				{
 					m1 = vect3<metres,TypeParam>(val1x, val1y, val1z);
 					auto m3 = m1 *= val2;
-					EXPECT_FLOAT_EQ(val1x * val2, m1.x().value());
-					EXPECT_FLOAT_EQ(val1y * val2, m1.y().value());
-					EXPECT_FLOAT_EQ(val1z * val2, m1.z().value());
-					EXPECT_FLOAT_EQ(val1x * val2, m3.x().value());
-					EXPECT_FLOAT_EQ(val1y * val2, m3.y().value());
-					EXPECT_FLOAT_EQ(val1z * val2, m3.z().value());
+					EXPECT_FLOAT_EQ(0, abs(val1x * val2 - m1.x().value()));
+					EXPECT_FLOAT_EQ(0, abs(val1y * val2 - m1.y().value()));
+					EXPECT_FLOAT_EQ(0, abs(val1z * val2 - m1.z().value()));
+					EXPECT_FLOAT_EQ(0, abs(val1x * val2 - m3.x().value()));
+					EXPECT_FLOAT_EQ(0, abs(val1y * val2 - m3.y().value()));
+					EXPECT_FLOAT_EQ(0, abs(val1z * val2 - m3.z().value()));
 					auto m4 = m1 *= val3;
-					EXPECT_FLOAT_EQ(val1x * val2 * val3, m1.x().value());
-					EXPECT_FLOAT_EQ(val1y * val2 * val3, m1.y().value());
-					EXPECT_FLOAT_EQ(val1z * val2 * val3, m1.z().value());
-					EXPECT_FLOAT_EQ(val1x * val2 * val3, m4.x().value());
-					EXPECT_FLOAT_EQ(val1y * val2 * val3, m4.y().value());
-					EXPECT_FLOAT_EQ(val1z * val2 * val3, m4.z().value());
+					EXPECT_FLOAT_EQ(0, abs(val1x * val2 * val3 - m1.x().value()));
+					EXPECT_FLOAT_EQ(0, abs(val1y * val2 * val3 - m1.y().value()));
+					EXPECT_FLOAT_EQ(0, abs(val1z * val2 * val3 - m1.z().value()));
+					EXPECT_FLOAT_EQ(0, abs(val1x * val2 * val3 - m4.x().value()));
+					EXPECT_FLOAT_EQ(0, abs(val1y * val2 * val3 - m4.y().value()));
+					EXPECT_FLOAT_EQ(0, abs(val1z * val2 * val3 - m4.z().value()));
 				}
 				
 				// Operator /=.
 				// All test-values.
-				if (val2 != 0)
+				if (abs(val2) != 0)
 				{
 					m1 = vect3<metres,TypeParam>(val1x, val1y, val1z);
 					auto m3 = m1 /= val2;
-					EXPECT_FLOAT_EQ(val1x / val2, m1.x().value());
-					EXPECT_FLOAT_EQ(val1y / val2, m1.y().value());
-					EXPECT_FLOAT_EQ(val1z / val2, m1.z().value());
-					EXPECT_FLOAT_EQ(val1x / val2, m3.x().value());
-					EXPECT_FLOAT_EQ(val1y / val2, m3.y().value());
-					EXPECT_FLOAT_EQ(val1z / val2, m3.z().value());
-					if (val3 != 0)
+					EXPECT_FLOAT_EQ(0, abs(val1x / val2 - m1.x().value()));
+					EXPECT_FLOAT_EQ(0, abs(val1y / val2 - m1.y().value()));
+					EXPECT_FLOAT_EQ(0, abs(val1z / val2 - m1.z().value()));
+					EXPECT_FLOAT_EQ(0, abs(val1x / val2 - m3.x().value()));
+					EXPECT_FLOAT_EQ(0, abs(val1y / val2 - m3.y().value()));
+					EXPECT_FLOAT_EQ(0, abs(val1z / val2 - m3.z().value()));
+					if (abs(val3) != 0)
 					{
 						auto m4 = m1 /= val3;
-						EXPECT_FLOAT_EQ(val1x / val2 / val3, m1.x().value());
-						EXPECT_FLOAT_EQ(val1y / val2 / val3, m1.y().value());
-						EXPECT_FLOAT_EQ(val1z / val2 / val3, m1.z().value());
-						EXPECT_FLOAT_EQ(val1x / val2 / val3, m4.x().value());
-						EXPECT_FLOAT_EQ(val1y / val2 / val3, m4.y().value());
-						EXPECT_FLOAT_EQ(val1z / val2 / val3, m4.z().value());
+						EXPECT_FLOAT_EQ(0, abs(val1x / val2 / val3 - m1.x().value()));
+						EXPECT_FLOAT_EQ(0, abs(val1y / val2 / val3 - m1.y().value()));
+						EXPECT_FLOAT_EQ(0, abs(val1z / val2 / val3 - m1.z().value()));
+						EXPECT_FLOAT_EQ(0, abs(val1x / val2 / val3 - m4.x().value()));
+						EXPECT_FLOAT_EQ(0, abs(val1y / val2 / val3 - m4.y().value()));
+						EXPECT_FLOAT_EQ(0, abs(val1z / val2 / val3 - m4.z().value()));
 					}
 				}
 
@@ -1082,7 +1272,7 @@ TYPED_TEST(measureTest, vect3)
 					// with its double if it is small.
 					if (abs(m2.x().value()) >= MIN_THRESHOLD)
 					{
-						if (squared_norm_value(m2) > 1) m2 /= 2;
+						if (abs(squared_norm_value(m2)) > 1.f) m2 /= 2;
 						else m1 *= 2;
 						EXPECT_FALSE(m1 == m2);
 						EXPECT_TRUE(m1 != m2);
@@ -1095,36 +1285,52 @@ TYPED_TEST(measureTest, vect3)
 
 	// Comparing 1 with a bit more than 1.
 	auto m3 = vect3<metres,TypeParam>(1, 1, 1);
-	auto m4 = vect3<metres,TypeParam>(1 + epsilon, 1 + epsilon, 1 + epsilon);
+	auto m4 = vect3<metres,TypeParam>(1 + epsilon, 1, 1);
+	auto m4b = vect3<metres,TypeParam>(1, 1 + epsilon, 1);
+	auto m4c = vect3<metres,TypeParam>(1, 1, 1 + epsilon);
 	EXPECT_FALSE(m3 == m4);
+	EXPECT_FALSE(m3 == m4b);
+	EXPECT_FALSE(m3 == m4c);
 	EXPECT_TRUE(m3 != m4);
+	EXPECT_TRUE(m3 != m4b);
+	EXPECT_TRUE(m3 != m4c);
 	EXPECT_TRUE(is_equal(m3, m4, tolerance));
+	EXPECT_TRUE(is_equal(m3, m4b, tolerance));
+	EXPECT_TRUE(is_equal(m3, m4c, tolerance));
 
 	// Comparing -1 with a bit less than -1.
 	auto m5 = vect3<metres,TypeParam>(-1, -1, -1);
-	auto m6 = vect3<metres,TypeParam>(-1 - epsilon, -1 - epsilon, -1 - epsilon);
+	auto m6 = vect3<metres,TypeParam>(-1 - epsilon, -1, -1);
+	auto m6b = vect3<metres,TypeParam>(-1, -1 - epsilon, -1);
+	auto m6c = vect3<metres,TypeParam>(-1, -1, -1 - epsilon);
 	EXPECT_FALSE(m5 == m6);
+	EXPECT_FALSE(m5 == m6b);
+	EXPECT_FALSE(m5 == m6c);
 	EXPECT_TRUE(m5 != m6);
+	EXPECT_TRUE(m5 != m6b);
+	EXPECT_TRUE(m5 != m6c);
 	EXPECT_TRUE(is_equal(m5, m6, tolerance));
+	EXPECT_TRUE(is_equal(m5, m6b, tolerance));
+	EXPECT_TRUE(is_equal(m5, m6c, tolerance));
 
 	// Compare non-extreme numbers, far from zero,
 	// with a small tolerance or with a large tolerance.
 	auto m7 = vect3<metres,TypeParam>(4, 4, 4);
 	auto m8 = vect3<metres,TypeParam>(6, 6, 6);
-	auto tol1 = vect1<metres,TypeParam>(3);
-	auto tol2 = vect1<metres,TypeParam>(4);
+	auto tol1 = vect1<metres,float>(3);
+	auto tol2 = vect1<metres,float>(4);
 	EXPECT_FALSE(is_equal(m7, m8, tol1));
 	EXPECT_FALSE(is_equal(m8, m7, tol1));
 	EXPECT_TRUE(is_equal(m7, m8, tol2));
 	EXPECT_TRUE(is_equal(m8, m7, tol2));
 }
 
-TYPED_TEST(measureTest, point3)
+TYPED_TEST(general_test, point3)
 {
 	auto epsilon = numeric_limits<TypeParam>::is_integer ?
-		1 : numeric_limits<TypeParam>::epsilon();
-	auto tolerance = vect1<metres,TypeParam>(epsilon * 2);
-	auto zero = vect1<metres,TypeParam>(0);
+		1 : numeric_limits<float>::epsilon();
+	auto tolerance = vect1<metres,float>(epsilon * 2);
+	auto zero = vect1<metres,float>(0);
 	
 	// Try several numeric values.
 	for (int i = 0; i < test_values<TypeParam>::count; ++i)
@@ -1215,9 +1421,10 @@ TYPED_TEST(measureTest, point3)
 					// with its double if it is small.
 					if (abs(m3.x().value()) >= MIN_THRESHOLD)
 					{
+                        auto two = static_cast<TypeParam>(2);
 						if (abs(m3.x().value()) + abs(m3.y().value()) + abs(m3.z().value()) > 2)
-							m3 = point3<metres,TypeParam>(m3.x().value() / 2, m3.y().value() / 2, m3.z().value() / 2);
-						else m1 = point3<metres,TypeParam>(m1.x().value() * 2, m1.y().value() * 2, m1.z().value() * 2);
+							m3 = point3<metres,TypeParam>(m3.x().value() / two, m3.y().value() / two, m3.z().value() / two);
+						else m1 = point3<metres,TypeParam>(m1.x().value() * two, m1.y().value() * two, m1.z().value() * two);
 						EXPECT_FALSE(m1 == m3);
 						EXPECT_TRUE(m1 != m3);					
 						EXPECT_FALSE(is_equal(m1, m3, zero));
@@ -1245,15 +1452,15 @@ TYPED_TEST(measureTest, point3)
 	// with a small tolerance or with a large tolerance.
 	auto m7 = point3<metres,TypeParam>(4, 4, 4);
 	auto m8 = point3<metres,TypeParam>(6, 6, 6);
-	auto tol1 = vect1<metres,TypeParam>(3);
-	auto tol2 = vect1<metres,TypeParam>(4);
+	auto tol1 = vect1<metres,float>(3);
+	auto tol2 = vect1<metres,float>(4);
 	EXPECT_FALSE(is_equal(m7, m8, tol1));
 	EXPECT_FALSE(is_equal(m8, m7, tol1));
 	EXPECT_TRUE(is_equal(m7, m8, tol2));
 	EXPECT_TRUE(is_equal(m8, m7, tol2));
 }
 
-TYPED_TEST(measureTest, vectpoint3)
+TYPED_TEST(general_test, vectpoint3)
 {
 	// Midpoint.
 	// Try all triples of pairs of numeric values except extremes.
@@ -1277,19 +1484,19 @@ TYPED_TEST(measureTest, vectpoint3)
 						{
 							TypeParam val2z = test_values<TypeParam>::v[k2];
 							auto m2 = point3<metres,TypeParam>(val2x, val2y, val2z);
-							
-							EXPECT_FLOAT_EQ((val1x + val2x) * 0.5f, midpoint(m1, m2, 0.5f).x().value());
-							EXPECT_FLOAT_EQ((val1y + val2y) * 0.5f, midpoint(m1, m2, 0.5f).y().value());
-							EXPECT_FLOAT_EQ((val1z + val2z) * 0.5f, midpoint(m1, m2, 0.5f).z().value());
-							EXPECT_FLOAT_EQ(val1x, midpoint(m1, m2, 0).x().value());
-							EXPECT_FLOAT_EQ(val1y, midpoint(m1, m2, 0).y().value());
-							EXPECT_FLOAT_EQ(val1z, midpoint(m1, m2, 0).z().value());
-							EXPECT_FLOAT_EQ(val2x, midpoint(m1, m2, 1).x().value());
-							EXPECT_FLOAT_EQ(val2y, midpoint(m1, m2, 1).y().value());
-							EXPECT_FLOAT_EQ(val2z, midpoint(m1, m2, 1).z().value());
-							EXPECT_FLOAT_EQ(val1x * (1 - 0.23f) + val2x * 0.23f, midpoint(m1, m2, 0.23f).x().value());
-							EXPECT_FLOAT_EQ(val1y * (1 - 0.23f) + val2y * 0.23f, midpoint(m1, m2, 0.23f).y().value());
-							EXPECT_FLOAT_EQ(val1z * (1 - 0.23f) + val2z * 0.23f, midpoint(m1, m2, 0.23f).z().value());
+                            auto two = static_cast<TypeParam>(2);
+							EXPECT_FLOAT_EQ(0, abs((val1x + val2x) / two - midpoint(m1, m2).x().value()));
+							EXPECT_FLOAT_EQ(0, abs((val1y + val2y) / two - midpoint(m1, m2).y().value()));
+							EXPECT_FLOAT_EQ(0, abs((val1z + val2z) / two - midpoint(m1, m2).z().value()));
+							EXPECT_FLOAT_EQ(0, abs(val1x - midpoint(m1, m2, 0.f).x().value()));
+							EXPECT_FLOAT_EQ(0, abs(val1y - midpoint(m1, m2, 0.f).y().value()));
+							EXPECT_FLOAT_EQ(0, abs(val1z - midpoint(m1, m2, 0.f).z().value()));
+							EXPECT_FLOAT_EQ(0, abs(val2x - midpoint(m1, m2, 1.f).x().value()));
+							EXPECT_FLOAT_EQ(0, abs(val2y - midpoint(m1, m2, 1.f).y().value()));
+							EXPECT_FLOAT_EQ(0, abs(val2z - midpoint(m1, m2, 1.f).z().value()));
+							EXPECT_FLOAT_EQ(0, abs(val1x * static_cast<TypeParam>(1 - 0.23f) + val2x * static_cast<TypeParam>(0.23f) - midpoint(m1, m2, 0.23f).x().value()));
+							EXPECT_FLOAT_EQ(0, abs(val1y * static_cast<TypeParam>(1 - 0.23f) + val2y * static_cast<TypeParam>(0.23f) - midpoint(m1, m2, 0.23f).y().value()));
+							EXPECT_FLOAT_EQ(0, abs(val1z * static_cast<TypeParam>(1 - 0.23f) + val2z * static_cast<TypeParam>(0.23f) - midpoint(m1, m2, 0.23f).z().value()));
 						}
 					}
 				}
@@ -1331,36 +1538,36 @@ TYPED_TEST(measureTest, vectpoint3)
 							auto m4 = point3<metres,TypeParam>(val4x, val4y, val4z);
 							point3<metres,TypeParam> point3array[] = { m1, m2, m3, m4 };
 							TypeParam weights[] = { 2, 3, 7, 4 };
-							EXPECT_FLOAT_EQ(val1x * weights[0],
-								barycentric_combination(1, point3array, weights).x().value());
-							EXPECT_FLOAT_EQ(val1y * weights[0],
-								barycentric_combination(1, point3array, weights).y().value());
-							EXPECT_FLOAT_EQ(val1z * weights[0],
-								barycentric_combination(1, point3array, weights).z().value());
-							EXPECT_FLOAT_EQ(val1x * weights[0] + val2x * weights[1],
-								barycentric_combination(2, point3array, weights).x().value());
-							EXPECT_FLOAT_EQ(val1y * weights[0] + val2y * weights[1],
-								barycentric_combination(2, point3array, weights).y().value());
-							EXPECT_FLOAT_EQ(val1z * weights[0] + val2z * weights[1],
-								barycentric_combination(2, point3array, weights).z().value());
-							EXPECT_FLOAT_EQ(val1x * weights[0] + val2x * weights[1]
-								+ val3x * weights[2],
-								barycentric_combination(3, point3array, weights).x().value());
-							EXPECT_FLOAT_EQ(val1y * weights[0] + val2y * weights[1]
-								+ val3y * weights[2],
-								barycentric_combination(3, point3array, weights).y().value());
-							EXPECT_FLOAT_EQ(val1z * weights[0] + val2z * weights[1]
-								+ val3z * weights[2],
-								barycentric_combination(3, point3array, weights).z().value());
-							EXPECT_FLOAT_EQ(val1x * weights[0] + val2x * weights[1]
-								+ val3x * weights[2] + val4x * weights[3],
-								barycentric_combination(4, point3array, weights).x().value());
-							EXPECT_FLOAT_EQ(val1y * weights[0] + val2y * weights[1]
-								+ val3y * weights[2] + val4y * weights[3],
-								barycentric_combination(4, point3array, weights).y().value());
-							EXPECT_FLOAT_EQ(val1z * weights[0] + val2z * weights[1]
-								+ val3z * weights[2] + val4z * weights[3],
-								barycentric_combination(4, point3array, weights).z().value());
+							EXPECT_FLOAT_EQ(0, abs(val1x * weights[0]
+								- barycentric_combination(1, point3array, weights).x().value()));
+							EXPECT_FLOAT_EQ(0, abs(val1y * weights[0]
+								- barycentric_combination(1, point3array, weights).y().value()));
+							EXPECT_FLOAT_EQ(0, abs(val1z * weights[0]
+								- barycentric_combination(1, point3array, weights).z().value()));
+							EXPECT_FLOAT_EQ(0, abs(val1x * weights[0] + val2x * weights[1]
+								- barycentric_combination(2, point3array, weights).x().value()));
+							EXPECT_FLOAT_EQ(0, abs(val1y * weights[0] + val2y * weights[1]
+								- barycentric_combination(2, point3array, weights).y().value()));
+							EXPECT_FLOAT_EQ(0, abs(val1z * weights[0] + val2z * weights[1]
+								- barycentric_combination(2, point3array, weights).z().value()));
+							EXPECT_FLOAT_EQ(0, abs(val1x * weights[0] + val2x * weights[1]
+								+ val3x * weights[2]
+								- barycentric_combination(3, point3array, weights).x().value()));
+							EXPECT_FLOAT_EQ(0, abs(val1y * weights[0] + val2y * weights[1]
+								+ val3y * weights[2]
+								- barycentric_combination(3, point3array, weights).y().value()));
+							EXPECT_FLOAT_EQ(0, abs(val1z * weights[0] + val2z * weights[1]
+								+ val3z * weights[2]
+								- barycentric_combination(3, point3array, weights).z().value()));
+							EXPECT_FLOAT_EQ(0, abs(val1x * weights[0] + val2x * weights[1]
+								+ val3x * weights[2] + val4x * weights[3]
+								- barycentric_combination(4, point3array, weights).x().value()));
+							EXPECT_FLOAT_EQ(0, abs(val1y * weights[0] + val2y * weights[1]
+								+ val3y * weights[2] + val4y * weights[3]
+								- barycentric_combination(4, point3array, weights).y().value()));
+							EXPECT_FLOAT_EQ(0, abs(val1z * weights[0] + val2z * weights[1]
+								+ val3z * weights[2] + val4z * weights[3]
+								- barycentric_combination(4, point3array, weights).z().value()));
 						}
 					}
 				}
@@ -1369,10 +1576,10 @@ TYPED_TEST(measureTest, vectpoint3)
 	}
 
 	// Try all triples of pairs of numeric values except extremes.
-	TypeParam sqrt_of_max = static_cast<TypeParam>(std::sqrt(test_values<TypeParam>
-		::v[test_values<TypeParam>::count - 1]));
-    TypeParam sqrt_of_min = static_cast<TypeParam>(std::sqrt(test_values<TypeParam>
-        ::v[(test_values<TypeParam>::count + 1) / 2]));
+	auto sqrt_of_max = abs(static_cast<TypeParam>(std::sqrt(test_values<TypeParam>
+		::v[test_values<TypeParam>::count - 1])));
+    auto sqrt_of_min = abs(static_cast<TypeParam>(std::sqrt(test_values<TypeParam>
+        ::v[(test_values<TypeParam>::count + 1) / 2])));
 	for (int i1 = 1; i1 < test_values<TypeParam>::count - 1; ++i1)
 	{
 		TypeParam val1x = test_values<TypeParam>::v[i1];
@@ -1450,9 +1657,9 @@ TYPED_TEST(measureTest, vectpoint3)
 							}
 
 							// vect3 / N -> vect3
-							if (val2x != 0) EXPECT_EQ(val1x / val2x, (v1 / val2x).x().value());
-							if (val2y != 0) EXPECT_EQ(val1y / val2y, (v1 / val2y).y().value());
-							if (val2z != 0) EXPECT_EQ(val1z / val2z, (v1 / val2z).z().value());
+							if (abs(val2x) != 0) EXPECT_EQ(val1x / val2x, (v1 / val2x).x().value());
+							if (abs(val2y) != 0) EXPECT_EQ(val1y / val2y, (v1 / val2y).y().value());
+							if (abs(val2z) != 0) EXPECT_EQ(val1z / val2z, (v1 / val2z).z().value());
 						}
 					}
 				}
@@ -1473,9 +1680,9 @@ TYPED_TEST(measureTest, vectpoint3)
 				if (abs(val1x) < sqrt_of_max && abs(val1y) < sqrt_of_max && abs(val1z) < sqrt_of_max
                     && abs(val1x) > sqrt_of_min && abs(val1y) > sqrt_of_min && abs(val1z) > sqrt_of_min)
 				{
-					EXPECT_FLOAT_EQ(val1x * val1x + val1y * val1y + val1z * val1z, squared_norm_value(m1));
-					EXPECT_FLOAT_EQ(static_cast<TypeParam>(
-						std::sqrt(val1x * val1x + val1y * val1y + val1z * val1z)), norm(m1).value());
+					EXPECT_FLOAT_EQ(0, abs(val1x * val1x + val1y * val1y + val1z * val1z - squared_norm_value(m1)));
+					EXPECT_FLOAT_EQ(0, abs(static_cast<TypeParam>(
+						std::sqrt(val1x * val1x + val1y * val1y + val1z * val1z)) - norm(m1).value()));
 				}
 			}
 		}
@@ -1483,12 +1690,12 @@ TYPED_TEST(measureTest, vectpoint3)
 }
 
 //// azimuths
-TYPED_TEST(measureTest, signed_azimuth)
+TYPED_TEST(comparison_test, signed_azimuth)
 {
 	auto epsilon = numeric_limits<TypeParam>::is_integer ?
-		1 : numeric_limits<TypeParam>::epsilon();
-	auto tolerance = vect1<degrees,TypeParam>(epsilon * 2);
-	auto zero = vect1<degrees,TypeParam>(0);
+		1 : numeric_limits<float>::epsilon();
+	auto tolerance = vect1<degrees,float>(epsilon * 2);
+	auto zero = vect1<degrees,float>(0);
 	
 	// Try several numeric values except extremes.
 	for (int i = 1; i < test_values<TypeParam>::count - 1; ++i)
@@ -1501,7 +1708,7 @@ TYPED_TEST(measureTest, signed_azimuth)
 			auto m2 = vect1<degrees,TypeParam>(val2);
 
 			// Construction and "value".
-			EXPECT_NEAR(modulo(val1 + 180, 360) - 180, m1.value(), AZIMUTH_TOLERANCE);
+			EXPECT_NEAR(0, abs(modulo(val1 + static_cast<TypeParam>(180), static_cast<TypeParam>(360)) - static_cast<TypeParam>(180) - m1.value()), AZIMUTH_TOLERANCE);
 			EXPECT_EQ(val2, m2.value());
 
 			// Operator +=.
@@ -1511,8 +1718,8 @@ TYPED_TEST(measureTest, signed_azimuth)
 			{
 				m1 = signed_azimuth<degrees,TypeParam>(val1);
 				auto m3 = m1 += m2;
-				EXPECT_NEAR(modulo(val1 + val2 + 180, 360) - 180, m1.value(), AZIMUTH_TOLERANCE);
-				EXPECT_NEAR(modulo(val1 + val2 + 180, 360) - 180, m3.value(), AZIMUTH_TOLERANCE);
+				EXPECT_NEAR(0, abs(modulo(val1 + val2 + static_cast<TypeParam>(180), static_cast<TypeParam>(360)) - static_cast<TypeParam>(180) - m1.value()), AZIMUTH_TOLERANCE);
+				EXPECT_NEAR(0, abs(modulo(val1 + val2 + static_cast<TypeParam>(180), static_cast<TypeParam>(360)) - static_cast<TypeParam>(180) - m3.value()), AZIMUTH_TOLERANCE);
 			}
 
 			// Operator -=.
@@ -1522,8 +1729,8 @@ TYPED_TEST(measureTest, signed_azimuth)
 			{
 				m1 = signed_azimuth<degrees,TypeParam>(val1);
 				auto m3 = m1 -= m2;
-				EXPECT_NEAR(modulo(val1 - val2 + 180, 360) - 180, m1.value(), AZIMUTH_TOLERANCE);
-				EXPECT_NEAR(modulo(val1 - val2 + 180, 360) - 180, m3.value(), AZIMUTH_TOLERANCE);
+				EXPECT_NEAR(0, abs(modulo(val1 - val2 + static_cast<TypeParam>(180), static_cast<TypeParam>(360)) - static_cast<TypeParam>(180) - m1.value()), AZIMUTH_TOLERANCE);
+				EXPECT_NEAR(0, abs(modulo(val1 - val2 + static_cast<TypeParam>(180), static_cast<TypeParam>(360)) - static_cast<TypeParam>(180) - m3.value()), AZIMUTH_TOLERANCE);
 			}
 		}
 
@@ -1550,8 +1757,8 @@ TYPED_TEST(measureTest, signed_azimuth)
 		if (abs(val1) >= MIN_THRESHOLD && abs(val1) <= 360)
 		{
 			if (abs(val1) > 2)
-				m3 = signed_azimuth<degrees,TypeParam>(val1 / 2);
-			else m1 = signed_azimuth<degrees,TypeParam>(val1 * 2);
+				m3 = signed_azimuth<degrees,TypeParam>(val1 / static_cast<TypeParam>(2));
+			else m1 = signed_azimuth<degrees,TypeParam>(val1 * static_cast<TypeParam>(2));
 
 			EXPECT_FALSE(m1 == m3);
 			EXPECT_TRUE(m1 != m3);
@@ -1577,8 +1784,8 @@ TYPED_TEST(measureTest, signed_azimuth)
 	// with a small tolerance or with a large tolerance.
 	auto m7 = signed_azimuth<degrees,TypeParam>(45);
 	auto m8 = signed_azimuth<degrees,TypeParam>(48);
-	auto tol1 = vect1<degrees,TypeParam>(2);
-	auto tol2 = vect1<degrees,TypeParam>(4);
+	auto tol1 = vect1<degrees,float>(2);
+	auto tol2 = vect1<degrees,float>(4);
 	EXPECT_FALSE(is_equal(m7, m8, tol1));
 	EXPECT_FALSE(is_equal(m8, m7, tol1));
 	EXPECT_TRUE(is_equal(m7, m8, tol2));
@@ -1599,27 +1806,27 @@ TYPED_TEST(measureTest, signed_azimuth)
 				auto p2 = signed_azimuth<degrees,TypeParam>(val2);
 			
 				// signed_azimuth - signed_azimuth -> vect1
-				EXPECT_NEAR(modulo(val1 - val2 + 180, 360) - 180,
-					(p1 - p2).value(), AZIMUTH_TOLERANCE);
+				EXPECT_NEAR(0, abs(modulo(val1 - val2 + static_cast<TypeParam>(180), static_cast<TypeParam>(360)) - static_cast<TypeParam>(180)
+					- (p1 - p2).value()), AZIMUTH_TOLERANCE);
 
 				// signed_azimuth + vect1 -> signed_azimuth
-				EXPECT_NEAR(modulo(val1 + val2 + 180, 360) - 180,
-					(p1 + v2).value(), AZIMUTH_TOLERANCE);
+				EXPECT_NEAR(0, abs(modulo(val1 + val2 + static_cast<TypeParam>(180), static_cast<TypeParam>(360)) - static_cast<TypeParam>(180)
+					- (p1 + v2).value()), AZIMUTH_TOLERANCE);
 
 				// signed_azimuth - vect1 -> signed_azimuth
-				EXPECT_NEAR(modulo(val1 - val2 + 180, 360) - 180,
-					(p1 - v2).value(), AZIMUTH_TOLERANCE);
+				EXPECT_NEAR(0, abs(modulo(val1 - val2 + static_cast<TypeParam>(180), static_cast<TypeParam>(360)) - static_cast<TypeParam>(180)
+					- (p1 - v2).value()), AZIMUTH_TOLERANCE);
 			}
 		}
 	}	
 }
 ///////////////
-TYPED_TEST(measureTest, unsigned_azimuth)
+TYPED_TEST(comparison_test, unsigned_azimuth)
 {
 	auto epsilon = numeric_limits<TypeParam>::is_integer ?
-		1 : numeric_limits<TypeParam>::epsilon();
-	auto tolerance = vect1<degrees,TypeParam>(epsilon * 2);
-	auto zero = vect1<degrees,TypeParam>(0);
+		1 : numeric_limits<float>::epsilon();
+	auto tolerance = vect1<degrees,float>(epsilon * 2);
+	auto zero = vect1<degrees,float>(0);
 	
 	// Try several numeric values.
 	for (int i = 0; i < test_values<TypeParam>::count; ++i)
@@ -1632,7 +1839,7 @@ TYPED_TEST(measureTest, unsigned_azimuth)
 			auto m2 = vect1<degrees,TypeParam>(val2);
 
 			// Construction and "value".
-			EXPECT_NEAR(modulo(val1, 360), m1.value(), AZIMUTH_TOLERANCE);
+			EXPECT_NEAR(0, abs(modulo(val1, static_cast<TypeParam>(360)) - m1.value()), AZIMUTH_TOLERANCE);
 			EXPECT_EQ(val2, m2.value());
 
 			// Operator +=.
@@ -1642,8 +1849,8 @@ TYPED_TEST(measureTest, unsigned_azimuth)
 			{
 				m1 = unsigned_azimuth<degrees,TypeParam>(val1);
 				auto m3 = m1 += m2;
-				EXPECT_NEAR(modulo(val1 + val2, 360), m1.value(), AZIMUTH_TOLERANCE);
-				EXPECT_NEAR(modulo(val1 + val2, 360), m3.value(), AZIMUTH_TOLERANCE);
+				EXPECT_NEAR(0, abs(modulo(val1 + val2, static_cast<TypeParam>(360)) - m1.value()), AZIMUTH_TOLERANCE);
+				EXPECT_NEAR(0, abs(modulo(val1 + val2, static_cast<TypeParam>(360)) - m3.value()), AZIMUTH_TOLERANCE);
 			}
 
 			// Operator -=.
@@ -1653,8 +1860,8 @@ TYPED_TEST(measureTest, unsigned_azimuth)
 			{
 				m1 = unsigned_azimuth<degrees,TypeParam>(val1);
 				auto m3 = m1 -= m2;
-				EXPECT_NEAR(modulo(val1 - val2, 360), m1.value(), AZIMUTH_TOLERANCE);
-				EXPECT_NEAR(modulo(val1 - val2, 360), m3.value(), AZIMUTH_TOLERANCE);
+				EXPECT_NEAR(0, abs(modulo(val1 - val2, static_cast<TypeParam>(360)) - m1.value()), AZIMUTH_TOLERANCE);
+				EXPECT_NEAR(0, abs(modulo(val1 - val2, static_cast<TypeParam>(360)) - m3.value()), AZIMUTH_TOLERANCE);
 			}
 		}
 
@@ -1681,8 +1888,8 @@ TYPED_TEST(measureTest, unsigned_azimuth)
 		if (abs(val1) >= MIN_THRESHOLD && abs(val1) <= 360)
 		{
 			if (abs(val1) > 2)
-				m3 = unsigned_azimuth<degrees,TypeParam>(val1 / 2);
-			else m1 = unsigned_azimuth<degrees,TypeParam>(val1 * 2);
+				m3 = unsigned_azimuth<degrees,TypeParam>(val1 / static_cast<TypeParam>(2));
+			else m1 = unsigned_azimuth<degrees,TypeParam>(val1 * static_cast<TypeParam>(2));
 
 			EXPECT_FALSE(m1 == m3);
 			EXPECT_TRUE(m1 != m3);
@@ -1706,8 +1913,8 @@ TYPED_TEST(measureTest, unsigned_azimuth)
 	// with a small tolerance or with a large tolerance.
 	auto m7 = unsigned_azimuth<degrees,TypeParam>(45);
 	auto m8 = unsigned_azimuth<degrees,TypeParam>(48);
-	auto tol1 = vect1<degrees,TypeParam>(2);
-	auto tol2 = vect1<degrees,TypeParam>(4);
+	auto tol1 = vect1<degrees,float>(2);
+	auto tol2 = vect1<degrees,float>(4);
 	EXPECT_FALSE(is_equal(m7, m8, tol1));
 	EXPECT_FALSE(is_equal(m8, m7, tol1));
 	EXPECT_TRUE(is_equal(m7, m8, tol2));
@@ -1729,22 +1936,20 @@ TYPED_TEST(measureTest, unsigned_azimuth)
 				auto p2 = unsigned_azimuth<degrees,TypeParam>(val2);
 
 				// unsigned_azimuth - unsigned_azimuth -> vect1
-				EXPECT_NEAR(modulo(val1 - val2 + 180, 360) - 180,
-					(p1 - p2).value(), AZIMUTH_TOLERANCE);
+				EXPECT_NEAR(0, abs(modulo(val1 - val2 + static_cast<TypeParam>(180), static_cast<TypeParam>(360)) - static_cast<TypeParam>(180)
+					- (p1 - p2).value()), AZIMUTH_TOLERANCE);
 
 				// unsigned_azimuth + vect1 -> unsigned_azimuth
-				EXPECT_NEAR(modulo(val1 + val2, 360),
-					(p1 + v2).value(), AZIMUTH_TOLERANCE);
+				EXPECT_NEAR(0, abs(modulo(val1 + val2, static_cast<TypeParam>(360))
+					- (p1 + v2).value()), AZIMUTH_TOLERANCE);
 
 				// unsigned_azimuth - vect1 -> unsigned_azimuth
-				EXPECT_NEAR(modulo(val1 - val2, 360),
-					(p1 - v2).value(), AZIMUTH_TOLERANCE);
+				EXPECT_NEAR(0, abs(modulo(val1 - val2, static_cast<TypeParam>(360))
+					- (p1 - v2).value()), AZIMUTH_TOLERANCE);
 			}
 		}
 	}	
 }
-
-//#endif
 
 MEASURES_UNIT(km, Space, " Km", 1000, 0)
 MEASURES_UNIT(inches, Space, "\"", 0.0254, 0)
@@ -1761,9 +1966,9 @@ MEASURES_MAGNITUDE(Area, square_metres, " m2")
 MEASURES_UNIT(square_km, Area, " Km2", 1000000, 0)
 MEASURES_UNIT(square_inches, Area, "\"2", 0.0254 * 0.0254, 0)
 
-MEASURES_MAGNITUDE(Temperature, kelvin, "°K")
-MEASURES_UNIT(celsius, Temperature, "°C", 1, 273.15)
-MEASURES_UNIT(fahrenheit, Temperature, "°F", 5. / 9., 273.15 - 32. * 5. / 9.)
+MEASURES_MAGNITUDE(Temperature, kelvin, "^K")
+MEASURES_UNIT(celsius, Temperature, "^C", 1, 273.15)
+MEASURES_UNIT(fahrenheit, Temperature, "^F", 5. / 9., 273.15 - 32. * 5. / 9.)
 
 TEST(unitTest, magnitudes)
 {
@@ -1779,7 +1984,7 @@ TEST(unitTest, magnitudes)
 	EXPECT_EQ(1, metres::id().ratio());
 	EXPECT_EQ(0, metres::id().offset());
 
-	ASSERT_STREQ("°", degrees::id().suffix());
+	ASSERT_STREQ("^", degrees::id().suffix());
 	EXPECT_NEAR(pi / 180, degrees::id().ratio(), AZIMUTH_TOLERANCE);
 	EXPECT_EQ(0, degrees::id().offset());
 
@@ -1827,15 +2032,15 @@ TEST(unitTest, magnitudes)
 	EXPECT_EQ(0.0254 * 0.0254, square_inches::id().ratio());
 	EXPECT_EQ(0, square_inches::id().offset());
 
-	ASSERT_STREQ("°K", kelvin::id().suffix());
+	ASSERT_STREQ("^K", kelvin::id().suffix());
 	EXPECT_EQ(1, kelvin::id().ratio());
 	EXPECT_EQ(0, kelvin::id().offset());
 
-	ASSERT_STREQ("°C", celsius::id().suffix());
+	ASSERT_STREQ("^C", celsius::id().suffix());
 	EXPECT_EQ(1, celsius::id().ratio());
 	EXPECT_EQ(273.15, celsius::id().offset());
 
-	ASSERT_STREQ("°F", fahrenheit::id().suffix());
+	ASSERT_STREQ("^F", fahrenheit::id().suffix());
 	EXPECT_EQ(5. / 9., fahrenheit::id().ratio());
 	EXPECT_EQ(273.15 - 32. * 5. / 9., fahrenheit::id().offset());
 }
@@ -1854,7 +2059,7 @@ TEST(unitTest, units)
 	EXPECT_EQ(1, metres::ratio());
 	EXPECT_EQ(0, metres::offset());
 
-	ASSERT_STREQ("°", degrees::suffix());
+	ASSERT_STREQ("^", degrees::suffix());
 	EXPECT_NEAR(pi / 180, degrees::ratio(), AZIMUTH_TOLERANCE);
 	EXPECT_EQ(0, degrees::offset());
 
@@ -1902,15 +2107,15 @@ TEST(unitTest, units)
 	EXPECT_EQ(0.0254 * 0.0254, square_inches::ratio());
 	EXPECT_EQ(0, square_inches::offset());
 
-	ASSERT_STREQ("°K", kelvin::suffix());
+	ASSERT_STREQ("^K", kelvin::suffix());
 	EXPECT_EQ(1, kelvin::ratio());
 	EXPECT_EQ(0, kelvin::offset());
 
-	ASSERT_STREQ("°C", celsius::suffix());
+	ASSERT_STREQ("^C", celsius::suffix());
 	EXPECT_EQ(1, celsius::ratio());
 	EXPECT_EQ(273.15, celsius::offset());
 
-	ASSERT_STREQ("°F", fahrenheit::suffix());
+	ASSERT_STREQ("^F", fahrenheit::suffix());
 	EXPECT_EQ(5. / 9., fahrenheit::ratio());
 	EXPECT_EQ(273.15 - 32. * 5. / 9., fahrenheit::offset());
 }

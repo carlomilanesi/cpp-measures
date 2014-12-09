@@ -1,3 +1,4 @@
+#define MEASURES_USE_ALL
 #include "measures.hpp"
 using namespace measures;
 using namespace std;

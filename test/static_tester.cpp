@@ -5,28 +5,22 @@
 #include <sstream>  // for stringstream
 #include <string>   // for string
 #include <vector>   // for vector
+#include <algorithm>// for count
 using namespace std;
 
-// tags: @PERFECT, @ALLOWED, @ILLEGAL, @END
+// sample test for legality: [@[allowed snippet]@[illegal snippet]@]
 
-// Command-line suffix to discard output.
-string redirection_command;
+char const tag1[] = "[@[";
+char const tag2[] = "]@[";
+char const tag3[] = "]@]";
+size_t const tag1size = sizeof tag1 - 1;
+size_t const tag2size = sizeof tag2 - 1;
+size_t const tag3size = sizeof tag3 - 1;
 
-// Compiler command-line to output compiler version information.
-string compiler_version_command;
-
-// Compiler command-line prefix to check for compilation errors.
-string compiler_base_errors_command;
-
-// Compiler command-line prefix to check for compilation warnings.
-string compiler_base_warnings_command;
-
-int n_tot_hits = 0;  
-
-string getenv_string(const char *env_var_name, bool required = true)
+string getenv_string(const char *env_var_name)
 {
     const char *env_var_value = getenv(env_var_name);
-    if (! env_var_value && required)
+    if (! env_var_value)
     {
         cout << "Environment variabile '" << env_var_name
             << "' not defined." << endl;
@@ -40,179 +34,173 @@ string getenv_string(const char *env_var_name, bool required = true)
     return value;
 }
 
-bool CheckErrors(const string &filename, int n_block, int n_tot_blocks)
+void test_allowed_file(string const& file_name,
+    string const& compiler_base_command, string const& redirection_command)
 {
-    const string compiler_errors_command = compiler_base_errors_command + " "
-        + filename + " " + redirection_command;
-    cerr << setw(5) << n_block << "/" << n_tot_blocks << "\r";
-    return system(compiler_errors_command.c_str()) != 0;
-}
-
-bool CheckWarnings(const string &filename, int n_block, int n_tot_blocks)
-{
-    const string compiler_warnings_command = compiler_base_warnings_command
-        + " " + filename + " " + redirection_command;
-    cerr << setw(5) << n_block << "/" << n_tot_blocks << "\r";
-    return system(compiler_warnings_command.c_str()) != 0;
-}
-
-void test_file(string dir, string filename)
-{
-    if (system((compiler_version_command + " "
-        + redirection_command).c_str()) > 0)
+    string const compiler_command = compiler_base_command + " "
+        + file_name + " " + redirection_command;
+    if (system(compiler_command.c_str()) != 0)
     {
-        cout << "Wrong test: the command '"
-            << compiler_version_command << "' cannot be executed." << endl;
+        cout << "Error: some unexpected errors when running" << endl
+            << compiler_base_command + " " + file_name << endl;
         exit(EXIT_FAILURE);
     }
-    int n_hits = 0;
-    int n_current_block = 0;
-    string line;
-    int n_tot_blocks;
-    do
+}
+
+bool fail_snippet(bool first_snippet, string const& contents,
+    int i_curr_element, string const& temp_path,
+    string const& compiler_command)
+{
+    // Save file without every element, but for current element
+    // insert only a snippet.
+    ofstream os(temp_path.c_str());
+    if (! os)
     {
-        ++n_current_block;
-        ifstream is(filename);
-        if (! is)
+        cout << "Impossible to write temporary file '"
+            << temp_path << "'." << endl;
+        exit(EXIT_FAILURE);
+    }
+
+    int i_element = 0;
+    size_t tag1_pos;
+    size_t tag3_end_pos = 0;
+    while ((tag1_pos = contents.find(tag1, tag3_end_pos))
+        != string::npos)
+    {
+        // Find middle tag of the element.
+        size_t tag2_pos = contents.find(tag2, tag1_pos + tag1size);
+        
+        // Find end tag of the element.
+        size_t tag3_pos = contents.find(tag3, tag2_pos + tag2size);
+        
+        os << contents.substr(tag3_end_pos, tag1_pos - tag3_end_pos);
+        if (i_element == i_curr_element)
         {
-            cout << "Impossible to read file '" << filename
-                << "'." << endl;
-            exit(EXIT_FAILURE);
-        }
-        stringstream test_filename;
-        test_filename << dir << "_test.cpp";
-        ofstream os(test_filename.str().c_str());
-        if (! os)
-        {
-            cout << "Impossible to write temporary file '"
-                << test_filename.str() << "'." << endl;
-            exit(EXIT_FAILURE);
-        }
-        enum e_asserted { undefined, perfect, allowed, illegal }
-            asserted = undefined;
-        int n_line = 0;
-        int n_block = 0;
-        bool in_block = false;
-        while (is)
-        {
-            ++n_line;
-            getline(is, line);
-            if (line.find("@PERFECT") != string::npos)
+            if (first_snippet)
             {
-                if (in_block)
-                {
-                    cout << "Wrong test: @PERFECT marker"
-                        " found inside another block, at line " << n_line
-                        << "." << endl;
-                    exit(EXIT_FAILURE);
-                }
-                ++n_block;
-                in_block = true;
-                if (n_block == n_current_block) asserted = perfect;
-            }
-            else if (line.find("@ALLOWED") != string::npos)
-            {
-                if (in_block)
-                {
-                    cout << "Wrong test: @ALLOWED marker"
-                        " found inside another block, at line " << n_line
-                        << "." << endl;
-                    exit(EXIT_FAILURE);
-                }
-                ++n_block;
-                in_block = true;
-                if (n_block == n_current_block) asserted = allowed;
-            }
-            else if (line.find("@ILLEGAL") != string::npos)
-            {
-                if (in_block)
-                {
-                    cout << "Wrong test: @ILLEGAL marker"
-                        " found inside another block, at line " << n_line
-                        << "." << endl;
-                    exit(EXIT_FAILURE);
-                }
-                ++n_block;
-                in_block = true;
-                if (n_block == n_current_block) asserted = illegal;
-            }
-            else if (line.find("@END") != string::npos)
-            {
-                if (! in_block)
-                {
-                    cout << "Wrong test: @END marker"
-                        " found outside any block, at line " << n_line
-                        << "." << endl;
-                    exit(EXIT_FAILURE);
-                }
-                in_block = false;
+                os << contents.substr(tag1_pos + tag1size,
+                    tag2_pos - tag1_pos - tag1size);
             }
             else
             {
-                if ((! in_block || n_block == n_current_block)
-                    && line.size() > 0)
-                { os << line << endl; }
+                os << contents.substr(tag2_pos + tag2size,
+                    tag3_pos - tag2_pos - tag2size);
             }
         }
-        if (in_block)
+        
+        tag3_end_pos = tag3_pos + tag3size;
+        ++i_element;
+    }
+    os << contents.substr(tag3_end_pos);
+    os.close();
+    return system(compiler_command.c_str()) != 0;
+}
+
+string tell_position(string const& contents, int offset)
+{
+    stringstream sstr;
+    sstr << "row " << count(contents.begin(),
+        contents.begin() + offset, '\n') + 1
+        << " column " << offset - contents.rfind('\n', offset);
+    return sstr.str();
+}
+
+void test_illegal_file(string const& temp_dir, string const& file_name,
+    string const& compiler_base_command, string const& redirection_command)
+{
+    stringstream sstr;
+    sstr << ifstream(file_name).rdbuf();
+    string contents = sstr.str();
+    
+    // Check and count all elements in the file.
+    int n_elements = 0;
+    size_t tag1_pos;
+    size_t tag3_end_pos = 0;
+    while ((tag1_pos = contents.find(tag1, tag3_end_pos))
+        != string::npos)
+    {
+        // Find middle tag of the element.
+        size_t tag2_pos = contents.find(tag2, tag1_pos + tag1size);
+        if (tag2_pos == string::npos)
         {
-            cout << "Wrong test: missing @END marker." << endl;
+            cout << "Error: missing tag '" << tag2 << "' after "
+                << tell_position(contents, tag1_pos + tag1size)
+                << " in file '" << file_name + "'." << endl;
             exit(EXIT_FAILURE);
         }
-        n_tot_blocks = n_block;
-        is.close();
-        os.close();
 
-        switch (asserted)
+        // Find end tag of the element.
+        size_t tag3_pos = contents.find(tag3, tag2_pos + tag2size);
+        if (tag3_pos == string::npos)
         {
-            case perfect:
-                if (CheckWarnings(test_filename.str(), n_current_block, n_tot_blocks))
-                {
-                    cout << endl << compiler_base_warnings_command + " " + test_filename.str() << endl;
-                    cout << "****** Compilation with some errors or warnings, while a compilation with"
-                        " no errors nor warnings was expected." << endl;
-                    exit(EXIT_FAILURE);
-                }
-                break;
-            case allowed:
-                if (CheckErrors(test_filename.str(), n_current_block, n_tot_blocks))
-                {
-                    cout << endl << compiler_base_errors_command + " " + test_filename.str() << endl;
-                    cout << "****** Compilation with some errors,"
-                        " while a compilation with no errors was expected." << endl;
-                    exit(EXIT_FAILURE);
-                }
-                break;
-            case illegal:
-                if (! CheckErrors(test_filename.str(), n_current_block, n_tot_blocks))
-                {
-                    cout << endl << compiler_base_errors_command + " " + test_filename.str() << endl;
-                    cout << "****** ERROR: Compilation with no errors,"
-                        " while a compilation with errors was expected." << endl;
-                    exit(EXIT_FAILURE);
-                }
-                break;
-            default:
-                cout << "****** ERROR: No static test tag defined among PERFECT, ALLOWED, ILLEGAL." << endl;
-                exit(EXIT_FAILURE);
+            cout << "Error: missing tag '" << tag3 << "' after "
+                << tell_position(contents, tag2_pos + tag1size)
+                << " in file '" << file_name + "'." << endl;
+            exit(EXIT_FAILURE);
         }
-        ++n_hits;
-        remove((dir + "_test.cpp").c_str());
-    } while (n_current_block < n_tot_blocks);
-    n_tot_hits += n_hits;
+        
+        tag3_end_pos = tag3_pos + tag3size;
+        ++n_elements;
+    }
+    if (tag3_end_pos == 0)
+    {
+        cout << "Error: no tag '" << tag1 << "' in file '"
+            << file_name + "'." << endl;
+        exit(EXIT_FAILURE);
+    }
+
+    string const temp_path = temp_dir + "_TEST.cpp";
+    string const compiler_command = compiler_base_command + " "
+        + temp_path + " " + redirection_command;
+
+    // Loop for every test element in the file.
+    for (int i_element = 0; i_element < n_elements; ++i_element)
+    {
+        // Make two tests for the current element, one with the first part
+        // as allowed, and the other with the second part as illegal.
+        if (fail_snippet(true, contents, i_element, temp_path,
+            compiler_command))
+        {
+            cout << "Error: unexpected error for snippet n."
+                << (i_element + 1) << " asserted allowed in file '"
+                << file_name + "', when running" << endl
+                << compiler_base_command << " " << temp_path << endl;
+            exit(EXIT_FAILURE);
+        }
+
+        if (! fail_snippet(false, contents, i_element, temp_path,
+            compiler_command))
+        {
+            cout << "Error: no errors for snippet n."
+                << (i_element + 1) << " asserted illegal in file '"
+                << file_name + "', when running" << endl
+                << compiler_base_command << " " << temp_path << endl;
+            exit(EXIT_FAILURE);
+        }
+    }    
+}
+
+void print_usage(string const& msg)
+{
+    cout << msg << endl;
+    cout << "Usage: static_tester [/t<temporary directory>]"
+        " {/p<perfect file>} {/a<allowed file>} {/i<illegal file>}" << endl;
+    exit(EXIT_FAILURE);
 }
 
 int main(int argc, char *argv[])
 {
-    redirection_command = getenv_string("REDIRECTION_COMMAND");
-    compiler_version_command = getenv_string("COMPILER_VERSION_COMMAND");
-    compiler_base_errors_command
+    string redirection_command
+        = getenv_string("REDIRECTION_COMMAND");
+    string compiler_version_command
+        = getenv_string("COMPILER_VERSION_COMMAND");
+    string compiler_base_errors_command
         = getenv_string("COMPILER_BASE_ERRORS_COMMAND");
-    compiler_base_warnings_command
-        = getenv_string("COMPILER_BASE_WARNINGS_COMMAND", false);
+    string compiler_base_warnings_command
+        = getenv_string("COMPILER_BASE_WARNINGS_COMMAND");
 
-    string tmp_dir = "";
-    vector<string> input_files;
+    string temp_dir = "";
+    vector<string> perfect_files, allowed_files, illegal_files;
     for (int arg = 1; arg < argc; ++arg)
     {
         switch (argv[arg][0])
@@ -221,33 +209,57 @@ int main(int argc, char *argv[])
             case '/':
                 switch (argv[arg][1])
                 {
-                    case 't':
-                        tmp_dir = argv[arg] + 2;
-                        break;
+                    case 't': temp_dir = argv[arg] + 2; break;
+                    case 'p': perfect_files.push_back(argv[arg] + 2); break;
+                    case 'a': allowed_files.push_back(argv[arg] + 2); break;
+                    case 'i': illegal_files.push_back(argv[arg] + 2); break;
+                    default:
+                        print_usage(string(
+                            "Error: unrecognized command line option '")
+                            + argv[arg][1] + "'");
                 }
                 break;
             default:
-                input_files.push_back(argv[arg]);
+                print_usage(string(
+                    "Error: unrecognized command line argument '")
+                    + argv[arg] + "'");
         }
     }
-    if (input_files.size() == 0)
+    if (perfect_files.size() + allowed_files.size()
+        + illegal_files.size() == 0)
     {
-        cout << "Usage: static_tester [/t<temporary directory>] first_input_file ..." << endl;
+        print_usage("Error: No input files");
+    }
+    
+    if (system((compiler_version_command + " "
+        + redirection_command).c_str()) > 0)
+    {
+        cout << "Error: the command '" << compiler_version_command
+            << "' cannot be executed." << endl;
         exit(EXIT_FAILURE);
     }
-    for (auto file_name: input_files)
+
+    for (auto file_name: perfect_files)
     {
-        cout << "Processing test file '" << file_name << "'" << endl;
-        test_file(tmp_dir, file_name);
+        cout << "Processing file '" << file_name
+            << "', asserted PERFECT." << endl;
+        test_allowed_file(file_name,
+            compiler_base_warnings_command, redirection_command);
     }
-    if (input_files.size() == 1)
+    for (auto file_name: allowed_files)
     {
-       cout << "One test file processed." << endl;
+        cout << "Processing test file '" << file_name
+            << "', asserted ALLOWED." << endl;
+        test_allowed_file(file_name,
+            compiler_base_errors_command, redirection_command);
     }
-    else
+    for (auto file_name: illegal_files)
     {
-       cout << input_files.size() << " test files processed." << endl;
+        cout << "Processing test file '" << file_name
+            << "', asserted ILLEGAL." << endl;
+        test_illegal_file(temp_dir, file_name,
+            compiler_base_errors_command, redirection_command);
     }
-    cout << "No errors, total successes: " << n_tot_hits << "." << endl;
+    cout << "OK" << endl;
     return EXIT_SUCCESS;
 }

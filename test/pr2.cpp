@@ -1,4 +1,6 @@
-#include "measures_io.hpp"
+#define MEASURES_USE_3D
+#define MEASURES_USE_IOSTREAM
+#include "measures.hpp"
 #include <sstream>
 using namespace measures;
 using namespace std;

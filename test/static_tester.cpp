@@ -96,11 +96,11 @@ bool fail_snippet(bool first_snippet, string const& contents,
     return system(compiler_command.c_str()) != 0;
 }
 
-string tell_position(string const& contents, int offset)
+string tell_position(string const& contents, size_t offset)
 {
     stringstream sstr;
     sstr << "row " << count(contents.begin(),
-        contents.begin() + offset, '\n') + 1
+        contents.begin() + static_cast<ptrdiff_t>(offset), '\n') + 1
         << " column " << offset - contents.rfind('\n', offset);
     return sstr.str();
 }

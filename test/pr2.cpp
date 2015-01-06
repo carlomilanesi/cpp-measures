@@ -1,5 +1,5 @@
 #define MEASURES_USE_3D
-#define MEASURES_USE_IOSTREAM
+#define MEASURES_USE_IOSTREAMS
 #include "measures.hpp"
 #include <sstream>
 using namespace measures;

@@ -27,3 +27,15 @@ TODO:
 - test quaternions and complex numbers.
 - possibly allow mixed types in assignment operators (like vect1<inches,float>(3) += vect1<inches,double>(4))
 - write a script that extracts source code from the Tutorial, compiles and runs it, and checks its output.
+- write classes linear_transformation2, linear_transformation3, affine_transformation2, affine_transformation3, and
+  corresponding functions "transformed_by" in vect2, vect3, point2, point3.
+  Their member functions are:
+  methods for vect2, point2, vect3, point3:
+  coeff(int row, int column) const, coeff(int row, int column), combine, invert
+  factory methods for vect2:  rotation, projection, reflection, scaling
+  factory methods for point2: translation, rotation, projection, reflection, scaling
+  factory methods for vect3:  rotation, projection_onto_line, projection_onto_plane,
+  reflection_over_line, reflection_over_plane, scaling
+  factory methods for point3: translation, rotation, projection_onto_line, projection_onto_plane,
+  reflection_over_line, reflection_over_plane, scaling
+- Combine this library with some open source physics engine.

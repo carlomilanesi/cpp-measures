@@ -1,4 +1,5 @@
-# This script must be launched from "cpp-measure/test" directory.
+#!/bin/sh
+# This script must be launched from "cpp-measures/test" directory.
 
 gendir=../../gen/
 rm -f -r $gendir
@@ -21,7 +22,8 @@ COMPILER_BASE_ERRORS_COMMAND="clang -std=c++11 -fsyntax-only -Wfatal-errors -ped
 export COMPILER_BASE_ERRORS_COMMAND
 COMPILER_BASE_WARNINGS_COMMAND="clang -std=c++11 -fsyntax-only -Wfatal-errors -pedantic -Werror -I../"
 export COMPILER_BASE_WARNINGS_COMMAND
-${gendir}static_tester.exe -t${gendir} st_test_legal.cpp st_test1.cpp st_test2.cpp
+${gendir}static_tester.exe -t${gendir} /pst_test_perfect.cpp /ast_test_allowed.cpp /pst_test_core.cpp /pst_test_2d.cpp /pst_test_3d.cpp /pst_test_angles.cpp /pst_test_io.cpp
+
 # rm ${gendir}_*
 
 echo
@@ -36,7 +38,7 @@ COMPILER_BASE_ERRORS_COMMAND="g++-4.7 -std=c++11 -o /dev/null -Wfatal-errors -pe
 export COMPILER_BASE_ERRORS_COMMAND
 COMPILER_BASE_WARNINGS_COMMAND="g++-4.7 -std=c++11 -o /dev/null -Wfatal-errors -pedantic -Werror -I../"
 export COMPILER_BASE_WARNINGS_COMMAND
-${gendir}static_tester.exe -t${gendir} st_test_legal.cpp st_test1.cpp st_test2.cpp
+${gendir}static_tester.exe -t${gendir} /pst_test_perfect.cpp /ast_test_allowed.cpp /pst_test_core.cpp /pst_test_2d.cpp /pst_test_3d.cpp /pst_test_angles.cpp /pst_test_io.cpp
 # rm ${gendir}_*
 
 echo
@@ -48,8 +50,12 @@ echo ==== Dynamic tests ====
 # Use the following command when using GTest for Windows x64 (64-bit)
 # cl /nologo /Ox /EHsc /I ..\gtest-1.7.0\include /D _VARIADIC_MAX=10 dyn_tests.cpp /Fo..\gen\ /Fe..\gen\dyn_tests.exe /link /LIBPATH:..\gtest-1.7.0\msvc\x64\Release gtest.lib
 
-g++-4.7 -std=c++11 -g -O -I../ -isystem ../../gtest-1.7.0/include -Wall -Wextra -Werror dyn_tests.cpp -lpthread ../../gtest-1.7.0/make/gtest_main.a -Wfatal-errors -o${gendir}dyn_tests.exe
+# Not used option -O, because clang appears
+# to have a bug with long double optimization.
+clang++ -std=c++11 -s -g -I../ -isystem ../../gtest-1.7.0/include -Wall -Wextra -Werror dyn_tests.cpp -lpthread ../../gtest-1.7.0/make/gtest_main.a -Wfatal-errors -o${gendir}dyn_tests.exe
+${gendir}dyn_tests.exe
 
+g++-4.7 -std=c++11 -s -g -O -I../ -isystem ../../gtest-1.7.0/include -Wall -Wextra -Werror dyn_tests.cpp -lpthread ../../gtest-1.7.0/make/gtest_main.a -Wfatal-errors -o${gendir}dyn_tests.exe
 ${gendir}dyn_tests.exe
 
 echo OK

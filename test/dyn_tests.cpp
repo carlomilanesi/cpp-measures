@@ -1,6 +1,5 @@
 #include "gtest/gtest.h"
 #include <complex>
-
 #define MEASURES_USE_ALL
 #include "measures.hpp"
 using namespace measures;
@@ -13,6 +12,73 @@ MEASURES_ANGLE_UNIT(turns, " rev", 1, 0)
 #define MIN_THRESHOLD 1e-14
 #define MAX_THRESHOLD 1e14
 
+MEASURES_UNIT(km, Space, " Km", 1000, 0)
+MEASURES_UNIT(inches, Space, "\"", 0.0254, 0)
+
+MEASURES_MAGNITUDE(Time, seconds, " s")
+MEASURES_UNIT(hours, Time, " h", 3600, 0)
+MEASURES_UNIT(days, Time, " d", 86400, 0)
+
+MEASURES_MAGNITUDE(Speed, metres_per_second, " m/s")
+MEASURES_UNIT(km_per_hour, Speed, " Km/h", 1 / 3.6, 0)
+MEASURES_UNIT(inches_per_day, Speed, "\"/day", 86400 / 0.0254, 0)
+
+MEASURES_MAGNITUDE(Area, square_metres, " m2")
+MEASURES_UNIT(square_km, Area, " Km2", 1000000, 0)
+MEASURES_UNIT(square_inches, Area, "\"2", 0.0254 * 0.0254, 0)
+
+MEASURES_MAGNITUDE(Temperature, kelvin, "^K")
+MEASURES_UNIT(celsius, Temperature, "^C", 1, 273.15)
+MEASURES_UNIT(fahrenheit, Temperature, "^F", 5. / 9., 273.15 - 32. * 5. / 9.)
+
+MEASURES_MAGNITUDE(Volume, cubic_metres, " m3")
+MEASURES_MAGNITUDE(Density, kg_per_cubic_metre, " Kg/m3")
+MEASURES_MAGNITUDE(Mass, kg, " Kg")
+MEASURES_MAGNITUDE(Force, newtons, " N")
+MEASURES_MAGNITUDE(Energy, joules, " J")
+MEASURES_MAGNITUDE(Torque, newton_metres, " Nm")
+MEASURES_MAGNITUDE(Unitless, units, " u.")
+MEASURES_UNIT(dozens, Unitless, " doz.", 12, 0)
+MEASURES_MAGNITUDE(MagneticField, tesla, " T")
+MEASURES_MAGNITUDE(ElectricField, volts_per_metre, " V/m")
+
+MEASURES_DERIVED_1_1(cubic_metres, kg_per_cubic_metre, kg)
+MEASURES_DERIVED_SQ_1(metres, square_metres)
+MEASURES_DERIVED_SQ_2(metres, square_metres, square_metres)
+MEASURES_DERIVED_SQ_3(metres, cubic_metres, cubic_metres)
+MEASURES_DERIVED_1_3(seconds, metres_per_second, metres)
+MEASURES_DERIVED_1_1(newtons, metres, joules)
+MEASURES_DERIVED_2_2(newtons, metres, joules, newton_metres)
+MEASURES_DERIVED_3_3(newtons, metres, joules, newton_metres)
+MEASURES_DERIVED_1_1(metres_per_second, tesla, volts_per_metre)
+MEASURES_DERIVED_2_2(metres_per_second, tesla, volts_per_metre, volts_per_metre)
+MEASURES_DERIVED_3_3(metres_per_second, tesla, volts_per_metre, volts_per_metre)
+MEASURES_DERIVED_SQ_1(units, units)
+MEASURES_DERIVED_SQ_2(units, units, units)
+MEASURES_DERIVED_SQ_3(units, units, units)
+
+MEASURES_DERIVED_SQ_1(inches, square_inches)
+MEASURES_DERIVED_1_1(hours, km_per_hour, km)
+MEASURES_DERIVED_1_2(hours, km_per_hour, km)
+MEASURES_DERIVED_1_3(hours, km_per_hour, km)
+
+
+template <typename ValueType, class MeasureType>
+bool equality(ValueType expected_value, MeasureType actual_measure)
+{
+    typedef decltype(abs(typename MeasureType::value_type())) val_type;
+	auto tolerance = numeric_limits<val_type>::is_integer ?
+		1 : 512 * numeric_limits<val_type>::epsilon();
+    auto rel_diff = abs(
+        (static_cast<typename MeasureType::value_type>(expected_value) - 
+        actual_measure.value())
+        / (abs(expected_value) == 0
+        ? static_cast<decltype(expected_value)>(1) : expected_value));
+    return rel_diff < tolerance;
+}
+
+#define EQUAL(expected, actual) EXPECT_TRUE(equality(expected, actual));
+
 template <typename Num1, typename Num2>
 decltype(Num1()/Num2()) modulo(Num1 a, Num2 b)
 {
@@ -20,29 +86,41 @@ decltype(Num1()/Num2()) modulo(Num1 a, Num2 b)
   return result >= 0 ? result : result + b;
 }
 
+// These are all the supported inner types
+// that support any operation.
 template <class T>
-class general_test: public testing::Test { };
-typedef testing::Types<int,long,long long,float,double,long double,
-    complex<float>,complex<double>,complex<long double>> AllImplementations;
-TYPED_TEST_CASE(general_test, AllImplementations);
+class fractional_test: public testing::Test { };
+typedef testing::Types<float,double,long double>
+    FractionalImplementations;
+TYPED_TEST_CASE(fractional_test, FractionalImplementations);
 
+// These are all the supported inner types
+// that may not support angles and maps.
 template <class T>
 class comparison_test: public testing::Test { };
 typedef testing::Types<int,long,long long,float,double,long double>
     ComparableImplementations;
 TYPED_TEST_CASE(comparison_test, ComparableImplementations);
 
+// These are all the supported inner types
+// that may not support comparison operations, angle operations, and mappings.
+template <class T>
+class general_test: public testing::Test { };
+typedef testing::Types<int,long,long long,float,double,long double,
+    complex<float>,complex<double>,complex<long double>> AllImplementations;
+TYPED_TEST_CASE(general_test, AllImplementations);
+
 template <typename T>
 struct test_values
 {
-	static const int count = 11;
-	static const T v[count];
+	static int const count = 11;
+	static T const v[count];
 };
 
 template <typename T>
 T const test_values<T>::v[] = {
 	numeric_limits<T>::lowest() + static_cast<T>(1),
-	(numeric_limits<T>::lowest() + static_cast<T>(1)) / static_cast<T>(17),
+	(numeric_limits<T>::lowest() + static_cast<T>(1)) / static_cast<T>(319),
 	-static_cast<T>(std::sqrt(numeric_limits<T>::max() / static_cast<T>(10))),
 	static_cast<T>(-1) - numeric_limits<T>::epsilon(),
 	numeric_limits<T>::is_integer ? -1 : -numeric_limits<T>::min(),
@@ -50,17 +128,17 @@ T const test_values<T>::v[] = {
 	numeric_limits<T>::is_integer ? 1 : numeric_limits<T>::min(),
 	static_cast<T>(1) + numeric_limits<T>::epsilon(),
 	static_cast<T>(std::sqrt(numeric_limits<T>::max() / static_cast<T>(10))),
-	numeric_limits<T>::max() / static_cast<T>(17),
+	numeric_limits<T>::max() / static_cast<T>(319),
 	numeric_limits<T>::max(),
 };
 
 TEST(general_test, turn)
 {
 	EXPECT_FLOAT_EQ(360, degrees::turn_fraction<int>());
-	EXPECT_FLOAT_EQ(2 * pi, radians::turn_fraction<double>());
+	EXPECT_FLOAT_EQ(2 * pi, radians::turn_fraction<long double>());
 	EXPECT_FLOAT_EQ(1, turns::turn_fraction<int>());
 	EXPECT_FLOAT_EQ(360, degrees::id().turn_fraction<int>());
-	EXPECT_FLOAT_EQ(2 * pi, radians::id().turn_fraction<double>());
+	EXPECT_FLOAT_EQ(2 * pi, radians::id().turn_fraction<long double>());
 	EXPECT_FLOAT_EQ(1, turns::id().turn_fraction<int>());
 }
 
@@ -115,11 +193,11 @@ TYPED_TEST(general_test, vect1)
 		{
 			m1 = vect1<metres,TypeParam>(val1);
 			auto m3 = m1 *= val2;
-			EXPECT_FLOAT_EQ(0, abs(val1 * val2 - m1.value()));
-			EXPECT_FLOAT_EQ(0, abs(val1 * val2 - m3.value()));
+			EQUAL(val1 * val2, m1)
+			EQUAL(val1 * val2, m3)
 			auto m4 = m1 *= val3;
-			EXPECT_FLOAT_EQ(0, abs(val1 * val2 * val3 - m1.value()));
-			EXPECT_FLOAT_EQ(0, abs(val1 * val2 * val3 - m4.value()));
+			EQUAL(val1 * val2 * val3, m1)
+			EQUAL(val1 * val2 * val3, m4)
 		}
 		
 		// Operator /=.
@@ -133,8 +211,8 @@ TYPED_TEST(general_test, vect1)
 			if (abs(val3) != 0)
 			{
 				auto m4 = m1 /= val3;
-				EXPECT_FLOAT_EQ(0, abs(val1 / val2 / val3 - m1.value()));
-				EXPECT_FLOAT_EQ(0, abs(val1 / val2 / val3 - m4.value()));
+				EQUAL(val1 / val2 / val3, m1)
+				EQUAL(val1 / val2 / val3, m4)
 			}
 		}
 
@@ -205,8 +283,6 @@ TYPED_TEST(comparison_test, vect1)
 	for (int i = 0; i < test_values<TypeParam>::count; ++i)
 	{
 		TypeParam val1 = test_values<TypeParam>::v[i];
-		TypeParam val2 = static_cast<TypeParam>(2.19);
-		TypeParam val3 = 3;
 
 		// Relational operators.
 		
@@ -310,7 +386,6 @@ TYPED_TEST(general_test, point1)
 	{
 		TypeParam val1 = test_values<TypeParam>::v[i];
 		TypeParam val2 = static_cast<TypeParam>(2.19);
-		TypeParam val3 = 3;
 		auto m1 = point1<metres,TypeParam>(val1);
 		auto m2 = vect1<metres,TypeParam>(val2);
 
@@ -408,7 +483,6 @@ TYPED_TEST(comparison_test, point1)
 	{
 		TypeParam val1 = test_values<TypeParam>::v[i];
 		TypeParam val2 = static_cast<TypeParam>(2.19);
-		TypeParam val3 = 3;
 		auto m1 = point1<metres,TypeParam>(val1);
 		auto m2 = vect1<metres,TypeParam>(val2);
 
@@ -546,6 +620,7 @@ TYPED_TEST(general_test, vectpoint1)
 {
 	// Midpoint.
 	// Try all pairs of numeric values except extremes.
+    auto fraction = abs(static_cast<TypeParam>(0.23f));
 	for (int i1 = 1; i1 < test_values<TypeParam>::count - 1; ++i1)
 	{
 		TypeParam val1 = test_values<TypeParam>::v[i1];
@@ -554,13 +629,11 @@ TYPED_TEST(general_test, vectpoint1)
 		{
 			TypeParam val2 = test_values<TypeParam>::v[i2];
 			auto m2 = point1<metres,TypeParam>(val2);
-			EXPECT_FLOAT_EQ(0, abs((val1 + val2) / static_cast<TypeParam>(2)
-                - midpoint(m1, m2).value()));
-			EXPECT_FLOAT_EQ(0, abs(val1
-                - midpoint(m1, m2, 0).value()));
-			EXPECT_FLOAT_EQ(0, abs(val2 - midpoint(m1, m2, 1).value()));
-			EXPECT_FLOAT_EQ(0, abs(val1 * static_cast<TypeParam>(1 - 0.23f) + val2 * static_cast<TypeParam>(0.23f)
-                - midpoint(m1, m2, 0.23f).value()));
+			EQUAL((val1 + val2) / static_cast<TypeParam>(2), midpoint(m1, m2))
+			EQUAL(val1, midpoint(m1, m2, 0))
+			EQUAL(val2, midpoint(m1, m2, 1))
+			EQUAL(val1 * (1 - fraction) + val2 * fraction,
+                midpoint(m1, m2, fraction))
 		}
 	}
 
@@ -581,16 +654,16 @@ TYPED_TEST(general_test, vectpoint1)
 			auto m4 = point1<metres,TypeParam>(val4);
 			point1<metres,TypeParam> point1array[] = { m1, m2, m3, m4 };
 			TypeParam weights[] = { 2, 3, 7, 4 };
-			EXPECT_FLOAT_EQ(0, abs(val1 * weights[0]
-				- barycentric_combination(1, point1array, weights).value()));
-			EXPECT_FLOAT_EQ(0, abs(val1 * weights[0] + val2 * weights[1]
-				- barycentric_combination(2, point1array, weights).value()));
-			EXPECT_FLOAT_EQ(0, abs(val1 * weights[0] + val2 * weights[1]
-				+ val3 * weights[2]
-				- barycentric_combination(3, point1array, weights).value()));
-			EXPECT_FLOAT_EQ(0, abs(val1 * weights[0] + val2 * weights[1]
-				+ val3 * weights[2] + val4 * weights[3]
-				- barycentric_combination(4, point1array, weights).value()));
+			EQUAL(val1 * weights[0],
+				barycentric_combination(1, point1array, weights))
+			EQUAL(val1 * weights[0] + val2 * weights[1],
+				barycentric_combination(2, point1array, weights))
+			EQUAL(val1 * weights[0] + val2 * weights[1]
+				+ val3 * weights[2],
+				barycentric_combination(3, point1array, weights))
+			EQUAL(val1 * weights[0] + val2 * weights[1]
+				+ val3 * weights[2] + val4 * weights[3],
+				barycentric_combination(4, point1array, weights))
 		}
 	}
 	
@@ -652,13 +725,519 @@ TYPED_TEST(general_test, vectpoint1)
 		auto m1 = vect1<metres, TypeParam>(val1);
 		if (abs(val1) < sqrt_of_max)
 		{
-			EXPECT_EQ(val1 * val1, squared_norm_value(m1));
+			EQUAL(val1 * val1, m1 * m1);
 		}
-		EXPECT_EQ(abs(val1), norm(m1).value());
+		EQUAL(abs(val1), norm(m1));
 	}
 }
 
 //////////////////////////////////////////////////////////////////////
+TYPED_TEST(fractional_test, linear_map2)
+{
+    long double x = 17.8L;
+    long double y = 13.3L;
+    vect2<metres,TypeParam> v1(x, y);
+
+    { //// Rotation ////
+        auto v2 = v1;
+        auto v3 = v1;
+        vect1<degrees,long double> ang(36.L);
+        
+        // Create two rotators, presumed equal.
+        auto lm1 = linear_map2<TypeParam>::rotation(ang);
+        auto lm2 = make_rotation(ang);
+
+        // Apply 10 rotations by 1/10 of a turn
+        // by using both rotators.
+        for (int i = 0; i < 10; ++i)
+        {
+            v2 = v2.mapped_by(lm1);
+            v3 = v3.mapped_by(lm2);
+        }
+
+        // The resulting vectors should be equal to the original one.
+        EQUAL(x, v2.x())
+        EQUAL(y, v2.y())
+        EQUAL(x, v3.x())
+        EQUAL(y, v3.y())
+    }
+
+    { //// Rotation at right ////
+        auto v2 = v1.mapped_by(linear_map2<TypeParam>::rotation_at_right());
+        auto v3 = v1.mapped_by(make_rotation_at_right<TypeParam>());
+
+        // The resulting vectors should have x equal to the original y,
+        // and y equal to the opposite of the original x.
+        EQUAL(y, v2.x())
+        EQUAL(-x, v2.y())
+        EQUAL(y, v3.x())
+        EQUAL(-x, v3.y())
+
+        // The resulting vectors should be orthogonal to the original one.
+        EQUAL(0, v2 * v1)
+        EQUAL(0, v3 * v1)
+    }
+
+    { //// Rotation at left ////
+        auto v2 = v1.mapped_by(linear_map2<TypeParam>::rotation_at_left());
+        auto v3 = v1.mapped_by(make_rotation_at_left<TypeParam>());
+
+        // The resulting vectors should have x equal to the opposite
+        // of the original y, and y equal to the original x.
+        EQUAL(-y, v2.x())
+        EQUAL(x, v2.y())
+        EQUAL(-y, v3.x())
+        EQUAL(x, v3.y())
+
+        // The resulting vectors should be orthogonal to the original one.
+        EQUAL(0, v2 * v1)
+        EQUAL(0, v3 * v1)
+    }
+ 
+    { //// Projection ////
+        long double const ang_val = 0.9L;
+        point1<radians,TypeParam> ang1(ang_val);
+        signed_azimuth<radians,TypeParam> ang2(ang_val);
+        unsigned_azimuth<radians,TypeParam> ang3(ang_val);
+        auto dir = vect2<metres,TypeParam>::unit_vector(ang1);
+        
+        // Create eight projectors, presumed equal, and apply each of them
+        // to the original vector.
+        auto v2 = v1.mapped_by(linear_map2<TypeParam>::projection(ang1));
+        auto v3 = v1.mapped_by(make_projection(ang1));
+        auto v4 = v1.mapped_by(linear_map2<TypeParam>::projection(ang2));
+        auto v5 = v1.mapped_by(make_projection(ang2));
+        auto v6 = v1.mapped_by(linear_map2<TypeParam>::projection(ang3));
+        auto v7 = v1.mapped_by(make_projection(ang3));
+        auto v8 = v1.mapped_by(linear_map2<TypeParam>::projection(dir));
+        auto v9 = v1.mapped_by(make_projection(dir));
+
+        // Check that the resulting vectors have the specified direction.
+        EQUAL(0, cross_product(dir, v2))
+        EQUAL(0, cross_product(dir, v3))
+        EQUAL(0, cross_product(dir, v4))
+        EQUAL(0, cross_product(dir, v5))
+        EQUAL(0, cross_product(dir, v6))
+        EQUAL(0, cross_product(dir, v7))
+        EQUAL(0, cross_product(dir, v8))
+        EQUAL(0, cross_product(dir, v9))
+
+        // Check that the resulting vectors are orthogonal
+        // to the difference between them and the original vector.
+        EQUAL(0, (v2 - v1) * v2)
+        EQUAL(0, (v3 - v1) * v3)
+        EQUAL(0, (v4 - v1) * v4)
+        EQUAL(0, (v5 - v1) * v5)
+        EQUAL(0, (v6 - v1) * v6)
+        EQUAL(0, (v7 - v1) * v7)
+        EQUAL(0, (v8 - v1) * v8)
+        EQUAL(0, (v9 - v1) * v9)
+    }
+
+    { //// Reflection ////
+        long double const ang_val = 0.9L;
+        point1<radians,TypeParam> ang1(ang_val);
+        signed_azimuth<radians,TypeParam> ang2(ang_val);
+        unsigned_azimuth<radians,TypeParam> ang3(ang_val);
+        auto dir = vect2<metres,TypeParam>::unit_vector(ang1);
+        
+        // Create eight reflectors, presumed equal, and apply each of them
+        // to the original vector.
+        auto v2 = v1.mapped_by(linear_map2<TypeParam>::reflection(ang1));
+        auto v3 = v1.mapped_by(make_reflection(ang1));
+        auto v4 = v1.mapped_by(linear_map2<TypeParam>::reflection(ang2));
+        auto v5 = v1.mapped_by(make_reflection(ang2));
+        auto v6 = v1.mapped_by(linear_map2<TypeParam>::reflection(ang3));
+        auto v7 = v1.mapped_by(make_reflection(ang3));
+        auto v8 = v1.mapped_by(linear_map2<TypeParam>::reflection(dir));
+        auto v9 = v1.mapped_by(make_reflection(dir));
+
+        // Check that the resulting vectors have a cross product
+        // with the direction vector that is the opposite
+        // of that of the original vector.
+        auto expected = -cross_product(v1, dir).value();
+        EQUAL(expected, cross_product(v2, dir))
+        EQUAL(expected, cross_product(v3, dir))
+        EQUAL(expected, cross_product(v4, dir))
+        EQUAL(expected, cross_product(v5, dir))
+        EQUAL(expected, cross_product(v6, dir))
+        EQUAL(expected, cross_product(v7, dir))
+        EQUAL(expected, cross_product(v8, dir))
+        EQUAL(expected, cross_product(v9, dir))
+
+        // Check that the difference between the resulting vectors
+        // and the original vector is orthogonal to the specified direction.
+        EQUAL(0, (v2 - v1) * dir)
+        EQUAL(0, (v3 - v1) * dir)
+        EQUAL(0, (v4 - v1) * dir)
+        EQUAL(0, (v5 - v1) * dir)
+        EQUAL(0, (v6 - v1) * dir)
+        EQUAL(0, (v7 - v1) * dir)
+        EQUAL(0, (v8 - v1) * dir)
+        EQUAL(0, (v9 - v1) * dir)
+    }
+    
+    { //// Scaling ////
+        // Create some scalers, and apply each of them to the vector.
+        auto v2 = v1.mapped_by(linear_map2<TypeParam>::scaling(0, 0));
+        EQUAL(0, v2.x()) EQUAL(0, v2.y())
+        v2 = v1.mapped_by(linear_map2<TypeParam>::scaling(1, 0));
+        EQUAL(x, v2.x()) EQUAL(0, v2.y())
+        v2 = v1.mapped_by(linear_map2<TypeParam>::scaling(0, 1));
+        EQUAL(0, v2.x()) EQUAL(y, v2.y())
+        v2 = v1.mapped_by(linear_map2<TypeParam>::scaling(1, 1));
+        EQUAL(x, v2.x()) EQUAL(y, v2.y())
+        v2 = v1.mapped_by(linear_map2<TypeParam>::scaling(-3.7L, -1.921L));
+        EQUAL(x * -3.7L, v2.x()) EQUAL(y * -1.921L, v2.y())
+    }
+    
+    { //// Inversion ////
+        linear_map2<TypeParam> lm;
+        
+        // Set a non-invertible matrix.
+        lm.coeff(0, 0) = 2; lm.coeff(0, 1) = 3;
+        lm.coeff(1, 0) = 6; lm.coeff(1, 1) = 9;
+
+        // Check that its inverse has all zeros.
+        lm = lm.inverted();
+        EXPECT_EQ(0, lm.coeff(0, 0));
+        EXPECT_EQ(0, lm.coeff(0, 1));
+        EXPECT_EQ(0, lm.coeff(1, 0));
+        EXPECT_EQ(0, lm.coeff(1, 1));
+        
+        // Set an invertible matrix.
+        lm.coeff(0, 0) = 2; lm.coeff(0, 1) = 3;
+        lm.coeff(1, 0) = 9; lm.coeff(1, 1) = 6;
+
+        // Check that by applying it before or after its inverse,
+        // the same vector is obtained.
+        auto inv_lm = lm.inverted();
+        auto v2 = v1.mapped_by(lm).mapped_by(inv_lm);
+        EQUAL(x, v2.x())
+        EQUAL(y, v2.y())
+        
+        v2 = v1.mapped_by(inv_lm).mapped_by(lm);
+        EQUAL(x, v2.x())
+        EQUAL(y, v2.y())
+    }
+    
+    { //// Composition ////
+        // Create three linear 2D transformations.
+        auto lm1 = make_scaling(TypeParam(3), TypeParam(4));
+        auto lm2 = make_projection(point1<degrees,TypeParam>(83));
+        auto lm3 = make_rotation(vect1<degrees,TypeParam>(147));
+
+        // Apply them one at a time.
+        auto v2 = v1.mapped_by(lm1).mapped_by(lm2).mapped_by(lm3);
+        
+        // Combine the first with the second, and the result with the third,
+        // and apply the result.
+        auto v3 = v1.mapped_by(combine(combine(lm1, lm2), lm3));
+
+        // Combine the second with the third, and the first with the result,
+        // and apply the result.
+        auto v4 = v1.mapped_by(combine(lm1, combine(lm2, lm3)));
+        
+        // Check that the three transformed vectors are the same.
+        EQUAL(v2.x().value(), v3.x())
+        EQUAL(v2.y().value(), v3.y())
+        EQUAL(v2.x().value(), v4.x())
+        EQUAL(v2.y().value(), v4.y())
+
+        // Set an invertible matrix.
+        lm1.coeff(0, 0) = 2; lm1.coeff(0, 1) = 3;
+        lm1.coeff(1, 0) = 9; lm1.coeff(1, 1) = 6;
+        
+        // Combine it with its inverse,
+        // and its inverse with it.
+        // In both cases, the result should be the identity.
+        auto lm1_inv = lm1.inverted();
+        lm2 = combine(lm1, lm1_inv);
+        lm3 = combine(lm1_inv, lm1);
+        
+        // Apply to a vector the resulting transformations.
+        v2 = v1.mapped_by(lm2);
+        v3 = v1.mapped_by(lm3);
+        
+        // Check that the resulting vectors are (almost) unchanged.
+        EQUAL(x, v2.x())
+        EQUAL(y, v2.y())
+        EQUAL(x, v3.x())
+        EQUAL(y, v3.y())
+    }
+}
+
+TYPED_TEST(fractional_test, affine_map2)
+{
+    long double fx = -3.2L;
+    long double fy = -7.9L;
+    point2<metres,TypeParam> fp(fx, fy);
+    long double x = 17.8L;
+    long double y = 13.3L;
+    point2<metres,TypeParam> p1(x, y);
+
+    { //// Translation ////
+        // Create two translators, presumed equal.
+        long double dx = -13.2L;
+        long double dy = -27.9L;
+        vect2<metres,TypeParam> delta(dx, dy);
+        auto am1 = affine_map2<metres,TypeParam>::translation(delta);
+        auto am2 = make_translation(delta);
+
+        // Apply them to the same point.
+        auto p2 = p1.mapped_by(am1);
+        auto p3 = p1.mapped_by(am2);
+
+        // The resulting vectors should be equal.
+        EQUAL(x + dx, p2.x())
+        EQUAL(y + dy, p2.y())
+        EQUAL(x + dx, p3.x())
+        EQUAL(y + dy, p3.y())
+    }
+    
+    { //// Rotation ////
+        auto p2 = p1;
+        auto p3 = p1;
+        vect1<degrees,long double> ang(36.L);
+        
+        // Create two rotators, presumed equal.
+        auto am1 = affine_map2<metres,TypeParam>::rotation(fp, ang);
+        auto am2 = make_rotation(fp, ang);
+
+        // Apply 10 rotations by 1/10 of a turn
+        // by using both rotators.
+        for (int i = 0; i < 10; ++i)
+        {
+            p2 = p2.mapped_by(am1);
+            p3 = p3.mapped_by(am2);
+        }
+
+        // The resulting vectors should be equal to the original one.
+        EQUAL(x, p2.x())
+        EQUAL(y, p2.y())
+        EQUAL(x, p3.x())
+        EQUAL(y, p3.y())
+    }
+
+    { //// Rotation at right ////
+        auto p2 = p1.mapped_by(affine_map2<metres,TypeParam>::rotation_at_right(fp));
+        auto p3 = p1.mapped_by(make_rotation_at_right(fp));
+
+        // The resulting points should make a vectors with the fixed point
+        // that has x equal to the original,
+        // and y equal to the opposite of the original.
+        auto v1 = p1 - fp;
+        auto v2 = p2 - fp;
+        auto v3 = p3 - fp;
+        EQUAL(y - fy, v2.x())
+        EQUAL(-(x - fx), v2.y())
+        EQUAL(y - fy, v3.x())
+        EQUAL(-(x - fx), v3.y())
+
+        // The resulting vectors should be orthogonal to the original one.
+        EQUAL(0, v2 * v1)
+        EQUAL(0, v3 * v1)
+    }
+
+    { //// Rotation at left ////
+        auto p2 = p1.mapped_by(affine_map2<metres,TypeParam>::rotation_at_left(fp));
+        auto p3 = p1.mapped_by(make_rotation_at_left(fp));
+
+        // The resulting points should make a vectors with the fixed point
+        // that has x equal to the opposite of the original,
+        // and y equal to the original.
+        auto v1 = p1 - fp;
+        auto v2 = p2 - fp;
+        auto v3 = p3 - fp;
+        EQUAL(-(y - fy), v2.x())
+        EQUAL(x - fx, v2.y())
+        EQUAL(-(y - fy), v3.x())
+        EQUAL(x - fx, v3.y())
+
+        // The resulting vectors should be orthogonal to the original one.
+        EQUAL(0, v2 * v1)
+        EQUAL(0, v3 * v1)
+    }
+ 
+    { //// Projection ////
+        long double const ang_val = 0.9L;
+        point1<radians,TypeParam> ang1(ang_val);
+        signed_azimuth<radians,TypeParam> ang2(ang_val);
+        unsigned_azimuth<radians,TypeParam> ang3(ang_val);
+        auto dir = vect2<metres,TypeParam>::unit_vector(ang1);
+        
+        // Create eight projectors, presumed equal, and apply each of them
+        // to the original point.
+        auto p2 = p1.mapped_by(affine_map2<metres,TypeParam>::projection(fp, ang1));
+        auto p3 = p1.mapped_by(make_projection(fp, ang1));
+        auto p4 = p1.mapped_by(affine_map2<metres,TypeParam>::projection(fp, ang2));
+        auto p5 = p1.mapped_by(make_projection(fp, ang2));
+        auto p6 = p1.mapped_by(affine_map2<metres,TypeParam>::projection(fp, ang3));
+        auto p7 = p1.mapped_by(make_projection(fp, ang3));
+        auto p8 = p1.mapped_by(affine_map2<metres,TypeParam>::projection(fp, dir));
+        auto p9 = p1.mapped_by(make_projection(fp, dir));
+
+        // Check that the resulting points belong to the projection line.
+        EQUAL(0, cross_product(dir, p2 - fp)) 
+        EQUAL(0, cross_product(dir, p3 - fp))
+        EQUAL(0, cross_product(dir, p4 - fp))
+        EQUAL(0, cross_product(dir, p5 - fp))
+        EQUAL(0, cross_product(dir, p6 - fp))
+        EQUAL(0, cross_product(dir, p7 - fp))
+        EQUAL(0, cross_product(dir, p8 - fp))
+        EQUAL(0, cross_product(dir, p9 - fp))
+
+        // Check that the vectors from the resulting points to the fixed point
+        // are orthogonal to the vectors from the resulting points
+        // to the original point.
+        EQUAL(0, (p2 - p1) * (p2 - fp))
+        EQUAL(0, (p3 - p1) * (p3 - fp))
+        EQUAL(0, (p4 - p1) * (p4 - fp))
+        EQUAL(0, (p5 - p1) * (p5 - fp))
+        EQUAL(0, (p6 - p1) * (p6 - fp))
+        EQUAL(0, (p7 - p1) * (p7 - fp))
+        EQUAL(0, (p8 - p1) * (p8 - fp))
+        EQUAL(0, (p9 - p1) * (p9 - fp))
+    }
+
+    { //// Reflection ////
+        long double const ang_val = 0.9L;
+        point1<radians,TypeParam> ang1(ang_val);
+        signed_azimuth<radians,TypeParam> ang2(ang_val);
+        unsigned_azimuth<radians,TypeParam> ang3(ang_val);
+        auto dir = vect2<metres,TypeParam>::unit_vector(ang1);
+        
+        // Create eight reflectors, presumed equal, and apply each of them
+        // to the original point.
+        auto p2 = p1.mapped_by(affine_map2<metres,TypeParam>::reflection(fp, ang1));
+        auto p3 = p1.mapped_by(make_reflection(fp, ang1));
+        auto p4 = p1.mapped_by(affine_map2<metres,TypeParam>::reflection(fp, ang2));
+        auto p5 = p1.mapped_by(make_reflection(fp, ang2));
+        auto p6 = p1.mapped_by(affine_map2<metres,TypeParam>::reflection(fp, ang3));
+        auto p7 = p1.mapped_by(make_reflection(fp, ang3));
+        auto p8 = p1.mapped_by(affine_map2<metres,TypeParam>::reflection(fp, dir));
+        auto p9 = p1.mapped_by(make_reflection(fp, dir));
+
+        // Check that the vectors from the fixed point to the resulting point
+        // have a cross product with the director vector,
+        // that is the opposite of that of the original point.
+        auto expected = -cross_product(p1 - fp, dir).value();
+        EQUAL(expected, cross_product(p2 - fp, dir))
+        EQUAL(expected, cross_product(p3 - fp, dir))
+        EQUAL(expected, cross_product(p4 - fp, dir))
+        EQUAL(expected, cross_product(p5 - fp, dir))
+        EQUAL(expected, cross_product(p6 - fp, dir))
+        EQUAL(expected, cross_product(p7 - fp, dir))
+        EQUAL(expected, cross_product(p8 - fp, dir))
+        EQUAL(expected, cross_product(p9 - fp, dir))
+
+        // Check that the vectors from the resulting points
+        // to the original point are orthogonal to the projection line.
+        EQUAL(0, (p2 - p1) * dir)
+        EQUAL(0, (p3 - p1) * dir)
+        EQUAL(0, (p4 - p1) * dir)
+        EQUAL(0, (p5 - p1) * dir)
+        EQUAL(0, (p6 - p1) * dir)
+        EQUAL(0, (p7 - p1) * dir)
+        EQUAL(0, (p8 - p1) * dir)
+        EQUAL(0, (p9 - p1) * dir)
+    }
+    
+    { //// Scaling ////
+        // Create some scalers, and apply each of them to the vector.
+        auto p2 = p1.mapped_by(affine_map2<metres,TypeParam>
+            ::scaling(fp, 0, 0));
+        EQUAL(fx, p2.x()) EQUAL(fy, p2.y())
+        p2 = p1.mapped_by(affine_map2<metres,TypeParam>::scaling(fp, 1, 0));
+        EQUAL(x, p2.x()) EQUAL(fy, p2.y())
+        p2 = p1.mapped_by(affine_map2<metres,TypeParam>::scaling(fp, 0, 1));
+        EQUAL(fx, p2.x()) EQUAL(y, p2.y())
+        p2 = p1.mapped_by(affine_map2<metres,TypeParam>::scaling(fp, 1, 1));
+        EQUAL(x, p2.x()) EQUAL(y, p2.y())
+        p2 = p1.mapped_by(affine_map2<metres,TypeParam>
+            ::scaling(fp, -3.7L, -1.921L));
+        EQUAL(fx + (x - fx) * -3.7L, p2.x())
+        EQUAL(fy + (y - fy) * -1.921L, p2.y())
+    }
+    
+    { //// Inversion ////
+        affine_map2<metres,TypeParam> am;
+        
+        // Set a non-invertible matrix.
+        am.coeff(0, 0) = 2; am.coeff(0, 1) = 3; am.coeff(0, 2) = -3.1L;
+        am.coeff(1, 0) = 6; am.coeff(1, 1) = 9; am.coeff(1, 2) = -7.4L;
+
+        // Check that its inverse has all zeros.
+        am = am.inverted();
+        EXPECT_EQ(0, am.coeff(0, 0));
+        EXPECT_EQ(0, am.coeff(0, 1));
+        EXPECT_EQ(0, am.coeff(0, 2));
+        EXPECT_EQ(0, am.coeff(1, 0));
+        EXPECT_EQ(0, am.coeff(1, 1));
+        EXPECT_EQ(0, am.coeff(1, 2));
+        
+        // Set an invertible matrix.
+        am.coeff(0, 0) = 2; am.coeff(0, 1) = 3; am.coeff(0, 2) = -3.1L;
+        am.coeff(1, 0) = 9; am.coeff(1, 1) = 6; am.coeff(1, 2) = -7.4L;
+
+        // Check that by applying it before or after its inverse,
+        // the same vector is obtained.
+        auto inv_am = am.inverted();
+        auto p2 = p1.mapped_by(am).mapped_by(inv_am);
+        EQUAL(x, p2.x())
+        EQUAL(y, p2.y())
+        
+        p2 = p1.mapped_by(inv_am).mapped_by(am);
+        EQUAL(x, p2.x())
+        EQUAL(y, p2.y())
+    }
+    
+    { //// Composition ////
+        // Create three affine 2D transformations.
+        auto am1 = make_scaling(fp, 3., 4.);
+        auto am2 = make_projection(fp, point1<degrees>(83));
+        auto am3 = make_rotation(fp, vect1<degrees>(147));
+
+        // Apply them one at a time.
+        auto p2 = p1.mapped_by(am1).mapped_by(am2).mapped_by(am3);
+        
+        // Combine the first with the second, and the result with the third,
+        // and apply the result.
+        auto p3 = p1.mapped_by(combine(combine(am1, am2), am3));
+
+        // Combine the second with the third, and the first with the result,
+        // and apply the result.
+        auto p4 = p1.mapped_by(combine(am1, combine(am2, am3)));
+        
+        // Check that the three transformed vectors are the same.
+        EQUAL(p2.x().value(), p3.x())
+        EQUAL(p2.y().value(), p3.y())
+        EQUAL(p2.x().value(), p4.x())
+        EQUAL(p2.y().value(), p4.y())
+
+        // Set an invertible matrix.
+        am1.coeff(0, 0) = 2; am1.coeff(0, 1) = 3;
+        am1.coeff(1, 0) = 9; am1.coeff(1, 1) = 6;
+        
+        // Combine it with its inverse,
+        // and its inverse with it.
+        // In both cases, the result should be the identity.
+        auto am1_inv = am1.inverted();
+        am2 = combine(am1, am1_inv);
+        am3 = combine(am1_inv, am1);
+        
+        // Apply to a vector the resulting transformations.
+        p2 = p1.mapped_by(am2);
+        p3 = p1.mapped_by(am3);
+        
+        // Check that the resulting vectors are (almost) unchanged.
+        EQUAL(x, p2.x())
+        EQUAL(y, p2.y())
+        EQUAL(x, p3.x())
+        EQUAL(y, p3.y())
+    }
+}
+
 TYPED_TEST(general_test, vect2)
 {
 	auto epsilon = numeric_limits<TypeParam>::is_integer ?
@@ -727,15 +1306,15 @@ TYPED_TEST(general_test, vect2)
 			{
 				m1 = vect2<metres,TypeParam>(val1x, val1y);
 				auto m3 = m1 *= val2;
-				EXPECT_FLOAT_EQ(0, abs(val1x * val2 - m1.x().value()));
-				EXPECT_FLOAT_EQ(0, abs(val1y * val2 - m1.y().value()));
-				EXPECT_FLOAT_EQ(0, abs(val1x * val2 - m3.x().value()));
-				EXPECT_FLOAT_EQ(0, abs(val1y * val2 - m3.y().value()));
+				EQUAL(val1x * val2, m1.x())
+				EQUAL(val1y * val2, m1.y())
+				EQUAL(val1x * val2, m3.x())
+				EQUAL(val1y * val2, m3.y())
 				auto m4 = m1 *= val3;
-				EXPECT_FLOAT_EQ(0, abs(val1x * val2 * val3 - m1.x().value()));
-				EXPECT_FLOAT_EQ(0, abs(val1y * val2 * val3 - m1.y().value()));
-				EXPECT_FLOAT_EQ(0, abs(val1x * val2 * val3 - m4.x().value()));
-				EXPECT_FLOAT_EQ(0, abs(val1y * val2 * val3 - m4.y().value()));
+				EQUAL(val1x * val2 * val3, m1.x())
+				EQUAL(val1y * val2 * val3, m1.y())
+				EQUAL(val1x * val2 * val3, m4.x())
+				EQUAL(val1y * val2 * val3, m4.y())
 			}
 			
 			// Operator /=.
@@ -744,17 +1323,17 @@ TYPED_TEST(general_test, vect2)
 			{
 				m1 = vect2<metres,TypeParam>(val1x, val1y);
 				auto m3 = m1 /= val2;
-				EXPECT_FLOAT_EQ(0, abs(val1x / val2 - m1.x().value()));
-				EXPECT_FLOAT_EQ(0, abs(val1y / val2 - m1.y().value()));
-				EXPECT_FLOAT_EQ(0, abs(val1x / val2 - m3.x().value()));
-				EXPECT_FLOAT_EQ(0, abs(val1y / val2 - m3.y().value()));
+				EQUAL(val1x / val2, m1.x())
+				EQUAL(val1y / val2, m1.y())
+				EQUAL(val1x / val2, m3.x())
+				EQUAL(val1y / val2, m3.y())
 				if (abs(val3) != 0)
 				{
 					auto m4 = m1 /= val3;
-					EXPECT_FLOAT_EQ(0, abs(val1x / val2 / val3 - m1.x().value()));
-					EXPECT_FLOAT_EQ(0, abs(val1y / val2 / val3 - m1.y().value()));
-					EXPECT_FLOAT_EQ(0, abs(val1x / val2 / val3 - m4.x().value()));
-					EXPECT_FLOAT_EQ(0, abs(val1y / val2 / val3 - m4.y().value()));
+					EQUAL(val1x / val2 / val3, m1.x())
+					EQUAL(val1y / val2 / val3, m1.y())
+					EQUAL(val1x / val2 / val3, m4.x())
+					EQUAL(val1y / val2 / val3, m4.y())
 				}
 			}
 
@@ -838,10 +1417,8 @@ TYPED_TEST(general_test, point2)
 		for (int j = 0; j < test_values<TypeParam>::count; ++j)
 		{
 			TypeParam val1y = test_values<TypeParam>::v[j];
-			TypeParam val2 = static_cast<TypeParam>(2.19);
 			TypeParam val2x = static_cast<TypeParam>(2.27);
 			TypeParam val2y = static_cast<TypeParam>(2.13);
-			TypeParam val3 = 3;
 			auto m1 = point2<metres,TypeParam>(val1x, val1y);
 			auto m2 = vect2<metres,TypeParam>(val2x, val2y);
 
@@ -962,6 +1539,7 @@ TYPED_TEST(general_test, vectpoint2)
 {
 	// Midpoint.
 	// Try all pairs of pairs of numeric values except extremes.
+    auto fraction = abs(static_cast<TypeParam>(0.23f));
 	for (int i1 = 1; i1 < test_values<TypeParam>::count - 1; ++i1)
 	{
 		TypeParam val1x = test_values<TypeParam>::v[i1];
@@ -977,14 +1555,14 @@ TYPED_TEST(general_test, vectpoint2)
 				{
 					TypeParam val2y = test_values<TypeParam>::v[j2];
 					auto m2 = point2<metres,TypeParam>(val2x, val2y);
-					EXPECT_FLOAT_EQ(0, abs((val1x + val2x) / static_cast<TypeParam>(2) - midpoint(m1, m2).x().value()));
-					EXPECT_FLOAT_EQ(0, abs((val1y + val2y) / static_cast<TypeParam>(2) - midpoint(m1, m2).y().value()));
-					EXPECT_FLOAT_EQ(0, abs(val1x - midpoint(m1, m2, 0).x().value()));
-					EXPECT_FLOAT_EQ(0, abs(val1y - midpoint(m1, m2, 0).y().value()));
-					EXPECT_FLOAT_EQ(0, abs(val2x - midpoint(m1, m2, 1).x().value()));
-					EXPECT_FLOAT_EQ(0, abs(val2y - midpoint(m1, m2, 1).y().value()));
-					EXPECT_FLOAT_EQ(0, abs(val1x * static_cast<TypeParam>(1 - 0.23f) + val2x * static_cast<TypeParam>(0.23f) - midpoint(m1, m2, 0.23f).x().value()));
-					EXPECT_FLOAT_EQ(0, abs(val1y * static_cast<TypeParam>(1 - 0.23f) + val2y * static_cast<TypeParam>(0.23f) - midpoint(m1, m2, 0.23f).y().value()));
+					EQUAL((val1x + val2x) / static_cast<TypeParam>(2), midpoint(m1, m2).x())
+					EQUAL((val1y + val2y) / static_cast<TypeParam>(2), midpoint(m1, m2).y())
+					EQUAL(val1x, midpoint(m1, m2, 0).x())
+					EQUAL(val1y, midpoint(m1, m2, 0).y())
+					EQUAL(val2x, midpoint(m1, m2, 1).x())
+					EQUAL(val2y, midpoint(m1, m2, 1).y())
+					EQUAL(val1x * (1 - fraction) + val2x * fraction, midpoint(m1, m2, fraction).x())
+					EQUAL(val1y * (1 - fraction) + val2y * fraction, midpoint(m1, m2, fraction).y())
 				}
 			}
 		}
@@ -1016,26 +1594,26 @@ TYPED_TEST(general_test, vectpoint2)
 					auto m4 = point2<metres,TypeParam>(val4x, val4y);
 					point2<metres,TypeParam> point2array[] = { m1, m2, m3, m4 };
 					TypeParam weights[] = { 2, 3, 7, 4 };
-					EXPECT_FLOAT_EQ(0, abs(val1x * weights[0]
-						- barycentric_combination(1, point2array, weights).x().value()));
-					EXPECT_FLOAT_EQ(0, abs(val1y * weights[0]
-						- barycentric_combination(1, point2array, weights).y().value()));
-					EXPECT_FLOAT_EQ(0, abs(val1x * weights[0] + val2x * weights[1]
-						- barycentric_combination(2, point2array, weights).x().value()));
-					EXPECT_FLOAT_EQ(0, abs(val1y * weights[0] + val2y * weights[1]
-						- barycentric_combination(2, point2array, weights).y().value()));
-					EXPECT_FLOAT_EQ(0, abs(val1x * weights[0] + val2x * weights[1]
-						+ val3x * weights[2]
-						- barycentric_combination(3, point2array, weights).x().value()));
-					EXPECT_FLOAT_EQ(0, abs(val1y * weights[0] + val2y * weights[1]
-						+ val3y * weights[2]
-						- barycentric_combination(3, point2array, weights).y().value()));
-					EXPECT_FLOAT_EQ(0, abs(val1x * weights[0] + val2x * weights[1]
-						+ val3x * weights[2] + val4x * weights[3]
-						- barycentric_combination(4, point2array, weights).x().value()));
-					EXPECT_FLOAT_EQ(0, abs(val1y * weights[0] + val2y * weights[1]
-						+ val3y * weights[2] + val4y * weights[3]
-						- barycentric_combination(4, point2array, weights).y().value()));
+					EQUAL(val1x * weights[0],
+						barycentric_combination(1, point2array, weights).x())
+					EQUAL(val1y * weights[0],
+						barycentric_combination(1, point2array, weights).y())
+					EQUAL(val1x * weights[0] + val2x * weights[1],
+						barycentric_combination(2, point2array, weights).x())
+					EQUAL(val1y * weights[0] + val2y * weights[1],
+						barycentric_combination(2, point2array, weights).y())
+					EQUAL(val1x * weights[0] + val2x * weights[1]
+						+ val3x * weights[2],
+						barycentric_combination(3, point2array, weights).x())
+					EQUAL(val1y * weights[0] + val2y * weights[1]
+						+ val3y * weights[2],
+						barycentric_combination(3, point2array, weights).y())
+					EQUAL(val1x * weights[0] + val2x * weights[1]
+						+ val3x * weights[2] + val4x * weights[3],
+						barycentric_combination(4, point2array, weights).x())
+					EQUAL(val1y * weights[0] + val2y * weights[1]
+						+ val3y * weights[2] + val4y * weights[3],
+						barycentric_combination(4, point2array, weights).y())
 				}
 			}
 		}
@@ -1116,16 +1694,714 @@ TYPED_TEST(general_test, vectpoint2)
 		{
 			TypeParam val1x = test_values<TypeParam>::v[i];
 			TypeParam val1y = test_values<TypeParam>::v[j];
-			auto m1 = vect2<metres, TypeParam>(val1x, val1y);
+			auto m1 = vect2<metres,TypeParam>(val1x, val1y);
 			if (abs(val1x) < sqrt_of_max && abs(val1y) < sqrt_of_max
                 && abs(val1x) > sqrt_of_min && abs(val1y) > sqrt_of_min)
 			{
-				EXPECT_FLOAT_EQ(0, abs(val1x * val1x + val1y * val1y - squared_norm_value(m1)));
-				EXPECT_FLOAT_EQ(0, abs(static_cast<TypeParam>(
-					std::sqrt(val1x * val1x + val1y * val1y)) - norm(m1).value()));
+				EQUAL(val1x * val1x + val1y * val1y, m1 * m1)
+				EQUAL(static_cast<TypeParam>(
+					std::sqrt(val1x * val1x + val1y * val1y)), norm(m1))
 			}
 		}
 	}
+}
+
+TYPED_TEST(fractional_test, linear_map3)
+{
+    long double dx = 1.9L;
+    long double dy = -5.4L;
+    long double dz = -0.7L;
+    vect3<metres,TypeParam> dir(dx, dy, dz);
+    dir = normalized(dir);
+    long double x = 17.8L;
+    long double y = 13.3L;
+    long double z = -2.7L;
+    vect3<metres,TypeParam> v1(x, y, z);
+
+    { //// Rotation ////
+        auto v2 = v1;
+        auto v3 = v1;
+        vect1<degrees,long double> ang(36.L);
+        
+        // Create two rotators, presumed equal.
+        auto lm1 = linear_map3<TypeParam>::rotation(dir, ang);
+        auto lm2 = make_rotation(dir, ang);
+
+        // Apply 10 rotations by 1/10 of a turn
+        // by using both rotators.
+        // Check that every intermediate vector has the same
+        // dot product with the direction and the same norm
+        // of the cross product with the direction.
+        auto dp1v = (v1 * dir).value();
+        auto cpn1v = norm(cross_product(v1, dir)).value();
+        for (int i = 0; i < 10; ++i)
+        {
+            v2 = v2.mapped_by(lm1);
+            v3 = v3.mapped_by(lm2);
+            
+            auto dp2 = v2 * dir;
+            auto dp3 = v3 * dir;
+            auto cpn2 = norm(cross_product(v2, dir));
+            auto cpn3 = norm(cross_product(v3, dir));
+            EQUAL(dp1v, dp2)
+            EQUAL(dp1v, dp3)
+            EQUAL(cpn1v, cpn2)
+            EQUAL(cpn1v, cpn3)            
+        }
+
+        // The resulting vectors should be equal to the original one.
+        EQUAL(x, v2.x())
+        EQUAL(y, v2.y())
+        EQUAL(z, v2.z())
+        EQUAL(x, v3.x())
+        EQUAL(y, v3.y())
+        EQUAL(z, v3.z())
+    }
+
+    { //// Rotation at right ////
+        auto lm2 = linear_map3<TypeParam>::rotation_at_right(dir);
+        auto lm3 = make_rotation_at_right(dir);
+        auto v2 = v1;
+        auto v3 = v1;
+
+        // Apply 4 right-angle rotations by using both rotators.
+        // Check that every intermediate vector has the same
+        // dot product with the direction and the same norm
+        // of the cross product with the direction.
+        auto dp1v = (v1 * dir).value();
+        auto cpn1v = norm(cross_product(v1, dir)).value();
+        for (int i = 0; i < 4; ++i)
+        {
+            v2 = v2.mapped_by(lm2);
+            v3 = v3.mapped_by(lm3);
+            
+            auto dp2 = v2 * dir;
+            auto dp3 = v3 * dir;
+            auto cpn2 = norm(cross_product(v2, dir));
+            auto cpn3 = norm(cross_product(v3, dir));
+            EQUAL(dp1v, dp2)
+            EQUAL(dp1v, dp3)
+            EQUAL(cpn1v, cpn2)
+            EQUAL(cpn1v, cpn3)            
+        }
+        
+        // The resulting vectors should be equal to the original one.
+        EQUAL(x, v2.x())
+        EQUAL(y, v2.y())
+        EQUAL(z, v2.z())
+        EQUAL(x, v3.x())
+        EQUAL(y, v3.y())
+        EQUAL(z, v3.z())
+    }
+
+    { //// Rotation at left ////
+        auto lm2 = linear_map3<TypeParam>::rotation_at_left(dir);
+        auto lm3 = make_rotation_at_left(dir);
+        auto v2 = v1;
+        auto v3 = v1;
+
+        // Apply 4 left-angle rotations by using both rotators.
+        // Check that every intermediate vector has the same
+        // dot product with the direction and the same norm
+        // of the cross product with the direction.
+        auto dp1v = (v1 * dir).value();
+        auto cpn1v = norm(cross_product(v1, dir)).value();
+        for (int i = 0; i < 4; ++i)
+        {
+            v2 = v2.mapped_by(lm2);
+            v3 = v3.mapped_by(lm3);
+            
+            auto dp2 = v2 * dir;
+            auto dp3 = v3 * dir;
+            auto cpn2 = norm(cross_product(v2, dir));
+            auto cpn3 = norm(cross_product(v3, dir));
+            EQUAL(dp1v, dp2)
+            EQUAL(dp1v, dp3)
+            EQUAL(cpn1v, cpn2)
+            EQUAL(cpn1v, cpn3)            
+        }
+        
+        // The resulting vectors should be equal to the original one.
+        EQUAL(x, v2.x())
+        EQUAL(y, v2.y())
+        EQUAL(z, v2.z())
+        EQUAL(x, v3.x())
+        EQUAL(y, v3.y())
+        EQUAL(z, v3.z())
+    }
+ 
+    { //// Projection ////
+        // Create two line projectors, presumed equal, and apply each of them
+        // to the original vector.
+        auto v2 = v1.mapped_by(linear_map3<TypeParam>
+            ::projection_onto_line(dir));
+        auto v3 = v1.mapped_by(make_projection_onto_line(dir));
+
+        // Check that the resulting vectors have the specified direction.
+        EQUAL(0, norm(cross_product(dir, v2)))
+        EQUAL(0, norm(cross_product(dir, v3)))
+
+        // Check that the resulting vectors are orthogonal
+        // to the difference between them and the original vector.
+        EQUAL(0, (v2 - v1) * v2)
+        EQUAL(0, (v3 - v1) * v3)
+
+        // Create four plane projectors, presumed equal, and apply each of them
+        // to the original vector.
+        auto v4 = v1.mapped_by(linear_map3<TypeParam>
+            ::projection_onto_plane(dir));
+        auto v5 = v1.mapped_by(linear_map3<TypeParam>
+            ::projection_onto_plane(
+            dir.x().value(), dir.y().value(), dir.z().value()));
+        auto v6 = v1.mapped_by(make_projection_onto_plane(dir));
+        auto v7 = v1.mapped_by(make_projection_onto_plane(
+            dir.x().value(), dir.y().value(), dir.z().value()));
+
+        // Check that the resulting vectors belong to the specified plane.
+        EQUAL(0, dir * v4)
+        EQUAL(0, dir * v5)
+        EQUAL(0, dir * v6)
+        EQUAL(0, dir * v7)
+
+        // Check that the difference between the resulting vectors and
+        // the original one is orthogonal to the plane.
+        EQUAL(0, norm(cross_product(v4 - v1, dir)))
+        EQUAL(0, norm(cross_product(v5 - v1, dir)))
+        EQUAL(0, norm(cross_product(v6 - v1, dir)))
+        EQUAL(0, norm(cross_product(v7 - v1, dir)))
+    }
+
+    { //// Reflection ////
+        // Create two line reflectors, presumed equal, and apply each of them
+        // to the original vector.
+        auto v2 = v1.mapped_by(linear_map3<TypeParam>
+            ::reflection_over_line(dir));
+        auto v3 = v1.mapped_by(make_reflection_over_line(dir));
+
+        // Check that the resulting vectors have a cross product
+        // with the direction vector that is the opposite
+        // of that of the original vector.
+        auto result1 = cross_product(v1, dir);
+        EQUAL(0, norm(cross_product(v2, dir) + result1))
+        EQUAL(0, norm(cross_product(v3, dir) + result1))
+
+        // Check that the difference between the resulting vectors
+        // and the original vector is orthogonal to the specified direction.
+        EQUAL(0, (v2 - v1) * dir)
+        EQUAL(0, (v3 - v1) * dir)
+
+        // Create four plane reflectors, presumed equal, and apply each of them
+        // to the original vector.
+        auto v4 = v1.mapped_by(linear_map3<TypeParam>
+            ::reflection_over_plane(dir));
+        auto v5 = v1.mapped_by(linear_map3<TypeParam>
+            ::reflection_over_plane(
+            dir.x().value(), dir.y().value(), dir.z().value()));
+        auto v6 = v1.mapped_by(make_reflection_over_plane(dir));
+        auto v7 = v1.mapped_by(make_reflection_over_plane(
+            dir.x().value(), dir.y().value(), dir.z().value()));
+
+        // Check that the dot product of the resulting vectors
+        // with the normal is the opposite of that of the original vector.
+        EQUAL(0, dir * v4 + dir * v1)
+        EQUAL(0, dir * v5 + dir * v1)
+        EQUAL(0, dir * v6 + dir * v1)
+        EQUAL(0, dir * v7 + dir * v1)
+
+        // Check that the difference between the resulting vectors and
+        // the original one is orthogonal to the plane.
+        EQUAL(0, norm(cross_product(v4 - v1, dir)))
+        EQUAL(0, norm(cross_product(v5 - v1, dir)))
+        EQUAL(0, norm(cross_product(v6 - v1, dir)))
+        EQUAL(0, norm(cross_product(v7 - v1, dir)))
+    }
+    
+    { //// Scaling ////
+        // Create some scalers, and apply each of them to the vector.
+        auto v2 = v1.mapped_by(linear_map3<TypeParam>::scaling(0, 0, 0));
+        EQUAL(0, v2.x()) EQUAL(0, v2.y()) EQUAL(0, v2.z())
+        v2 = v1.mapped_by(linear_map3<TypeParam>::scaling(1, 0, 0));
+        EQUAL(x, v2.x()) EQUAL(0, v2.y()) EQUAL(0, v2.z())
+        v2 = v1.mapped_by(linear_map3<TypeParam>::scaling(0, 1, 0));
+        EQUAL(0, v2.x()) EQUAL(y, v2.y()) EQUAL(0, v2.z())
+        v2 = v1.mapped_by(linear_map3<TypeParam>::scaling(0, 0, 1));
+        EQUAL(0, v2.x()) EQUAL(0, v2.y()) EQUAL(z, v2.z())
+        v2 = v1.mapped_by(linear_map3<TypeParam>::scaling(1, 1, 0));
+        EQUAL(x, v2.x()) EQUAL(y, v2.y()) EQUAL(0, v2.z())
+        v2 = v1.mapped_by(linear_map3<TypeParam>::scaling(1, 0, 1));
+        EQUAL(x, v2.x()) EQUAL(0, v2.y()) EQUAL(z, v2.z())
+        v2 = v1.mapped_by(linear_map3<TypeParam>::scaling(0, 1, 1));
+        EQUAL(0, v2.x()) EQUAL(y, v2.y()) EQUAL(z, v2.z())
+        v2 = v1.mapped_by(linear_map3<TypeParam>::scaling(1, 1, 1));
+        EQUAL(x, v2.x()) EQUAL(y, v2.y()) EQUAL(z, v2.z())
+        v2 = v1.mapped_by(linear_map3<TypeParam>
+            ::scaling(-3.7L, -1.921L, 2.84L));
+        EQUAL(x * -3.7L, v2.x())
+        EQUAL(y * -1.921L, v2.y())
+        EQUAL(z * 2.84L, v2.z())
+    }
+    
+    { //// Inversion ////
+        linear_map3<TypeParam> lm;
+        
+        // Set a non-invertible matrix.
+        lm.coeff(0, 0) = 2; lm.coeff(0, 1) = 3; lm.coeff(0, 2) = 5;
+        lm.coeff(1, 0) = 6; lm.coeff(1, 1) = 9; lm.coeff(1, 2) = 15;
+        lm.coeff(2, 0) = -6; lm.coeff(2, 1) = 4; lm.coeff(2, 2) = 4;
+
+        // Check that its inverse has all zeros.
+        lm = lm.inverted();
+        EXPECT_EQ(0, lm.coeff(0, 0));
+        EXPECT_EQ(0, lm.coeff(0, 1));
+        EXPECT_EQ(0, lm.coeff(0, 2));
+        EXPECT_EQ(0, lm.coeff(1, 0));
+        EXPECT_EQ(0, lm.coeff(1, 1));
+        EXPECT_EQ(0, lm.coeff(1, 2));
+        EXPECT_EQ(0, lm.coeff(2, 0));
+        EXPECT_EQ(0, lm.coeff(2, 1));
+        EXPECT_EQ(0, lm.coeff(2, 2));
+        
+        // Set an invertible matrix.
+        lm.coeff(0, 0) = 2; lm.coeff(0, 1) = 3; lm.coeff(0, 2) = 5;
+        lm.coeff(1, 0) = 0; lm.coeff(1, 1) = 9; lm.coeff(1, 2) = 15;
+        lm.coeff(2, 0) = -6; lm.coeff(2, 1) = 4; lm.coeff(2, 2) = 4;
+
+        // Check that by applying it before or after its inverse,
+        // the same vector is obtained.
+        auto inv_lm = lm.inverted();
+        auto v2 = v1.mapped_by(lm).mapped_by(inv_lm);
+        EQUAL(x, v2.x())
+        EQUAL(y, v2.y())
+        EQUAL(z, v2.z())
+        
+        v2 = v1.mapped_by(inv_lm).mapped_by(lm);
+        EQUAL(x, v2.x())
+        EQUAL(y, v2.y())
+        EQUAL(z, v2.z())
+    }
+    
+    { //// Composition ////
+        // Create three linear 3D transformations.
+        auto lm1 = make_scaling(TypeParam(3), TypeParam(4), TypeParam(5));
+        auto lm2 = make_projection_onto_line(dir);
+        auto lm3 = make_rotation(normalized(vect3<metres,TypeParam>(3, 1, -5)),
+            vect1<degrees,TypeParam>(147));
+
+        // Apply them one at a time.
+        auto v2 = v1.mapped_by(lm1).mapped_by(lm2).mapped_by(lm3);
+        
+        // Combine the first with the second, and the result with the third,
+        // and apply the result.
+        auto v3 = v1.mapped_by(combine(combine(lm1, lm2), lm3));
+
+        // Combine the second with the third, and the first with the result,
+        // and apply the result.
+        auto v4 = v1.mapped_by(combine(lm1, combine(lm2, lm3)));
+        
+        // Check that the three transformed vectors are the same.
+        EQUAL(v2.x().value(), v3.x())
+        EQUAL(v2.y().value(), v3.y())
+        EQUAL(v2.z().value(), v3.z())
+        EQUAL(v2.x().value(), v4.x())
+        EQUAL(v2.y().value(), v4.y())
+        EQUAL(v2.z().value(), v4.z())
+
+        // Set an invertible matrix.
+        lm1.coeff(0, 0) = 2; lm1.coeff(0, 1) = 3; lm1.coeff(0, 2) = 5;
+        lm1.coeff(1, 0) = 0; lm1.coeff(1, 1) = 9; lm1.coeff(1, 2) = 15;
+        lm1.coeff(2, 0) = -6; lm1.coeff(2, 1) = 4; lm1.coeff(2, 2) = 4;
+        
+        // Combine it with its inverse,
+        // and its inverse with it.
+        // In both cases, the result should be the identity.
+        auto lm1_inv = lm1.inverted();
+        lm2 = combine(lm1, lm1_inv);
+        lm3 = combine(lm1_inv, lm1);
+        
+        // Apply to a vector the resulting transformations.
+        v2 = v1.mapped_by(lm2);
+        v3 = v1.mapped_by(lm3);
+        
+        // Check that the resulting vectors are (almost) unchanged.
+        EQUAL(x, v2.x())
+        EQUAL(y, v2.y())
+        EQUAL(z, v2.z())
+        EQUAL(x, v3.x())
+        EQUAL(y, v3.y())
+        EQUAL(z, v3.z())
+    }
+}
+
+TYPED_TEST(fractional_test, affine_map3)
+{
+    long double fx = -3.2L;
+    long double fy = -7.9L;
+    long double fz = 1.5L;
+    point3<metres,TypeParam> fp(fx, fy, fz);
+    long double dx = 1.9L;
+    long double dy = -5.4L;
+    long double dz = -0.7L;
+    vect3<metres,TypeParam> dir(dx, dy, dz);
+    dir = normalized(dir);
+    long double x = 17.8L;
+    long double y = 13.3L;
+    long double z = -2.7L;
+    point3<metres,TypeParam> p1(x, y, z);
+
+    { //// Translation ////
+        // Create two translators, presumed equal.
+        vect3<metres,TypeParam> delta(dx, dy, dz);
+        auto am1 = affine_map3<metres,TypeParam>::translation(delta);
+        auto am2 = make_translation(delta);
+
+        // Apply them to the same point.
+        auto p2 = p1.mapped_by(am1);
+        auto p3 = p1.mapped_by(am2);
+
+        // The resulting vectors should be equal.
+        EQUAL(x + dx, p2.x())
+        EQUAL(y + dy, p2.y())
+        EQUAL(z + dz, p2.z())
+        EQUAL(x + dx, p3.x())
+        EQUAL(y + dy, p3.y())
+        EQUAL(z + dz, p3.z())
+    }
+    
+    { //// Rotation ////
+        auto p2 = p1;
+        auto p3 = p1;
+        vect1<degrees,long double> ang(36.L);
+        
+        // Create two rotators, presumed equal.
+        auto am1 = affine_map3<metres,TypeParam>::rotation(fp, dir, ang);
+        auto am2 = make_rotation(fp, dir, ang);
+
+        // Apply 10 rotations by 1/10 of a turn
+        // by using both rotators.
+        // Check that the vector from the fixed point to every intermediate
+        // point has the same dot product with the direction and the same norm
+        // of the cross product with the direction.
+//cout << setprecision(34) << "    p1=" << p1 << ", fp=" << fp << ", dir = " << dir << ", p2=" << p2 << endl;
+        auto dp1v = ((p1 - fp) * dir).value();
+        auto cpn1v = norm(cross_product((p1 - fp), dir)).value();
+        for (int i = 0; i < 10; ++i)
+        {
+            p2 = p2.mapped_by(am1);
+            p3 = p3.mapped_by(am2);
+
+            auto dp2 = (p2 - fp) * dir;
+            auto dp3 = (p3 - fp) * dir;
+            auto cpn2 = norm(cross_product(p2 - fp, dir));
+            auto cpn3 = norm(cross_product(p3 - fp, dir));
+//cout << setprecision(34) << "      dp1v=" << dp1v << ", dp2=" << dp2 << ", dp1v - dp2 = " << dp1v - dp2.value() << ", p2=" << p2 << endl;
+            EQUAL(dp1v, dp2)
+            EQUAL(dp1v, dp3)
+            EQUAL(cpn1v, cpn2)
+            EQUAL(cpn1v, cpn3)            
+        }
+
+        // The resulting points should be equal to the original one.
+        EQUAL(x, p2.x())
+        EQUAL(y, p2.y())
+        EQUAL(z, p2.z())
+        EQUAL(x, p3.x())
+        EQUAL(y, p3.y())
+        EQUAL(z, p3.z())
+    }
+
+    { //// Rotation at right ////
+        auto am2 = affine_map3<metres,TypeParam>::rotation_at_right(fp, dir);
+        auto am3 = make_rotation_at_right(fp, dir);
+        auto p2 = p1;
+        auto p3 = p1;
+
+        // Apply 4 right-angle rotations by using both rotators.
+        // Check that every intermediate point has the same
+        // dot product with the direction and the same norm
+        // of the cross product with the direction.
+        auto dp1v = ((p1 - fp) * dir).value();
+        auto cpn1v = norm(cross_product(p1 - fp, dir)).value();
+        for (int i = 0; i < 4; ++i)
+        {
+            p2 = p2.mapped_by(am2);
+            p3 = p3.mapped_by(am3);
+            
+            auto dp2 = (p2 - fp) * dir;
+            auto dp3 = (p3 - fp) * dir;
+            auto cpn2 = norm(cross_product(p2 - fp, dir));
+            auto cpn3 = norm(cross_product(p3 - fp, dir));
+            EQUAL(dp1v, dp2)
+            EQUAL(dp1v, dp3)
+            EQUAL(cpn1v, cpn2)
+            EQUAL(cpn1v, cpn3)            
+        }
+        
+        // The resulting points should be equal to the original one.
+        EQUAL(x, p2.x())
+        EQUAL(y, p2.y())
+        EQUAL(z, p2.z())
+        EQUAL(x, p3.x())
+        EQUAL(y, p3.y())
+        EQUAL(z, p3.z())
+    }
+
+    { //// Rotation at left ////
+        auto am2 = affine_map3<metres,TypeParam>::rotation_at_left(fp, dir);
+        auto am3 = make_rotation_at_left(fp, dir);
+        auto p2 = p1;
+        auto p3 = p1;
+
+        // Apply 4 right-angle rotations by using both rotators.
+        // Check that every intermediate point has the same
+        // dot product with the direction and the same norm
+        // of the cross product with the direction.
+        auto dp1v = ((p1 - fp) * dir).value();
+        auto cpn1v = norm(cross_product(p1 - fp, dir)).value();
+        for (int i = 0; i < 4; ++i)
+        {
+            p2 = p2.mapped_by(am2);
+            p3 = p3.mapped_by(am3);
+            
+            auto dp2 = (p2 - fp) * dir;
+            auto dp3 = (p3 - fp) * dir;
+            auto cpn2 = norm(cross_product(p2 - fp, dir));
+            auto cpn3 = norm(cross_product(p3 - fp, dir));
+            EQUAL(dp1v, dp2)
+            EQUAL(dp1v, dp3)
+            EQUAL(cpn1v, cpn2)
+            EQUAL(cpn1v, cpn3)            
+        }
+        
+        // The resulting points should be equal to the original one.
+        EQUAL(x, p2.x())
+        EQUAL(y, p2.y())
+        EQUAL(z, p2.z())
+        EQUAL(x, p3.x())
+        EQUAL(y, p3.y())
+        EQUAL(z, p3.z())
+    }
+
+    { //// Projection ////
+        // Create two line projectors, presumed equal, and apply each of them
+        // to the original point.
+        auto p2 = p1.mapped_by(affine_map3<metres,TypeParam>
+            ::projection_onto_line(fp, dir));
+        auto p3 = p1.mapped_by(make_projection_onto_line(fp, dir));
+
+        // Check that the resulting points belong to the projection line.
+        EQUAL(0, norm(cross_product(dir, p2 - fp)))
+        EQUAL(0, norm(cross_product(dir, p3 - fp)))
+
+        // Check that the vectors from the resulting points to the fixed point
+        // are orthogonal to the vectors from the resulting points
+        // to the original point.
+        EQUAL(0, (p2 - p1) * (p2 - fp))
+        EQUAL(0, (p3 - p1) * (p3 - fp))
+
+        // Create four plane projectors, presumed equal, and apply each of them
+        // to the original point.
+        auto a = dir.x().value();
+        auto b = dir.y().value();
+        auto c = dir.z().value();
+        auto d = - a * fp.x().value() - b * fp.y().value()
+            - c * fp.z().value();
+        auto p4 = p1.mapped_by(affine_map3<metres,TypeParam>
+            ::projection_onto_plane(fp, dir));
+        auto p5 = p1.mapped_by(affine_map3<metres,TypeParam>
+            ::projection_onto_plane(a, b, c, d));
+        auto p6 = p1.mapped_by(make_projection_onto_plane(fp, dir));
+        auto p7 = p1.mapped_by(make_projection_onto_plane<metres>(
+            a, b, c, d));
+
+        // Check that the resulting points belong to the specified plane.
+        EQUAL(0, dir * (p4 - fp))
+        EQUAL(0, dir * (p5 - fp))
+        EQUAL(0, dir * (p6 - fp))
+        EQUAL(0, dir * (p7 - fp))
+
+        // Check that the difference between the resulting points and
+        // the original one is orthogonal to the plane.
+        EQUAL(0, norm(cross_product(p4 - p1, dir)))
+        EQUAL(0, norm(cross_product(p5 - p1, dir)))
+        EQUAL(0, norm(cross_product(p6 - p1, dir)))
+        EQUAL(0, norm(cross_product(p7 - p1, dir)))
+    }
+
+    { //// Reflection ////
+        // Create two line reflectors, presumed equal, and apply each of them
+        // to the original point.
+        auto p2 = p1.mapped_by(affine_map3<metres,TypeParam>
+            ::reflection_over_line(fp, dir));
+        auto p3 = p1.mapped_by(make_reflection_over_line(fp, dir));
+
+        // Check that the cross product between the difference between
+        // the resulting points and the fixed point with the direction vector
+        // is the opposite of that of the original point.
+        auto result1 = cross_product(p1 - fp, dir);
+        EQUAL(0, norm(cross_product(p2 - fp, dir) + result1))
+        EQUAL(0, norm(cross_product(p3 - fp, dir) + result1))
+
+        // Check that the vectors from the resulting points
+        // to the original point are orthogonal to the projection line.
+        EQUAL(0, (p2 - p1) * dir)
+        EQUAL(0, (p3 - p1) * dir)
+
+        // Create four plane reflectors, presumed equal, and apply each of them
+        // to the original point.
+        auto a = dir.x().value();
+        auto b = dir.y().value();
+        auto c = dir.z().value();
+        auto d = - a * fp.x().value() - b * fp.y().value()
+            - c * fp.z().value();
+        auto p4 = p1.mapped_by(affine_map3<metres, TypeParam>
+            ::reflection_over_plane(fp, dir));
+        auto p5 = p1.mapped_by(affine_map3<metres, TypeParam>
+            ::reflection_over_plane(a, b, c, d));
+        auto p6 = p1.mapped_by(make_reflection_over_plane(fp, dir));
+        auto p7 = p1.mapped_by(make_reflection_over_plane<metres>(
+            a, b, c, d));
+
+        // Check that the dot product of the difference between
+        // the resulting points and the fixed point
+        // with the normal is the opposite of that of the original point.
+        EQUAL(0, dir * (p4 - fp) + dir * (p1 - fp))
+        EQUAL(0, dir * (p5 - fp) + dir * (p1 - fp))
+        EQUAL(0, dir * (p6 - fp) + dir * (p1 - fp))
+        EQUAL(0, dir * (p7 - fp) + dir * (p1 - fp))
+
+        // Check that the difference between the resulting points and
+        // the original one is orthogonal to the plane.
+        EQUAL(0, norm(cross_product(p4 - p1, dir)))
+        EQUAL(0, norm(cross_product(p5 - p1, dir)))
+        EQUAL(0, norm(cross_product(p6 - p1, dir)))
+        EQUAL(0, norm(cross_product(p7 - p1, dir)))
+    }
+
+    { //// Scaling ////
+        // Create some scalers, and apply each of them to the point.
+        auto p2 = p1.mapped_by(affine_map3<metres,TypeParam>
+            ::scaling(fp, 0, 0, 0));
+        EQUAL(fx, p2.x()) EQUAL(fy, p2.y()) EQUAL(fz, p2.z())
+        p2 = p1.mapped_by(affine_map3<metres,TypeParam>
+            ::scaling(fp, 1, 0, 0));
+        EQUAL(x, p2.x()) EQUAL(fy, p2.y()) EQUAL(fz, p2.z())
+        p2 = p1.mapped_by(affine_map3<metres,TypeParam>
+            ::scaling(fp, 0, 1, 0));
+        EQUAL(fx, p2.x()) EQUAL(y, p2.y()) EQUAL(fz, p2.z())
+        p2 = p1.mapped_by(affine_map3<metres,TypeParam>
+            ::scaling(fp, 0, 0, 1));
+        EQUAL(fx, p2.x()) EQUAL(fy, p2.y()) EQUAL(z, p2.z())
+        p2 = p1.mapped_by(affine_map3<metres,TypeParam>
+            ::scaling(fp, 1, 1, 0));
+        EQUAL(x, p2.x()) EQUAL(y, p2.y()) EQUAL(fz, p2.z())
+        p2 = p1.mapped_by(affine_map3<metres,TypeParam>
+            ::scaling(fp, 1, 0, 1));
+        EQUAL(x, p2.x()) EQUAL(fy, p2.y()) EQUAL(z, p2.z())
+        p2 = p1.mapped_by(affine_map3<metres,TypeParam>
+            ::scaling(fp, 0, 1, 1));
+        EQUAL(fx, p2.x()) EQUAL(y, p2.y()) EQUAL(z, p2.z())
+        p2 = p1.mapped_by(affine_map3<metres,TypeParam>
+            ::scaling(fp, 1, 1, 1));
+        EQUAL(x, p2.x()) EQUAL(y, p2.y()) EQUAL(z, p2.z())
+        p2 = p1.mapped_by(affine_map3<metres,TypeParam>
+            ::scaling(fp, -3.7L, -1.921L, 2.84L));
+        EQUAL(fx + (x - fx) * -3.7L, p2.x())
+        EQUAL(fy + (y - fy) * -1.921L, p2.y())
+        EQUAL(fz + (z - fz) * 2.84L, p2.z())
+    }
+
+    { //// Inversion ////
+        affine_map3<metres,TypeParam> am;
+        
+        // Set a non-invertible matrix.
+        am.coeff(0, 0) = 2; am.coeff(0, 1) = 3; am.coeff(0, 2) = 5; am.coeff(0, 3) = 5;
+        am.coeff(1, 0) = 6; am.coeff(1, 1) = 9; am.coeff(1, 2) = 15; am.coeff(1, 3) = -16;
+        am.coeff(2, 0) = -6; am.coeff(2, 1) = 4; am.coeff(2, 2) = 4; am.coeff(2, 3) = 3;
+
+        // Check that its inverse has all zeros.
+        am = am.inverted();
+        EXPECT_EQ(0, am.coeff(0, 0));
+        EXPECT_EQ(0, am.coeff(0, 1));
+        EXPECT_EQ(0, am.coeff(0, 2));
+        EXPECT_EQ(0, am.coeff(0, 3));
+        EXPECT_EQ(0, am.coeff(1, 0));
+        EXPECT_EQ(0, am.coeff(1, 1));
+        EXPECT_EQ(0, am.coeff(1, 2));
+        EXPECT_EQ(0, am.coeff(1, 3));
+        EXPECT_EQ(0, am.coeff(2, 0));
+        EXPECT_EQ(0, am.coeff(2, 1));
+        EXPECT_EQ(0, am.coeff(2, 2));
+        EXPECT_EQ(0, am.coeff(2, 3));
+        
+        // Set an invertible matrix.
+        am.coeff(0, 0) = 2; am.coeff(0, 1) = 3; am.coeff(0, 2) = 5; am.coeff(0, 3) = 5;
+        am.coeff(1, 0) = 0; am.coeff(1, 1) = 9; am.coeff(1, 2) = 15; am.coeff(1, 3) = -16;
+        am.coeff(2, 0) = -6; am.coeff(2, 1) = 4; am.coeff(2, 2) = 4; am.coeff(2, 3) = 3;
+
+        // Check that by applying it before or after its inverse,
+        // the same vector is obtained.
+        auto inv_am = am.inverted();
+        auto p2 = p1.mapped_by(am).mapped_by(inv_am);
+        EQUAL(x, p2.x())
+        EQUAL(y, p2.y())
+        EQUAL(z, p2.z())
+        
+        p2 = p1.mapped_by(inv_am).mapped_by(am);
+        EQUAL(x, p2.x())
+        EQUAL(y, p2.y())
+        EQUAL(z, p2.z())
+    }
+
+    { //// Composition ////
+        // Create three affine 3D transformations.
+        auto am1 = make_scaling(fp, TypeParam(3), TypeParam(4), TypeParam(5));
+        auto am2 = make_projection_onto_line(fp, dir);
+        auto am3 = make_rotation(fp, normalized(vect3<metres,TypeParam>(3, 1, -5)),
+            vect1<degrees,TypeParam>(147));
+
+        // Apply them one at a time.
+        auto p2 = p1.mapped_by(am1).mapped_by(am2).mapped_by(am3);
+        
+        // Combine the first with the second, and the result with the third,
+        // and apply the result.
+        auto p3 = p1.mapped_by(combine(combine(am1, am2), am3));
+
+        // Combine the second with the third, and the first with the result,
+        // and apply the result.
+        auto p4 = p1.mapped_by(combine(am1, combine(am2, am3)));
+        
+        // Check that the three transformed vectors are the same.
+        EQUAL(p2.x().value(), p3.x())
+        EQUAL(p2.y().value(), p3.y())
+        EQUAL(p2.z().value(), p3.z())
+        EQUAL(p2.x().value(), p4.x())
+        EQUAL(p2.y().value(), p4.y())
+        EQUAL(p2.z().value(), p4.z())
+
+        // Set an invertible matrix.
+        am1.coeff(0, 0) = 2; am1.coeff(0, 1) = 3; am1.coeff(0, 2) = 5;
+        am1.coeff(1, 0) = 0; am1.coeff(1, 1) = 9; am1.coeff(1, 2) = 15;
+        am1.coeff(2, 0) = -6; am1.coeff(2, 1) = 4; am1.coeff(2, 2) = 4;
+        
+        // Combine it with its inverse,
+        // and its inverse with it.
+        // In both cases, the result should be the identity.
+        auto am1_inv = am1.inverted();
+        am2 = combine(am1, am1_inv);
+        am3 = combine(am1_inv, am1);
+        
+        // Apply to a vector the resulting transformations.
+        p2 = p1.mapped_by(am2);
+        p3 = p1.mapped_by(am3);
+        
+        // Check that the resulting vectors are (almost) unchanged.
+        EQUAL(x, p2.x())
+        EQUAL(y, p2.y())
+        EQUAL(z, p2.z())
+        EQUAL(x, p3.x())
+        EQUAL(y, p3.y())
+        EQUAL(z, p3.z())
+    }
 }
 
 TYPED_TEST(general_test, vect3)
@@ -1192,15 +2468,15 @@ TYPED_TEST(general_test, vect3)
 				{
 					m1 = vect3<metres,TypeParam>(val1x, val1y, val1z);
 					auto m3 = m1 -= m2;
-					EXPECT_FLOAT_EQ(0, abs(val1x - val2x - m1.x().value()));
-					EXPECT_FLOAT_EQ(0, abs(val1y - val2y - m1.y().value()));
-					EXPECT_FLOAT_EQ(0, abs(val1z - val2z - m1.z().value()));
-					EXPECT_FLOAT_EQ(0, abs(val2x - m2.x().value()));
-					EXPECT_FLOAT_EQ(0, abs(val2y - m2.y().value()));
-					EXPECT_FLOAT_EQ(0, abs(val2z - m2.z().value()));
-					EXPECT_FLOAT_EQ(0, abs(val1x - val2x - m3.x().value()));
-					EXPECT_FLOAT_EQ(0, abs(val1y - val2y - m3.y().value()));
-					EXPECT_FLOAT_EQ(0, abs(val1z - val2z - m3.z().value()));
+					EQUAL(val1x - val2x, m1.x())
+					EQUAL(val1y - val2y, m1.y())
+					EQUAL(val1z - val2z, m1.z())
+					EQUAL(val2x, m2.x())
+					EQUAL(val2y, m2.y())
+					EQUAL(val2z, m2.z())
+					EQUAL(val1x - val2x, m3.x())
+					EQUAL(val1y - val2y, m3.y())
+					EQUAL(val1z - val2z, m3.z())
 				}
 
 				// Operator *=.
@@ -1212,19 +2488,19 @@ TYPED_TEST(general_test, vect3)
 				{
 					m1 = vect3<metres,TypeParam>(val1x, val1y, val1z);
 					auto m3 = m1 *= val2;
-					EXPECT_FLOAT_EQ(0, abs(val1x * val2 - m1.x().value()));
-					EXPECT_FLOAT_EQ(0, abs(val1y * val2 - m1.y().value()));
-					EXPECT_FLOAT_EQ(0, abs(val1z * val2 - m1.z().value()));
-					EXPECT_FLOAT_EQ(0, abs(val1x * val2 - m3.x().value()));
-					EXPECT_FLOAT_EQ(0, abs(val1y * val2 - m3.y().value()));
-					EXPECT_FLOAT_EQ(0, abs(val1z * val2 - m3.z().value()));
+					EQUAL(val1x * val2, m1.x())
+					EQUAL(val1y * val2, m1.y())
+					EQUAL(val1z * val2, m1.z())
+					EQUAL(val1x * val2, m3.x())
+					EQUAL(val1y * val2, m3.y())
+					EQUAL(val1z * val2, m3.z())
 					auto m4 = m1 *= val3;
-					EXPECT_FLOAT_EQ(0, abs(val1x * val2 * val3 - m1.x().value()));
-					EXPECT_FLOAT_EQ(0, abs(val1y * val2 * val3 - m1.y().value()));
-					EXPECT_FLOAT_EQ(0, abs(val1z * val2 * val3 - m1.z().value()));
-					EXPECT_FLOAT_EQ(0, abs(val1x * val2 * val3 - m4.x().value()));
-					EXPECT_FLOAT_EQ(0, abs(val1y * val2 * val3 - m4.y().value()));
-					EXPECT_FLOAT_EQ(0, abs(val1z * val2 * val3 - m4.z().value()));
+					EQUAL(val1x * val2 * val3, m1.x())
+					EQUAL(val1y * val2 * val3, m1.y())
+					EQUAL(val1z * val2 * val3, m1.z())
+					EQUAL(val1x * val2 * val3, m4.x())
+					EQUAL(val1y * val2 * val3, m4.y())
+					EQUAL(val1z * val2 * val3, m4.z())
 				}
 				
 				// Operator /=.
@@ -1233,21 +2509,21 @@ TYPED_TEST(general_test, vect3)
 				{
 					m1 = vect3<metres,TypeParam>(val1x, val1y, val1z);
 					auto m3 = m1 /= val2;
-					EXPECT_FLOAT_EQ(0, abs(val1x / val2 - m1.x().value()));
-					EXPECT_FLOAT_EQ(0, abs(val1y / val2 - m1.y().value()));
-					EXPECT_FLOAT_EQ(0, abs(val1z / val2 - m1.z().value()));
-					EXPECT_FLOAT_EQ(0, abs(val1x / val2 - m3.x().value()));
-					EXPECT_FLOAT_EQ(0, abs(val1y / val2 - m3.y().value()));
-					EXPECT_FLOAT_EQ(0, abs(val1z / val2 - m3.z().value()));
+					EQUAL(val1x / val2, m1.x())
+					EQUAL(val1y / val2, m1.y())
+					EQUAL(val1z / val2, m1.z())
+					EQUAL(val1x / val2, m3.x())
+					EQUAL(val1y / val2, m3.y())
+					EQUAL(val1z / val2, m3.z())
 					if (abs(val3) != 0)
 					{
 						auto m4 = m1 /= val3;
-						EXPECT_FLOAT_EQ(0, abs(val1x / val2 / val3 - m1.x().value()));
-						EXPECT_FLOAT_EQ(0, abs(val1y / val2 / val3 - m1.y().value()));
-						EXPECT_FLOAT_EQ(0, abs(val1z / val2 / val3 - m1.z().value()));
-						EXPECT_FLOAT_EQ(0, abs(val1x / val2 / val3 - m4.x().value()));
-						EXPECT_FLOAT_EQ(0, abs(val1y / val2 / val3 - m4.y().value()));
-						EXPECT_FLOAT_EQ(0, abs(val1z / val2 / val3 - m4.z().value()));
+						EQUAL(val1x / val2 / val3, m1.x())
+						EQUAL(val1y / val2 / val3, m1.y())
+						EQUAL(val1z / val2 / val3, m1.z())
+						EQUAL(val1x / val2 / val3, m4.x())
+						EQUAL(val1y / val2 / val3, m4.y())
+						EQUAL(val1z / val2 / val3, m4.z())
 					}
 				}
 
@@ -1346,11 +2622,9 @@ TYPED_TEST(general_test, point3)
 			for (int k = 0; k < test_values<TypeParam>::count; ++k)
 			{
 				TypeParam val1z = test_values<TypeParam>::v[k];
-				TypeParam val2 = static_cast<TypeParam>(2.19);
 				TypeParam val2x = static_cast<TypeParam>(2.27);
 				TypeParam val2y = static_cast<TypeParam>(2.13);
 				TypeParam val2z = static_cast<TypeParam>(2.15);
-				TypeParam val3 = 3;
 				auto m1 = point3<metres,TypeParam>(val1x, val1y, val1z);
 				auto m2 = vect3<metres,TypeParam>(val2x, val2y, val2z);
 
@@ -1464,6 +2738,7 @@ TYPED_TEST(general_test, vectpoint3)
 {
 	// Midpoint.
 	// Try all triples of pairs of numeric values except extremes.
+    auto fraction = abs(static_cast<TypeParam>(0.23f));
 	for (int i1 = 1; i1 < test_values<TypeParam>::count - 1; ++i1)
 	{
 		TypeParam val1x = test_values<TypeParam>::v[i1];
@@ -1485,18 +2760,18 @@ TYPED_TEST(general_test, vectpoint3)
 							TypeParam val2z = test_values<TypeParam>::v[k2];
 							auto m2 = point3<metres,TypeParam>(val2x, val2y, val2z);
                             auto two = static_cast<TypeParam>(2);
-							EXPECT_FLOAT_EQ(0, abs((val1x + val2x) / two - midpoint(m1, m2).x().value()));
-							EXPECT_FLOAT_EQ(0, abs((val1y + val2y) / two - midpoint(m1, m2).y().value()));
-							EXPECT_FLOAT_EQ(0, abs((val1z + val2z) / two - midpoint(m1, m2).z().value()));
-							EXPECT_FLOAT_EQ(0, abs(val1x - midpoint(m1, m2, 0.f).x().value()));
-							EXPECT_FLOAT_EQ(0, abs(val1y - midpoint(m1, m2, 0.f).y().value()));
-							EXPECT_FLOAT_EQ(0, abs(val1z - midpoint(m1, m2, 0.f).z().value()));
-							EXPECT_FLOAT_EQ(0, abs(val2x - midpoint(m1, m2, 1.f).x().value()));
-							EXPECT_FLOAT_EQ(0, abs(val2y - midpoint(m1, m2, 1.f).y().value()));
-							EXPECT_FLOAT_EQ(0, abs(val2z - midpoint(m1, m2, 1.f).z().value()));
-							EXPECT_FLOAT_EQ(0, abs(val1x * static_cast<TypeParam>(1 - 0.23f) + val2x * static_cast<TypeParam>(0.23f) - midpoint(m1, m2, 0.23f).x().value()));
-							EXPECT_FLOAT_EQ(0, abs(val1y * static_cast<TypeParam>(1 - 0.23f) + val2y * static_cast<TypeParam>(0.23f) - midpoint(m1, m2, 0.23f).y().value()));
-							EXPECT_FLOAT_EQ(0, abs(val1z * static_cast<TypeParam>(1 - 0.23f) + val2z * static_cast<TypeParam>(0.23f) - midpoint(m1, m2, 0.23f).z().value()));
+							EQUAL((val1x + val2x) / two, midpoint(m1, m2).x())
+							EQUAL((val1y + val2y) / two, midpoint(m1, m2).y())
+							EQUAL((val1z + val2z) / two, midpoint(m1, m2).z())
+							EQUAL(val1x, midpoint(m1, m2, 0.f).x())
+							EQUAL(val1y, midpoint(m1, m2, 0.f).y())
+							EQUAL(val1z, midpoint(m1, m2, 0.f).z())
+							EQUAL(val2x, midpoint(m1, m2, 1.f).x())
+							EQUAL(val2y, midpoint(m1, m2, 1.f).y())
+							EQUAL(val2z, midpoint(m1, m2, 1.f).z())
+							EQUAL(val1x * (1 - fraction) + val2x * fraction, midpoint(m1, m2, fraction).x())
+							EQUAL(val1y * (1 - fraction) + val2y * fraction, midpoint(m1, m2, fraction).y())
+							EQUAL(val1z * (1 - fraction) + val2z * fraction, midpoint(m1, m2, fraction).z())
 						}
 					}
 				}
@@ -1538,36 +2813,36 @@ TYPED_TEST(general_test, vectpoint3)
 							auto m4 = point3<metres,TypeParam>(val4x, val4y, val4z);
 							point3<metres,TypeParam> point3array[] = { m1, m2, m3, m4 };
 							TypeParam weights[] = { 2, 3, 7, 4 };
-							EXPECT_FLOAT_EQ(0, abs(val1x * weights[0]
-								- barycentric_combination(1, point3array, weights).x().value()));
-							EXPECT_FLOAT_EQ(0, abs(val1y * weights[0]
-								- barycentric_combination(1, point3array, weights).y().value()));
-							EXPECT_FLOAT_EQ(0, abs(val1z * weights[0]
-								- barycentric_combination(1, point3array, weights).z().value()));
-							EXPECT_FLOAT_EQ(0, abs(val1x * weights[0] + val2x * weights[1]
-								- barycentric_combination(2, point3array, weights).x().value()));
-							EXPECT_FLOAT_EQ(0, abs(val1y * weights[0] + val2y * weights[1]
-								- barycentric_combination(2, point3array, weights).y().value()));
-							EXPECT_FLOAT_EQ(0, abs(val1z * weights[0] + val2z * weights[1]
-								- barycentric_combination(2, point3array, weights).z().value()));
-							EXPECT_FLOAT_EQ(0, abs(val1x * weights[0] + val2x * weights[1]
-								+ val3x * weights[2]
-								- barycentric_combination(3, point3array, weights).x().value()));
-							EXPECT_FLOAT_EQ(0, abs(val1y * weights[0] + val2y * weights[1]
-								+ val3y * weights[2]
-								- barycentric_combination(3, point3array, weights).y().value()));
-							EXPECT_FLOAT_EQ(0, abs(val1z * weights[0] + val2z * weights[1]
-								+ val3z * weights[2]
-								- barycentric_combination(3, point3array, weights).z().value()));
-							EXPECT_FLOAT_EQ(0, abs(val1x * weights[0] + val2x * weights[1]
-								+ val3x * weights[2] + val4x * weights[3]
-								- barycentric_combination(4, point3array, weights).x().value()));
-							EXPECT_FLOAT_EQ(0, abs(val1y * weights[0] + val2y * weights[1]
-								+ val3y * weights[2] + val4y * weights[3]
-								- barycentric_combination(4, point3array, weights).y().value()));
-							EXPECT_FLOAT_EQ(0, abs(val1z * weights[0] + val2z * weights[1]
-								+ val3z * weights[2] + val4z * weights[3]
-								- barycentric_combination(4, point3array, weights).z().value()));
+							EQUAL(val1x * weights[0],
+								barycentric_combination(1, point3array, weights).x())
+							EQUAL(val1y * weights[0],
+								barycentric_combination(1, point3array, weights).y())
+							EQUAL(val1z * weights[0],
+								barycentric_combination(1, point3array, weights).z())
+							EQUAL(val1x * weights[0] + val2x * weights[1],
+								barycentric_combination(2, point3array, weights).x())
+							EQUAL(val1y * weights[0] + val2y * weights[1],
+								barycentric_combination(2, point3array, weights).y())
+							EQUAL(val1z * weights[0] + val2z * weights[1],
+								barycentric_combination(2, point3array, weights).z())
+							EQUAL(val1x * weights[0] + val2x * weights[1]
+								+ val3x * weights[2],
+								barycentric_combination(3, point3array, weights).x())
+							EQUAL(val1y * weights[0] + val2y * weights[1]
+								+ val3y * weights[2],
+								barycentric_combination(3, point3array, weights).y())
+							EQUAL(val1z * weights[0] + val2z * weights[1]
+								+ val3z * weights[2],
+								barycentric_combination(3, point3array, weights).z())
+							EQUAL(val1x * weights[0] + val2x * weights[1]
+								+ val3x * weights[2] + val4x * weights[3],
+								barycentric_combination(4, point3array, weights).x())
+							EQUAL(val1y * weights[0] + val2y * weights[1]
+								+ val3y * weights[2] + val4y * weights[3],
+								barycentric_combination(4, point3array, weights).y())
+							EQUAL(val1z * weights[0] + val2z * weights[1]
+								+ val3z * weights[2] + val4z * weights[3],
+								barycentric_combination(4, point3array, weights).z())
 						}
 					}
 				}
@@ -1676,13 +2951,13 @@ TYPED_TEST(general_test, vectpoint3)
 				TypeParam val1x = test_values<TypeParam>::v[i];
 				TypeParam val1y = test_values<TypeParam>::v[j];
 				TypeParam val1z = test_values<TypeParam>::v[k];
-				auto m1 = vect3<metres, TypeParam>(val1x, val1y, val1z);
+				auto m1 = vect3<units, TypeParam>(val1x, val1y, val1z);
 				if (abs(val1x) < sqrt_of_max && abs(val1y) < sqrt_of_max && abs(val1z) < sqrt_of_max
                     && abs(val1x) > sqrt_of_min && abs(val1y) > sqrt_of_min && abs(val1z) > sqrt_of_min)
 				{
-					EXPECT_FLOAT_EQ(0, abs(val1x * val1x + val1y * val1y + val1z * val1z - squared_norm_value(m1)));
-					EXPECT_FLOAT_EQ(0, abs(static_cast<TypeParam>(
-						std::sqrt(val1x * val1x + val1y * val1y + val1z * val1z)) - norm(m1).value()));
+					EQUAL(val1x * val1x + val1y * val1y + val1z * val1z, m1 * m1)
+					EQUAL(static_cast<TypeParam>(
+						std::sqrt(val1x * val1x + val1y * val1y + val1z * val1z)), norm(m1))
 				}
 			}
 		}
@@ -1951,25 +3226,6 @@ TYPED_TEST(comparison_test, unsigned_azimuth)
 	}	
 }
 
-MEASURES_UNIT(km, Space, " Km", 1000, 0)
-MEASURES_UNIT(inches, Space, "\"", 0.0254, 0)
-
-MEASURES_MAGNITUDE(Time, seconds, " s")
-MEASURES_UNIT(hours, Time, " h", 3600, 0)
-MEASURES_UNIT(days, Time, " d", 86400, 0)
-
-MEASURES_MAGNITUDE(Speed, metres_per_second, " m/s")
-MEASURES_UNIT(km_per_hour, Speed, " Km/h", 1 / 3.6, 0)
-MEASURES_UNIT(inches_per_day, Speed, "\"/day", 86400 / 0.0254, 0)
-
-MEASURES_MAGNITUDE(Area, square_metres, " m2")
-MEASURES_UNIT(square_km, Area, " Km2", 1000000, 0)
-MEASURES_UNIT(square_inches, Area, "\"2", 0.0254 * 0.0254, 0)
-
-MEASURES_MAGNITUDE(Temperature, kelvin, "^K")
-MEASURES_UNIT(celsius, Temperature, "^C", 1, 273.15)
-MEASURES_UNIT(fahrenheit, Temperature, "^F", 5. / 9., 273.15 - 32. * 5. / 9.)
-
 TEST(unitTest, magnitudes)
 {
 	ASSERT_STREQ(" rad", radians::id().suffix());
@@ -2212,27 +3468,6 @@ TEST(unitTest, azimuth_conversions)
 	EXPECT_FLOAT_EQ(fmod(1010.3 / 360, 1.), convert<turns>(unsigned_azimuth<degrees>(1010.3)).value());
 	EXPECT_FLOAT_EQ(fmod(1010.3 * 360, 360.), convert<degrees>(unsigned_azimuth<turns>(1010.3)).value());
 }
-
-MEASURES_MAGNITUDE(Volume, cubic_metres, " m3")
-MEASURES_MAGNITUDE(Density, kg_per_cubic_metre, " Kg/m3")
-MEASURES_MAGNITUDE(Mass, kg, " Kg")
-MEASURES_MAGNITUDE(Force, newtons, " N")
-MEASURES_MAGNITUDE(Energy, joules, " J")
-MEASURES_MAGNITUDE(Torque, newton_metres, " Nm")
-MEASURES_MAGNITUDE(Unitless, units, " u.")
-MEASURES_UNIT(dozens, Unitless, " doz.", 12, 0)
-MEASURES_MAGNITUDE(MagneticField, tesla, " T")
-MEASURES_MAGNITUDE(ElectricField, volts_per_metre, " V/m")
-
-MEASURES_DERIVED_1_1(cubic_metres, kg_per_cubic_metre, kg)
-MEASURES_DERIVED_SQ_1(metres, square_metres)
-MEASURES_DERIVED_1_3(seconds, metres_per_second, metres)
-MEASURES_DERIVED_3_3_ALL(newtons, metres, joules, newton_metres)
-MEASURES_DERIVED_3_3_ALL(metres_per_second, tesla, volts_per_metre, volts_per_metre)
-MEASURES_DERIVED_SQ_3_ALL(units, units, units)
-
-MEASURES_DERIVED_SQ_1(inches, square_inches)
-MEASURES_DERIVED_1_3_ALL(hours, km_per_hour, km)
 
 TEST(unitTest, derived_operations)
 {

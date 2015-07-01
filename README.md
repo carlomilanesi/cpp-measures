@@ -1,7 +1,7 @@
 # cpp-measures
 
 
-Header-only C++ library to handle physical measures
+Header-only C++11 library to handle physical measures
 
 **License: This project is released under the Mozilla Public License 2.0.**
 
